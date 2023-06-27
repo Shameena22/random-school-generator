@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "random school generator", "random school generator\random school generator.csproj", "{40463617-E12F-4326-BD68-137052F86262}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{40463617-E12F-4326-BD68-137052F86262}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40463617-E12F-4326-BD68-137052F86262}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40463617-E12F-4326-BD68-137052F86262}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40463617-E12F-4326-BD68-137052F86262}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC79B092-0CFE-4227-8F7F-92E6231D2BF3}
+	EndGlobalSection
+EndGlobal
