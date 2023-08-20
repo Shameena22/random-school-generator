@@ -818,7 +818,7 @@ namespace random_school_generator
         private string UpdateZoneGrowth()
         {
             //if a floor's zone growth has been completed (or if this is the first call of the subroutine), move onto the next floor
-            if (_currentFloorIndex == -1 || (_allFloors[_currentFloorIndex].FinishedFirstZoneGrowth && _allFloors[_currentFloorIndex].FinishedSecondZoneGrowth && _allFloors[_currentFloorIndex].FinishedThirdZoneGrowth))
+            if (_currentFloorIndex == -1 || _currentZoneIndex >= _allFloors[_currentFloorIndex].Zones.Count || (_allFloors[_currentFloorIndex].FinishedFirstZoneGrowth && _allFloors[_currentFloorIndex].FinishedSecondZoneGrowth && _allFloors[_currentFloorIndex].FinishedThirdZoneGrowth))
             {
                 _currentFloorIndex++;
                 _currentZoneIndex = 0;
@@ -827,7 +827,7 @@ namespace random_school_generator
             if (_currentFloorIndex < _allFloors.Count)
             {
                 Floor currentFloor = _allFloors[_currentFloorIndex];
-                
+
                 //if the current floor hasn't finished the first growth stage
                 if (!currentFloor.FinishedFirstZoneGrowth)
                 {
@@ -945,7 +945,7 @@ namespace random_school_generator
                 if (((!left && !right && z.RectWidth < 75) || (!up && !down && z.RectHeight < 75)) && !z.FirstGrown)
                 {
                     f.Zones.Remove(z);
-                    //_currentZoneIndex--;
+                    _currentZoneIndex--;
                     f.RemoveFromGrid((char)('0' | z.ID));
                 }
 
@@ -953,8 +953,16 @@ namespace random_school_generator
                 //if no more growth available (or required area reached on first growth), finish
                 else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
                 {
-                    SetZoneRect(z, f);
-                    return true;
+                    if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
+                    {
+                        f.Zones.Remove(z);
+                        //_currentZoneIndex--;
+                        f.RemoveFromGrid((char)('0' | z.ID));
+                    } else
+                    {
+                        SetZoneRect(z, f);
+                        return true;
+                    }
                 }
 
                 _previousUpdateTime = DateTime.Now;
@@ -1615,7 +1623,7 @@ namespace random_school_generator
                             _currentRoomIndex++;
 
                             //TODO: add floor to grid and edgepoints and kfjgearfj ojgme
-                            //how to add??? blegh
+                            //how to add???
 
                         }
 
@@ -1625,7 +1633,7 @@ namespace random_school_generator
                 }
                 
             }
-            return "> growing rooms";
+            return $"> growing rooms: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
         }
 
         private void SetUpRooms()
@@ -1668,6 +1676,8 @@ namespace random_school_generator
                 if ((!left && !right && r.RectWidth < 50) || (!up && !down && r.RectHeight < 50))
                 {
                     z.Rooms.Remove(r);
+                    z.BadGrowthPoints.Add(r.GrowthPoint);
+                    //TODO: force room to be made if none created
                     //_currentRoomIndex--;
                     //return true;
                    // r.RemoveFromGrid((char)('0' | z.ID));
@@ -1677,10 +1687,35 @@ namespace random_school_generator
                 //if no more growth available (or required area reached on first growth), finish
                 else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= (z.Area / z.Rooms.Count)))
                 {
-                    SetRoomRect(r);
-                    //TODO: set zone rect...
-                    z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | r.ID), true, (char)('0' | z.ID));
-                    return true;
+                    if (r.RectHeight >= r.RectWidth * 4.5 || r.RectWidth >= r.RectHeight * 4.5)
+                    {
+                        z.Rooms.Remove(r);
+                        z.BadGrowthPoints.Add(new Point(r.GrowthPoint.X, r.GrowthPoint.Y));
+                       
+                    }
+                    else
+                    {
+                        SetRoomRect(r);
+                        //TODO: set zone rect...
+                        //what if room ID is same as zone ID?
+                        //also weird zone "shadows" appear....investigate
+
+                        char tempID;
+                        if (z.ID == r.ID)
+                        {
+                            //hmmmmmm
+                            //will only happen once per zone...so make it R? or U for unassigned
+                            tempID = 'U';
+                        }
+                        else
+                        {
+                            tempID = (char)('0' | r.ID);
+                        }
+
+                        z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), tempID, false, (char)('0' | z.ID), false);
+                        return true;
+                    }
+                   
                 }
             }
             return false;
@@ -1730,6 +1765,11 @@ namespace random_school_generator
 
             //a certain distance from other rooms
 
+            foreach (Point p in z.BadGrowthPoints)
+            {
+                UpdateClosePoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), -10);
+            }
+
             foreach (Room room in z.Rooms)
             {
                 if (!Room.ReferenceEquals(r, room) && room.Grown)
@@ -1737,11 +1777,14 @@ namespace random_school_generator
                     //not too close to the edgepoints...but adjacency is nice actually
                     foreach (Point p in room.Edgepoints)
                     {
-                        UpdateClosePoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), 5);
+                        if (weightedGrid[p.X, p.Y] > 0)
+                        {
+                            UpdateFarPoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), 5);
+                        }
+                      
                     }
                 }
             }
-
 
             //a distance away from the edge...
             //equally divide distance

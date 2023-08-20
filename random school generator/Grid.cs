@@ -45,7 +45,7 @@ namespace random_school_generator
                 }
             }
         }
-        public void AddRectToGrid(Rectangle r, char symbol, bool overwrite = false, char emptySymbol = 'X')
+        public void AddRectToGrid(Rectangle r, char symbol, bool overwrite = false, char emptySymbol = 'X', bool addRect = true)
         {
             //update grid with filled rectangle
             //can be set to overwrite all characters in the rectangle's position, or just to overwrite characters of a specific symbol
@@ -61,7 +61,10 @@ namespace random_school_generator
             }
 
             //add to list of rectangles for drawing
-            _floorRectangles.Add(r);
+            if (addRect)
+            {
+                _floorRectangles.Add(r);
+            }
         }
         public void RemoveFromGrid(char symbol, char replacementSymbol = 'X')
         {

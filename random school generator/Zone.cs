@@ -14,6 +14,7 @@ namespace random_school_generator
         private ZoneType _zoneType;
         private bool _firstGrown, _secondGrown, _thirdGrown;
         private List<Room> _rooms;
+        private List<Point> _badGrowthPoints;
         public Zone(int numberOfRooms, int idealSize, string zoneType, int id) : base() 
         {
             _numberOfRooms = numberOfRooms;
@@ -24,6 +25,7 @@ namespace random_school_generator
             _thirdGrown = false;
             _growthPoint = new Point (-100, -100);
             _floorRectangles.Add(new Rectangle());
+            _badGrowthPoints = new List<Point>();
             _ID = id;
             _area = 0;
             _rooms = new List<Room>();
@@ -39,6 +41,7 @@ namespace random_school_generator
         internal List<Room> Rooms { get => _rooms; set => _rooms = value; }
         public int NumberOfRooms1 { get => _numberOfRooms; set => _numberOfRooms = value; }
         public int Area { get => _area; set => _area = value; }
+        public List<Point> BadGrowthPoints { get => _badGrowthPoints; set => _badGrowthPoints = value; }
 
         public void UpdateArea()
         {
