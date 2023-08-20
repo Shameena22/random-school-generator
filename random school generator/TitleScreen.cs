@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,15 +38,19 @@ namespace random_school_generator
         {
             if (previousKeyboardState.IsKeyDown(Keys.Enter) && currentKeyboardState.IsKeyUp(Keys.Enter))
             {
-                return _selected;
+                return _selected; //return selected option once user presses enter
             }
+
+            //toggling selected option via arrow keys
             if (previousKeyboardState.IsKeyDown(Keys.Down) && currentKeyboardState.IsKeyUp(Keys.Down) && _selected == 0)
             {
-                _selected++;
+                _selected++; 
             } else if (previousKeyboardState.IsKeyDown(Keys.Up) && currentKeyboardState.IsKeyUp(Keys.Up) && _selected == 1)
             {
                 _selected--;
             }
+
+            //updating status of keys based on input
             foreach (MenuOption m in _menuOptions)
             {
                 if (_menuOptions.IndexOf(m) == _selected)
@@ -58,19 +61,22 @@ namespace random_school_generator
                     m.IsSelected = false;
                 }
             }
-            return -1;
+            return -1; //indicates to simulation that nothing has been selected yet
         }
 
-       public void DrawTitleScreen(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
+        public void DrawTitleScreen(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             graphicsDevice.Clear(Color.Black);
-            spriteBatch.Begin();
+
+            //draw title
             spriteBatch.DrawString(_consolasBold, "random school generator", new Vector2(5, 5), Color.White);
+
+            //draw options, one below the other
             for (int i = 0; i < _menuOptions.Count; i++)
             {
                 spriteBatch.DrawString(_consolas, _menuOptions[i].Text, new Vector2(5, 50 * (i + 1)), _menuOptions[i].GetColour());
             }
-            spriteBatch.End();
+
         }
     }
     
