@@ -1328,6 +1328,10 @@ namespace random_school_generator
                     {
                         for (int y = z.GrowthTopLeft.Y; y < z.GrowthTopLeft.Y + z.RectHeight; y++)
                         {
+                            if (f.GetGrid[x, y] == 'C')
+                            {
+                                int i = 0;
+                            }
                             z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = f.GetGrid[x, y];
                         }
                     }
@@ -1586,6 +1590,7 @@ namespace random_school_generator
         {
             if (_currentFloorIndex == -1)
             {
+                CopyFloorDataToZones();
                 SetUpRooms();
                 //initially...set zone and currentfloor
                 _currentFloorIndex = 0;
@@ -1610,8 +1615,23 @@ namespace random_school_generator
 
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
-                        _currentZoneIndex++;
-                        _currentRoomIndex = 0;
+                        //if room count = 0
+                        if (currentZone.Rooms.Count == 0)
+                        {
+                            //z.Rooms = new List<Room>();
+                            for (int i = 0; i < currentZone.NumberOfRooms; i++)
+                            {
+                                currentZone.Rooms.Add(new Room(i, currentZone.ZoneType.Type));
+                                _currentRoomIndex = 0;
+                                return $"> retrying room creation: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
+                            }
+                        }
+                        else
+                        {
+                            _currentZoneIndex++;
+                            _currentRoomIndex = 0;
+                        }
+
                     }
                     else
                     {
@@ -1650,7 +1670,6 @@ namespace random_school_generator
                 }
             }
         }
-
         private bool GrowRoom(Room r, Zone z) 
         {
             if (r.WeightedGrid is null)
@@ -1687,11 +1706,13 @@ namespace random_school_generator
                 //if no more growth available (or required area reached on first growth), finish
                 else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= (z.Area / z.Rooms.Count)))
                 {
-                    if (r.RectHeight >= r.RectWidth * 4.5 || r.RectWidth >= r.RectHeight * 4.5)
+                    if (r.RectHeight >= r.RectWidth * 3.5 || r.RectWidth >= r.RectHeight * 3.5)
                     {
+                        //remove it from the zone
+                        z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                         z.Rooms.Remove(r);
                         z.BadGrowthPoints.Add(new Point(r.GrowthPoint.X, r.GrowthPoint.Y));
-                       
+                        
                     }
                     else
                     {
@@ -1699,6 +1720,8 @@ namespace random_school_generator
                         //TODO: set zone rect...
                         //what if room ID is same as zone ID?
                         //also weird zone "shadows" appear....investigate
+
+                        //TODO: try making rooms again if count = 0
 
                         char tempID;
                         if (z.ID == r.ID)
@@ -1787,6 +1810,13 @@ namespace random_school_generator
             }
 
             //a distance away from the edge...
+            foreach (Point p in z.Edgepoints)
+            {
+                if (weightedGrid[p.X, p.Y] > 0)
+                {
+                    UpdateFarPoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), 5);
+                }
+            }
             //equally divide distance
             //remake corridors????
             return weightedGrid;
@@ -1806,7 +1836,7 @@ namespace random_school_generator
 
             //r.FloorRectangles.Add(new Rectangle(r.GrowthTopLeft, new Point(r.RectWidth, r.RectHeight)));
            // r.UpdateBaseRect(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
-            //set all edgepoints of the zone
+            //set all edgepoints of the zone//
             r.FindAllEdgePoints('R');
 
             //how to update zone...?

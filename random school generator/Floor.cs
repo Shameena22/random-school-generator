@@ -168,6 +168,7 @@ namespace random_school_generator
             }
             return spacesFound;
         }
+        //public void AddRectToGrid(Rectangle r, bool overwrite, char symbol = 'X')
         public void AddRectToGrid(Rectangle r, bool overwrite, char symbol = 'X')
         {
             base.AddRectToGrid(r, symbol, overwrite);
@@ -181,7 +182,7 @@ namespace random_school_generator
             //update the list of edge points so they don't contain any part of the stair block
             UpdateEdgePoints(r);
             //update grid with "S" symbol where the stair block is
-            AddRectToGrid(r, 'S');
+            AddRectToGrid(r, true, 'S');
         }
         public void AddEntrance(Rectangle r)
         {
@@ -190,7 +191,7 @@ namespace random_school_generator
             //update edge points list to not include anything in the entrance block
             UpdateEdgePoints(r);
             //fill entrance rectangle with "E" symbols on the grid
-            AddRectToGrid(r, 'E');
+            AddRectToGrid(r, true, 'E');
         }
         private void UpdateEdgePoints(Rectangle r)
         {
@@ -235,7 +236,7 @@ namespace random_school_generator
 
                 //store as a rectangle; mark it on the grid as 'C' and add it to the list of corridor rectangles
                 tempRect = new Rectangle(rectX, rectY, corridorLength, corridorLength);
-                AddRectToGrid(tempRect, 'C');
+                AddRectToGrid(tempRect, true, 'C');
                 _corridorRects.Add(tempRect);
             }
         }
