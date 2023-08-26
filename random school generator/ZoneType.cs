@@ -56,9 +56,9 @@ namespace random_school_generator
             TypeColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Ivory },
-                {"gym", Color.BlanchedAlmond },
+                {"gym", Color.CornflowerBlue },
                 {"office", Color.Brown},
-                {"canteen", Color.Beige },
+                {"canteen", Color.Chocolate },
                 {"staffroom", Color.BurlyWood },
                 {"toilets", Color.SeaShell },
                 {"english", Color.LightGoldenrodYellow },

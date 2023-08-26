@@ -63,8 +63,6 @@ namespace random_school_generator
             _currentZoneIndex = 0;
             _titleScreen = new TitleScreen();
             _settingsScreen = new SettingsScreen(_allSubjectOptions);
-            _scrollX = 0;
-            _scrollY = 0;
             _currentFloorIndex = 0;
             _previousUpdateTime = new DateTime();
             _displayMessages = new Queue<string>();
@@ -72,6 +70,8 @@ namespace random_school_generator
             _screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _random = new Random();
             _timeBetweenDisplayChange = 500;
+            _scrollX = -_screenWidth / 4;
+            _scrollY = -_screenHeight / 5;
         }
 
         protected override void Initialize()
@@ -1328,11 +1328,15 @@ namespace random_school_generator
                     {
                         for (int y = z.GrowthTopLeft.Y; y < z.GrowthTopLeft.Y + z.RectHeight; y++)
                         {
-                            if (f.GetGrid[x, y] == 'C')
+                            if (z.ZoneType.SecondaryType == "large" && f.GetGrid[x, y] == 'C')
                             {
-                                int i = 0;
+                                z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = (char)('0' | z.ID);
                             }
-                            z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = f.GetGrid[x, y];
+                            else
+                            {
+                                z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = f.GetGrid[x, y];
+                            }
+                          
                         }
                     }
 
@@ -1342,7 +1346,6 @@ namespace random_school_generator
                 }
             }
         }
-
 
         // - update corridor generation -
         private string UpdateCorridorCreation()
@@ -1584,7 +1587,6 @@ namespace random_school_generator
         //erase corridors + only add connections for new corridors to fit?
 
         //make rooms grow same way as zones.... 
-        // TODO: fix weird issues here...
 
         private string UpdateRoomGrowth()
         {
@@ -1612,7 +1614,6 @@ namespace random_school_generator
                 else
                 {
                     Zone currentZone = currentFloor.Zones[_currentZoneIndex];
-
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
                         //if room count = 0
@@ -1635,16 +1636,11 @@ namespace random_school_generator
                     }
                     else
                     {
-                        //do some actual growing... <--- TODO
 
                         if (GrowRoom(currentZone.Rooms[_currentRoomIndex], currentZone))
                         {
                             currentZone.Rooms[_currentRoomIndex].Grown = true;
                             _currentRoomIndex++;
-
-                            //TODO: add floor to grid and edgepoints and kfjgearfj ojgme
-                            //how to add???
-
                         }
 
                        
@@ -1681,12 +1677,11 @@ namespace random_school_generator
             } else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange))
             {
                 bool left = false, right = false, up = false, down = false;
-                int step = 1;
+                int step = 7;
 
                 GrowGrid(ref left, ref right, ref up, ref down, r, z, step, CheckValidRoomGrowth, (char)('0' | z.ID));
 
                 r.UpdateBaseRect(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
-                //TODO: when to stop growing?? <----
                 //also, how to display?
 
                 //stop growing when...
@@ -1696,7 +1691,6 @@ namespace random_school_generator
                 {
                     z.Rooms.Remove(r);
                     z.BadGrowthPoints.Add(r.GrowthPoint);
-                    //TODO: force room to be made if none created
                     //_currentRoomIndex--;
                     //return true;
                    // r.RemoveFromGrid((char)('0' | z.ID));
@@ -1704,7 +1698,7 @@ namespace random_school_generator
 
 
                 //if no more growth available (or required area reached on first growth), finish
-                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= (z.Area / z.Rooms.Count)))
+                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= (r.IdealSize)))
                 {
                     if (r.RectHeight >= r.RectWidth * 3.5 || r.RectWidth >= r.RectHeight * 3.5)
                     {
@@ -1717,11 +1711,9 @@ namespace random_school_generator
                     else
                     {
                         SetRoomRect(r);
-                        //TODO: set zone rect...
                         //what if room ID is same as zone ID?
                         //also weird zone "shadows" appear....investigate
 
-                        //TODO: try making rooms again if count = 0
 
                         char tempID;
                         if (z.ID == r.ID)
@@ -1765,8 +1757,10 @@ namespace random_school_generator
         }
         private int[,] MakeRoomWeightedGrid(Room r, Zone z) 
         {
-            
-            int estArea = (int)(z.Area / z.Rooms.Count);
+            int minArea = 300; //TODO; tweak
+            //max of those two...absolute min is the min area
+            int estArea = Math.Max((int)(z.Area / z.Rooms.Count), minArea);
+            r.IdealSize = estArea;
             //make grid dimensions
             int[,] weightedGrid = new int[z.RectWidth, z.RectHeight];
             //prevent points from outside
@@ -1843,6 +1837,8 @@ namespace random_school_generator
             //set to room ID?
             
         }
+        //TODO: display these nicely <---
+        //TODO: clean up, e.g. remove redundant corridors - a separate game state?
 
         // - update message queue -
         private void UpdateMessageQueue(string s)
@@ -1935,10 +1931,10 @@ namespace random_school_generator
         }
         private void DrawMessageQueue()
         {
-            //draws message at bottom right corner of screen, most recent closest to the top
+            //draws message at bottom left corner of screen, most recent closest to the top
             for (int i = 0; i < _displayMessages.Count; i++)
             {
-                _spriteBatch.DrawString(_consolas, _displayMessages.ToList()[i], new Vector2(_screenWidth - 350, _screenHeight - 100 - (20 * (i + 1))), Color.White);
+                _spriteBatch.DrawString(_consolas, _displayMessages.ToList()[i], new Vector2(10, _screenHeight - 100 - (20 * (i + 1))), Color.White);
             }
         }
     }
