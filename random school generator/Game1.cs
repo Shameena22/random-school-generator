@@ -36,7 +36,7 @@ namespace random_school_generator
         private DateTime _previousUpdateTime;
 
         //drawing + display
-        private int _scrollX, _scrollY;
+        private int _scrollX, _scrollY, _growthSpeed;
         private int _currentFloorIndex, _currentZoneIndex, _currentRoomIndex;
         private Queue<string> _displayMessages;
         private int _timeBetweenDisplayChange;
@@ -58,7 +58,7 @@ namespace random_school_generator
 
             //TODO: check if code below fits here
             _allSubjectOptions = new List<string> { "english", "maths", "science", "religious education", "languages", "computer science", "art", "design technology", "music", "random" };
-            _gameStates = new List<string> { "menu", "settings", "create floors", "create graphs", "create stairs", "grow rectangular zones", "create corridors", "create rooms" };
+            _gameStates = new List<string> { "menu", "settings", "create floors", "create graphs", "create stairs", "grow rectangular zones", "create corridors", "create rooms", "create furniture" };
             _gameStateIndex = 0;
             _currentZoneIndex = 0;
             _titleScreen = new TitleScreen();
@@ -71,7 +71,7 @@ namespace random_school_generator
             _random = new Random();
             _timeBetweenDisplayChange = 500;
             _scrollX = -_screenWidth / 4;
-            _scrollY = -_screenHeight / 5;
+            _scrollY = -_screenHeight / 8;
         }
 
         protected override void Initialize()
@@ -101,13 +101,13 @@ namespace random_school_generator
             Grid.LoadGridPixelData(GraphicsDevice);
             ZoneType.LoadZoneRules();
             ZoneType.SetTypeColours();
+            RoomType.SetTypeColours();
         }
 
         protected override void Update(GameTime gameTime)
         {
             string currentMessage = "";
             _currentKeyboardState = Keyboard.GetState();
-            // TODO: Add your update logic here
 
             //return to previous menu / exit if esc pressed
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || (_previousKeyboardState.IsKeyDown(Keys.Escape) && _currentKeyboardState.IsKeyUp(Keys.Escape)))
@@ -168,6 +168,10 @@ namespace random_school_generator
                     UpdateScroll();
                     currentMessage = UpdateRoomGrowth();
                     break;
+                case "create furniture":
+                    UpdateScroll();
+                    currentMessage = UpdateFurnitureCreation();
+                    break;
             }
 
             //update message queue with the message stored
@@ -204,7 +208,7 @@ namespace random_school_generator
                 //get results of all inputs from settings screen
                 _settingsScreen.ReturnValues(ref _floorSize, ref _numOfFloors, ref _subjectOne, ref _subjectTwo, ref _subjectThree, ref _irregularityText, ref _watchGeneration);
                 _floorIrregularity = SetComplexity();
-
+                SetGrowthSpeed();
                 //switch to next game state
                 if (_watchGeneration == "yes")
                 {
@@ -228,6 +232,22 @@ namespace random_school_generator
                     return 5;
                 default:
                     return 0;
+            }
+        }
+        private void SetGrowthSpeed()
+        {
+            //sets drawing speed of zone / room growth depending on floor size
+
+            if (_floorSize < 100000)
+            {
+                _growthSpeed = 5;
+            }
+            else if (_floorSize < 150000)
+            {
+                _growthSpeed = 7;
+            } else
+            {
+                _growthSpeed = 10;
             }
         }
 
@@ -917,7 +937,7 @@ namespace random_school_generator
                 //store zone data once each zone has been grown fully
                 CopyFloorDataToZones();
 
-                //move onto next game stage
+                //move onto next game state
                 _gameStateIndex++;
                 return "> finished zone growth";
             }           
@@ -931,15 +951,16 @@ namespace random_school_generator
                 _previousUpdateTime = DateTime.Now;
             }
 
-            //only updates after crtain (small) amount of time has passed between previous update 
+            //only updates after certain (small) amount of time has passed between previous update 
             else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange / 50))
             {
                 bool left = false, right = false, up = false, down = false;
 
-                //step = how many growths are done in one frame
-                int step = 5;
+                //grow the grid in available directions
+                GrowGrid(ref left, ref right, ref up, ref down, z, f, _growthSpeed, CheckValidZoneGrowth);
 
-                GrowGrid(ref left, ref right, ref up, ref down, z, f, step, CheckValidZoneGrowth);
+                //update the zone's base rectangle based on the new top left position and grid dimensions
+                z.UpdateBaseRect(z.GrowthTopLeft.X, z.GrowthTopLeft.Y, z.RectWidth, z.RectHeight);
 
                 //delete the zone if the shape is too narrow
                 if (((!left && !right && z.RectWidth < 75) || (!up && !down && z.RectHeight < 75)) && !z.FirstGrown)
@@ -949,14 +970,12 @@ namespace random_school_generator
                     f.RemoveFromGrid((char)('0' | z.ID));
                 }
 
-
                 //if no more growth available (or required area reached on first growth), finish
                 else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
                 {
                     if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
                     {
                         f.Zones.Remove(z);
-                        //_currentZoneIndex--;
                         f.RemoveFromGrid((char)('0' | z.ID));
                     } else
                     {
@@ -971,12 +990,11 @@ namespace random_school_generator
         }
         private void GrowGrid(ref bool left, ref bool right, ref bool up, ref bool down, GrowableArea p, Grid g, int step, Func<int, int, int, int, char, char[,], char, bool> CheckValidGrowth, char c = ' ')
         {
-            // bool left = false, right = false, up = false, down = false;
             for (int i = 0; i < step; i++)
             {
 
                 //grow in each direction if possible
-                //update the location of the zone's top-left corner and grid dimensions if grown in a certain direction
+                //update the location of the zone / room's top-left corner and grid dimensions if grown in a certain direction
 
                 //grow left if possible
                 left = CheckValidGrowth(p.GrowthTopLeft.X, p.GrowthTopLeft.Y, -1, p.RectHeight, 'x', g.GetGrid, c);
@@ -1008,10 +1026,6 @@ namespace random_school_generator
                     p.RectHeight++;
                 }
             }
-
-
-            //update the zone's base rectangle based on the new top left position and grid dimensions
-            p.UpdateBaseRect(p.GrowthTopLeft.X, p.GrowthTopLeft.Y, p.RectWidth, p.RectHeight);
         }
         private void SetZoneGrowthPoint(Zone z, Floor f)
         {
@@ -1146,12 +1160,11 @@ namespace random_school_generator
             if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange / 50))
             {
                 //step = how many growth iterations done in one frame
-                int step = 5;
 
                 bool left = false, right = false, up = false, down = false;
                 List<Point> pointsToAdd = new List<Point>(), tempPointsToAdd1 = new List<Point>(), tempPointsToAdd2 = new List<Point>();
 
-                for (int j = 0; j < step; j++)
+                for (int j = 0; j < _growthSpeed; j++)
                 {
                     left = false;
                     right = false;
@@ -1280,7 +1293,7 @@ namespace random_school_generator
         }
         private bool CheckValidGrowth(int x, int y, int step, int length, char direction, char[,] grid, Func<char[,], int, int, bool> endCriteria)
         {
-            //iterate along a zone's edge to check if growth in the specified direction + step is valid
+            //iterate along a zone / room's edge to check if growth in the specified direction + step is valid
             //returns false if any of the points in the growth direction are unavailable
 
             if (direction == 'x')
@@ -1328,6 +1341,7 @@ namespace random_school_generator
                     {
                         for (int y = z.GrowthTopLeft.Y; y < z.GrowthTopLeft.Y + z.RectHeight; y++)
                         {
+                            //large rooms will ignore corridors as they get in the way of growth
                             if (z.ZoneType.SecondaryType == "large" && f.GetGrid[x, y] == 'C')
                             {
                                 z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = (char)('0' | z.ID);
@@ -1359,14 +1373,14 @@ namespace random_school_generator
             if (_currentFloorIndex > -1)
             {
                 //if corridors haven't already been made for the current floor
-                if (_allFloors[_currentFloorIndex].CorridorStartingPoints.Count == 0)
+                if (_allFloors[_currentFloorIndex].CorridorStartingRects.Count == 0)
                 {
                     Floor f = _allFloors[_currentFloorIndex];
 
                     //collect each zone growth point to base the corridors on
                     foreach (Zone z in f.Zones)
                     {
-                        f.CorridorStartingPoints.Add(new Rectangle(z.GrowthPoint, new Point(1, 1)));
+                        f.CorridorStartingRects.Add(new Rectangle(z.GrowthPoint, new Point(1, 1)));
                     }
 
                     //create the corridors connecting stairs / entrance / points
@@ -1399,7 +1413,7 @@ namespace random_school_generator
             {
                 allStartingPoints.Add(new Point(r.X, r.Y));
             }
-            foreach (Rectangle r in f.CorridorStartingPoints)
+            foreach (Rectangle r in f.CorridorStartingRects)
             {
                 allStartingPoints.Add(new Point(r.X, r.Y));
             }
@@ -1439,7 +1453,7 @@ namespace random_school_generator
                 if (!alreadyConnected)
                 {
                     //collect points on the shortest path between two points
-                    corridorPoints.AddRange(FindShortestPath(p, closestPoint, (char[,])f.GetGrid.Clone()));
+                    corridorPoints.AddRange(FindShortestPath(p, closestPoint, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' ' ));
 
                     //if either of the points is already in one of the connection lists..
                     if (connectionIndex != -1)
@@ -1469,14 +1483,14 @@ namespace random_school_generator
                     tempPoints = FindClosestStairPoint(pointConnections[0], connections);
 
                     //add the shortest path between these two points to connect the lists
-                    corridorPoints.AddRange(FindShortestPath(tempPoints.Item1, tempPoints.Item2, (char[,])f.GetGrid.Clone()));
+                    corridorPoints.AddRange(FindShortestPath(tempPoints.Item1, tempPoints.Item2, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' '));
                 }
             }
 
             //call the floor to make a corridor based on all the paths created
             f.AddCorridor(corridorPoints);
         }
-        private List<Point> FindShortestPath(Point start, Point end, char[,] grid)
+        private List<Point> FindShortestPath(Point start, Point end, char[,] grid, Func<Point, char[,], bool> ValidNextPoint)
         {
             Queue<Point> nextPoints = new Queue<Point>();
             Point next = start;
@@ -1516,26 +1530,19 @@ namespace random_school_generator
                 }
             }
 
-            //trace back shortest path from end to start
-            next = end;
-            do
+            if (nextPoints.Count != 0)
             {
-                corridorList.Add(next);
-                next = previousPoints[next];
-            } while (previousPoints[next] != start);
-            corridorList.Add(start);
+                //trace back shortest path from end to start
+                next = end;
+                do
+                {
+                    corridorList.Add(next);
+                    next = previousPoints[next];
+                } while (next != start && previousPoints[next] != start);
+                corridorList.Add(start);
+            }
 
             return corridorList;
-        }
-        private bool ValidNextPoint(Point p, char[,] grid)
-        {
-            //used in the BFS subroutine to check if a point is within the bounds of the building and has not been visited yet
-            char c = grid[p.X, p.Y];
-
-            // return (c == 'X' || c == 'S' || c == 'E' || c == 'C');
-
-            //C can't be V or ' '
-            return (c != 'V' && c != ' ');
         }
         private Point FindClosestStairPoint(Point start, List<Point> allDestinations)
         {
@@ -1578,34 +1585,24 @@ namespace random_school_generator
             return (start, end);
         }
 
-        // - update floor generation - TODO
-
-        //make zones bigger? so they don't end up too small (done?)
-        //make rooms first...but grow with space between! <--- how?!
-        //assign entrances to each room
-        //make corridors go between entrances and the corridor entrance point given by the ones generated before
-        //erase corridors + only add connections for new corridors to fit?
-
-        //make rooms grow same way as zones.... 
-
+        // - update room growth - 
         private string UpdateRoomGrowth()
         {
             if (_currentFloorIndex == -1)
             {
+                //set inital values required if this is the first call of this function
                 CopyFloorDataToZones();
                 SetUpRooms();
-                //initially...set zone and currentfloor
                 _currentFloorIndex = 0;
                 _currentZoneIndex = 0;
                 _currentRoomIndex = 0;
-
-                //also construct the rooms!
+                return "> initialising room growth";
             }
             else if (_currentFloorIndex < _allFloors.Count)
             {
-                //for each zone
                 Floor currentFloor = _allFloors[_currentFloorIndex];
 
+                //if all zones on this floor have had rooms grown, move onto the next floor
                 if (_currentZoneIndex == currentFloor.Zones.Count)
                 {
                     _currentFloorIndex++;
@@ -1614,51 +1611,93 @@ namespace random_school_generator
                 else
                 {
                     Zone currentZone = currentFloor.Zones[_currentZoneIndex];
+
+                    //if all the rooms on this zone have been grown...
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
-                        //if room count = 0
+                        //retries room growth if no rooms were successfully grown
                         if (currentZone.Rooms.Count == 0)
                         {
-                            //z.Rooms = new List<Room>();
-                            for (int i = 0; i < currentZone.NumberOfRooms; i++)
+                            //allows 3 retries before grid is changed
+                            if (currentZone.RoomGrowthRetries < 3)
                             {
-                                currentZone.Rooms.Add(new Room(i, currentZone.ZoneType.Type));
-                                _currentRoomIndex = 0;
+                                currentZone.RoomGrowthRetries++;
+                                for (int i = 0; i < currentZone.NumberOfRooms; i++)
+                                {
+                                    currentZone.Rooms.Add(new Room(i, currentZone.ZoneType.Type));
+                                    _currentRoomIndex = 0;                                
+                                }
                                 return $"> retrying room creation: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
                             }
+                            //if 3 retries done, "remove" corridors so rooms have more space to grow
+                            else if (!currentZone.RoomGrowthFailed)
+                            {
+                                currentZone.RemoveFromGrid('C', (char)('0' | currentZone.ID));
+                                //change the grid to not include C
+                                for (int i = 0; i < currentZone.NumberOfRooms; i++)
+                                {
+                                    currentZone.Rooms.Add(new Room(i, currentZone.ZoneType.Type));
+                                    _currentRoomIndex = 0;                             
+                                }
+                                currentZone.RoomGrowthFailed = true;
+                                return $"> retrying room creation: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
+                            } 
+                            //if removing corridors doesn't help, delete the zone as it is too small
+                            else {
+                                currentFloor.RemoveFromGrid((char)('0' | currentZone.ID));
+                                currentFloor.Zones.Remove(currentZone);
+                                _currentRoomIndex = 0;
+                                //_currentZoneIndex++;
+                                return $"> deleting zone {_currentZoneIndex}";
+                            }     
                         }
+                        //if rooms have been grown successfully, move onto the next zone
                         else
                         {
                             _currentZoneIndex++;
                             _currentRoomIndex = 0;
                         }
-
                     }
+                    //if not all rooms have been grown yet
                     else
                     {
-
-                        if (GrowRoom(currentZone.Rooms[_currentRoomIndex], currentZone))
+                        if (_currentRoomIndex != -1)
                         {
-                            currentZone.Rooms[_currentRoomIndex].Grown = true;
-                            _currentRoomIndex++;
+                            //grows the current room and moves onto the next once it is done
+                            if (GrowRoom(currentZone.Rooms[_currentRoomIndex], currentZone, currentFloor))
+                            {
+                                currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                _currentRoomIndex++;
+                            }
                         }
 
-                       
+                        //_currentRoomIndex is only -1 when no good growth points can be found for any room
+                        //so we just delete the zone in that case
+                        else
+                        {
+                            currentFloor.RemoveFromGrid((char)('0' | currentZone.ID));
+                            currentFloor.Zones.Remove(currentZone);
+                        }
+
                     }
-
                 }
-                
+                return $"> growing rooms: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
             }
-            return $"> growing rooms: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
-        }
+            else
+            {
+                _currentFloorIndex = -1;
+                _gameStateIndex++;
+                return "> finished room growth";
+            }
 
+        }
         private void SetUpRooms()
         {
+            //creates the desired number of Room objects for each zone in the school
             foreach (Floor f in _allFloors)
             {
                 foreach (Zone z in f.Zones)
                 {
-                    //z.Rooms = new List<Room>();
                     for (int i = 0; i < z.NumberOfRooms; i++)
                     {
                         z.Rooms.Add(new Room(i, z.ZoneType.Type));
@@ -1666,68 +1705,46 @@ namespace random_school_generator
                 }
             }
         }
-        private bool GrowRoom(Room r, Zone z) 
+        private bool GrowRoom(Room r, Zone z, Floor f) 
         {
+            //if the room doesn't have a growth point yet, make it
             if (r.WeightedGrid is null)
             {
-                //MakeRoomWeightedGrid(r, z);
-                //make the growth point!
-                SetRoomGrowthPoint(r, z);
+                SetRoomGrowthPoint(r, z, f.Entrance);
                 _previousUpdateTime = DateTime.Now;
-            } else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange))
-            {
+            } 
+
+            else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
+
                 bool left = false, right = false, up = false, down = false;
-                int step = 7;
 
-                GrowGrid(ref left, ref right, ref up, ref down, r, z, step, CheckValidRoomGrowth, (char)('0' | z.ID));
+                //grow the room in available directions
+                GrowGrid(ref left, ref right, ref up, ref down, r, z, _growthSpeed, CheckValidRoomGrowth, (char)('0' | z.ID));
 
+                //update the base rectangle to match new position / dimensions
                 r.UpdateBaseRect(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
-                //also, how to display?
 
-                //stop growing when...
-                //can't grow anymore?
-
+                //if the room is too narrow, remove it
                 if ((!left && !right && r.RectWidth < 50) || (!up && !down && r.RectHeight < 50))
                 {
                     z.Rooms.Remove(r);
                     z.BadGrowthPoints.Add(r.GrowthPoint);
-                    //_currentRoomIndex--;
-                    //return true;
-                   // r.RemoveFromGrid((char)('0' | z.ID));
                 }
 
-
-                //if no more growth available (or required area reached on first growth), finish
+                //if no more growth available (or required area reached on first growth), finish growth
                 else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= (r.IdealSize)))
                 {
+
+                    //remove the room if it is too long
                     if (r.RectHeight >= r.RectWidth * 3.5 || r.RectWidth >= r.RectHeight * 3.5)
                     {
-                        //remove it from the zone
                         z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                         z.Rooms.Remove(r);
-                        z.BadGrowthPoints.Add(new Point(r.GrowthPoint.X, r.GrowthPoint.Y));
-                        
+                        z.BadGrowthPoints.Add(new Point(r.GrowthPoint.X, r.GrowthPoint.Y));                
                     }
-                    else
-                    {
-                        SetRoomRect(r);
-                        //what if room ID is same as zone ID?
-                        //also weird zone "shadows" appear....investigate
 
-
-                        char tempID;
-                        if (z.ID == r.ID)
-                        {
-                            //hmmmmmm
-                            //will only happen once per zone...so make it R? or U for unassigned
-                            tempID = 'U';
-                        }
-                        else
-                        {
-                            tempID = (char)('0' | r.ID);
-                        }
-
-                        z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), tempID, false, (char)('0' | z.ID), false);
+                    else {
+                        SetRoomRect(r, z);
                         return true;
                     }
                    
@@ -1736,15 +1753,15 @@ namespace random_school_generator
             return false;
         
         }
-        private void SetRoomGrowthPoint(Room r, Zone z)
+        private void SetRoomGrowthPoint(Room r, Zone z, Rectangle entrance)
         {
-            r.WeightedGrid = MakeRoomWeightedGrid(r, z);
+            r.WeightedGrid = MakeRoomWeightedGrid(r, z, entrance);
             r.GrowthPoint = ChooseGrowthPoint(r.WeightedGrid);
 
             if (r.WeightedGrid[r.GrowthPoint.X, r.GrowthPoint.Y] < 0)
             {
                 z.Rooms.Remove(r);
-                _currentRoomIndex--;
+                //_currentRoomIndex--;
             } else
             {
                 r.RectWidth = 1;
@@ -1755,16 +1772,18 @@ namespace random_school_generator
             }
 
         }
-        private int[,] MakeRoomWeightedGrid(Room r, Zone z) 
+        private int[,] MakeRoomWeightedGrid(Room r, Zone z, Rectangle entrance) 
         {
-            int minArea = 300; //TODO; tweak
+            int minArea = 300; //TODO: tweak
+
             //max of those two...absolute min is the min area
             int estArea = Math.Max((int)(z.Area / z.Rooms.Count), minArea);
             r.IdealSize = estArea;
             //make grid dimensions
             int[,] weightedGrid = new int[z.RectWidth, z.RectHeight];
-            //prevent points from outside
 
+
+            //prevent points from outside
             for (int x = 0; x < z.RectWidth; x++)
             {
                 for (int y = 0; y < z.RectHeight; y++)
@@ -1780,13 +1799,17 @@ namespace random_school_generator
                 }
             }
 
-            //a certain distance from other rooms
+            //discourage growth near the entrance if there is one
+            if (entrance.Width != 0)
+            {
+                UpdateClosePoints(ref weightedGrid, new Point(entrance.X - z.GrowthTopLeft.X, entrance.Y - z.GrowthTopLeft.Y), (int)(Math.Sqrt(estArea)), -10);
+            }
 
+            //encourage a certain distance from other rooms
             foreach (Point p in z.BadGrowthPoints)
             {
                 UpdateClosePoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), -10);
             }
-
             foreach (Room room in z.Rooms)
             {
                 if (!Room.ReferenceEquals(r, room) && room.Grown)
@@ -1803,7 +1826,7 @@ namespace random_school_generator
                 }
             }
 
-            //a distance away from the edge...
+            //encourage a distance away from the edge...
             foreach (Point p in z.Edgepoints)
             {
                 if (weightedGrid[p.X, p.Y] > 0)
@@ -1811,8 +1834,7 @@ namespace random_school_generator
                     UpdateFarPoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), 5);
                 }
             }
-            //equally divide distance
-            //remake corridors????
+
             return weightedGrid;
         }
         private bool CheckValidRoomGrowth(int x, int y, int step, int length, char direction, char[,] grid, char zoneID)
@@ -1820,25 +1842,369 @@ namespace random_school_generator
             //STEP OVER THIS
             return CheckValidGrowth(x, y, step, length, direction, grid, (grid, x, y) => !(grid[x, y] == zoneID));
         }
-        private void SetRoomRect(Room r)
+        private void SetRoomRect(Room r, Zone z)
         {
+            char tempID;
+
             //updates the zone's grid with new dimensions
             r.ResetGrid(r.RectWidth, r.RectHeight, 'R');
 
-            //adds the zone's rectangle to the floor grid
-            //f.AddRectToGrid(new Rectangle(z.GrowthTopLeft, new Point(z.RectWidth, z.RectHeight)), (char)('0' | z.ID), false);
-
-            //r.FloorRectangles.Add(new Rectangle(r.GrowthTopLeft, new Point(r.RectWidth, r.RectHeight)));
-           // r.UpdateBaseRect(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
-            //set all edgepoints of the zone//
+            //set all edgepoints of the zone
             r.FindAllEdgePoints('R');
 
-            //how to update zone...?
-            //set to room ID?
-            
+            //sets an ID for the room (can't have the room ID be the same as the zone ID)
+            if (z.ID == r.ID)
+            {
+                //TODO: this will bite you in the ass later, a problem for future me
+                tempID = 'U';
+            }
+            else
+            {
+                tempID = (char)('0' | r.ID);
+            }
+
+            //mark the zone's grid with the completed room shape
+            z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), tempID, false, (char)('0' | z.ID), false);
         }
-        //TODO: display these nicely <---
-        //TODO: clean up, e.g. remove redundant corridors - a separate game state?
+
+        // - create room furniture - TODO
+        private string UpdateFurnitureCreation()
+        {
+            if (_currentFloorIndex == -1)
+            {
+                //initialise furniture creation
+                _currentFloorIndex = 0;
+                _currentZoneIndex = 0;
+                _currentRoomIndex = 0;
+                _previousUpdateTime = DateTime.Now;
+
+                foreach (Floor f in _allFloors)
+                {
+                    f.SetRoomGrid();
+                    foreach (Zone z in f.Zones)
+                    {
+                        foreach (Room r in z.Rooms)
+                        {
+                            f.AddToRoomGrid(new Rectangle(z.GrowthTopLeft.X + r.GrowthTopLeft.X, z.GrowthTopLeft.Y + r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight));
+                        }
+                    }
+                }
+
+                return "> initialising furniture creation";
+            }
+            else if (_currentFloorIndex < _allFloors.Count)
+            {
+                Floor currentFloor = _allFloors[_currentFloorIndex];
+
+                if (_currentZoneIndex == currentFloor.Zones.Count)
+                {
+                    _currentFloorIndex++;
+                    _currentZoneIndex = 0;
+                    _currentRoomIndex = 0;
+                } 
+                else {
+
+                    Zone currentZone = currentFloor.Zones[_currentZoneIndex];
+
+                    if (_currentRoomIndex == currentZone.Rooms.Count)
+                    {
+                        AddDoors(currentFloor, currentZone);
+                        _currentZoneIndex++;
+                        _currentRoomIndex = 0;
+                    } 
+                    //TODO: tweak the time
+                    else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
+                        Room currentRoom = currentZone.Rooms[_currentRoomIndex];
+                        //do the things...
+                        RemoveCorridorsFromRoom(currentFloor, currentRoom, (char)('0' | currentZone.ID));
+                        _previousUpdateTime = DateTime.Now;
+                        _currentRoomIndex++;
+                    }
+
+                }
+
+                return $"> creating furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
+            }
+            else
+            {
+                return "> finished creating furniture";
+            }
+        }
+
+        //for each room
+        // - remove corridors if present (done)
+        // - add door adjacent to corridor / not building edge <---
+        // - - careful with room adjacencies
+        // - add furniture (depends on room type)
+        // - add walls
+
+        private void RemoveCorridorsFromRoom(Floor f, Room r, char zoneID)
+        {
+            //if corridor present...
+            for (int x = 0; x < r.RectWidth; x++)
+            {
+                for (int y = 0; y < r.RectHeight; y++)
+                {
+                    //how to actually locate?
+                    //C will not be present in zone grid
+                    if (f.GetGrid[r.FloorRectangles[0].X + x, r.FloorRectangles[0].Y + y] == 'C')
+                    {
+                        //TODO: remove from floor grid, remove from floor rects
+                        //using a Floor sub?
+                        f.RemoveCorridorPoint(r.FloorRectangles[0].X + x, r.FloorRectangles[0].Y + y, zoneID);
+                    }
+                }
+
+            }
+
+        }
+
+        //TODO: add doors
+        // - each room must be connected somehow to a room which has an exit point
+        // - go through each room - if exit point, add
+        // - just add doors to each other adj room / at least one door to the outside
+        // - when making walls, delete extra doors
+
+        /*
+         add all connections:
+         - if adj to another room; add
+         - if adj to outside NOT EDGE OF FLOOR; add
+         - store connection graphs somewhere
+
+         cut down:
+         - for each graph...
+         - - start at connected doors
+         - - if two separately valid rooms connected - remove connection
+         - - or mark other rooms as connected if connected to connected rooms
+        */
+
+        private void AddDoors(Floor f, Zone z)
+        {
+            List<List<Room>> roomConnections = new List<List<Room>>();
+            //for each room - add door if adjacent to a corridor and add door if adjacent to another room
+            //don't add if already done...
+            //store these in a list of lists
+            //so do it by zone; store graph in zone
+
+            foreach (Room r in z.Rooms)
+            {
+                //check if room adjacent to a valid outside place <-- TODO: check
+                // - - - repeat this for all of the points along the edge to get ones that can be used for the door
+                //done!
+                //might want the clusters too...just think bout that later
+                List<Point> outerEdgePoints = GetRoomPointsAdjacentToOutside(f, z, r);
+
+                //now check if adjacent to another room in the zone <--- TODO
+                //looiofhisdfnakc depends HOW MUCH adjacency too
+                //check if edgepoints share with another room in the zone
+                //then how many fit
+                //and add cluster if they fit
+
+                
+                foreach (Room r2 in z.Rooms)
+                {
+
+                }
+
+            }
+        }
+
+        private List<Point> GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
+        {
+            List<Point> usableEdgePoints = new List<Point>(), stairPoints = new List<Point>();
+            Point end = new Point(f.StairPoints[0].X, f.StairPoints[0].Y), tempPoint, tempStairPoint;
+            List<List<Point>> edgePointClusters = GetEdgePointClusters(f, z, r);
+
+            foreach (Rectangle rect in f.CorridorRects)
+            {
+                stairPoints.Add(rect.Center);
+            }
+
+            //TODO: make this faster by 'grouping' consecutive edgepoints
+            //on each side...
+            //broken if there is an obstruction adjacent
+
+            foreach (Point p in r.Edgepoints)
+            {
+                if (!usableEdgePoints.Contains(p) && ContainedInClusterLists(p, edgePointClusters)) //check if in cluster first
+                {
+                    tempPoint = new Point(p.X + r.GrowthTopLeft.X + z.GrowthTopLeft.X, p.Y + r.GrowthTopLeft.Y + z.GrowthTopLeft.Y);
+                    tempStairPoint = FindClosestStairPoint(tempPoint, stairPoints);
+                    //how to quickly check adjacency? Point, char[]...
+                    //mark rooms onto floor?? with an R
+                    //then make sure points are an X..
+
+                    //STEP OVER THIS
+                    if (FindShortestPath(tempPoint, tempStairPoint, (char[,])f.RoomGrid.Clone(), (p, grid) => grid[p.X, p.Y] == 'X').Count > 0)
+                    {
+                        //TODO: make to add every other in a cluster
+                        AddEdgesInACluster(p, edgePointClusters, ref usableEdgePoints);
+                    }
+                }
+            }
+            return usableEdgePoints;
+        }
+
+        private List<List<Point>> GetEdgePointClusters(Floor f, Zone z, Room r)
+        {
+            List<List<Point>> edgePointClusters = new List<List<Point>>();
+            //TODO: tweak
+            int minWidth = 10;
+            Point tempPoint;
+
+            //check left, right, up, down
+
+            //left:
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "left", minWidth, f.RoomGrid, ref edgePointClusters);
+
+            //right:
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X + r.RectWidth - 1, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "right", minWidth, f.RoomGrid, ref edgePointClusters);
+
+            //up:
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, "up", minWidth, f.RoomGrid, ref edgePointClusters);
+
+            //down:
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y + r.RectHeight - 1, r.RectWidth, "down", minWidth, f.RoomGrid, ref edgePointClusters);
+
+            //TODO: smth wrong happening here
+            for (int i = 0; i < edgePointClusters.Count; i++)
+            {
+                if (edgePointClusters[i].Count == 0)
+                {
+                    edgePointClusters.RemoveAt(i);
+                    i--;
+                } else
+                {
+                    for (int j = 0; j < edgePointClusters[i].Count; j++)
+                    {
+                        tempPoint = edgePointClusters[i][j];
+                        edgePointClusters[i][j] = new Point(tempPoint.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, tempPoint.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y);
+                    }
+                }
+            }
+
+            char[,] tempG = new char[f.RoomGrid.GetUpperBound(0) - 251, f.RoomGrid.GetUpperBound(1) - 399];
+
+            return edgePointClusters;
+        }
+        private bool ContainedInClusterLists(Point p, List<List<Point>> c)
+        {
+            foreach (List<Point> l in c)
+            {
+                if (l.Contains(p))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private void CheckAreaAroundEdge(int x, int y, int length, string direction, int minWidth, char[,] grid, ref List<List<Point>> edgePointClusters  )
+        {
+            int tempLength = 0;
+            bool broken = false;
+            List<Point> tempCluster = new List<Point>();
+
+            if (direction == "left" || direction == "right")
+            {
+                for (int tempY = y; tempY < y + length; tempY++)
+                {
+                    broken = false;
+                    for (int i = 1; i <= minWidth; i++)
+                    {
+                        if (direction == "left")
+                        {
+                            tempLength = x - i;
+                        }
+                        else
+                        {
+                            tempLength = x + i;
+                        }
+
+                        if (!(WithinBounds(tempLength, tempY, grid.GetUpperBound(0), grid.GetUpperBound(1)) && grid[tempLength, tempY] == 'X'))
+                        {
+                            //this point can't be added
+                            broken = true;
+                            break;
+                        }
+                    }
+
+                    if (broken)
+                    {
+                        if (tempCluster.Count > 0)
+                        {
+                            edgePointClusters.Add(tempCluster);
+                            tempCluster = new List<Point>();
+                        }
+                    } else
+                    {
+                        tempCluster.Add(new Point(x, tempY));
+                    }
+
+                }
+                edgePointClusters.Add(tempCluster);
+
+            } else if (direction == "up" || direction == "down")
+            {
+                for (int tempX = x; tempX < x + length; tempX++)
+                {
+                    broken = false;
+                    for (int i = 1; i <= minWidth; i++)
+                    {
+                        if (direction == "up")
+                        {
+                            tempLength = y - i;
+                        }
+                        else
+                        {
+                            tempLength = y + i;
+                        }
+
+                        if (!(WithinBounds(tempX, tempLength, grid.GetUpperBound(0), grid.GetUpperBound(1)) && grid[tempX, tempLength] == 'X'))
+                        {
+                            //this point can't be added
+                            broken = true;
+                            break;
+                        }
+                    }
+
+                    if (broken)
+                    {
+                        if (tempCluster.Count > 0)
+                        {
+                            edgePointClusters.Add(tempCluster);
+                            tempCluster = new List<Point>();
+                        }
+                    }
+                    else
+                    {
+                        tempCluster.Add(new Point(tempX, y));
+                    }
+
+                }
+                edgePointClusters.Add(tempCluster);
+            }
+
+        }
+
+        private bool AddEdgesInACluster(Point p, List<List<Point>> clusters, ref List<Point> edgePoints)
+        {
+            bool found = false;
+            foreach (List<Point> l in clusters)
+            {
+                if (l.Contains(p))
+                {
+                    found = true;
+                    foreach (Point point in l)
+                    {
+                        if (!edgePoints.Contains(point))
+                        {
+                            edgePoints.Add(point);
+                        }
+                    }
+                }
+            }
+            return found;
+        }
 
         // - update message queue -
         private void UpdateMessageQueue(string s)
@@ -1846,7 +2212,7 @@ namespace random_school_generator
             if (s != "")
             {
                 //remove oldest message if the queue has grown too large
-                if (_displayMessages.Count >= 5)
+                if (_displayMessages.Count > 5)
                 {
                     _displayMessages.Dequeue();
                 }
@@ -1909,7 +2275,7 @@ namespace random_school_generator
             {
                 _settingsScreen.DrawSettingsScreen(_spriteBatch, GraphicsDevice);
             }
-            else if (_gameState == "create floors" || _gameState == "create stairs" || _gameState == "create corridors" || _gameState == "grow rectangular zones" || _gameState == "create rooms")
+            else if (_gameState == "create floors" || _gameState == "create stairs" || _gameState == "create corridors" || _gameState == "grow rectangular zones" || _gameState == "create rooms" || _gameState == "create furniture")
             {
                 DrawFloorUpdates();
             }

@@ -10,26 +10,27 @@ using System.Threading.Tasks;
 
 namespace random_school_generator
 {
-    //TODO: make a Grid base class??? inheritors Floor, Zone, Room
     internal class Floor : Grid
     {
-        //TODO: fix this
         private int _floorID, _averageSize, _totalArea;
         private static Dictionary<int, Color> _componentColours;
         private List<Zone> _zones;
         private List<Rectangle> _stairRects, _corridorStartingRects, _corridorRects = new List<Rectangle>();
         private Rectangle _entrance;
         private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth;
+        private char[,] _roomGrid;
 
         public int TotalArea { get => _totalArea; set => _totalArea = value; }
         internal List<Zone> Zones { get => _zones; set => _zones = value; }
         public int FloorID { get => _floorID;  }
         public List<Rectangle> StairPoints { get => _stairRects; set => _stairRects = value; }
         public Rectangle Entrance { get => _entrance; set => _entrance = value; }
-        public List<Rectangle> CorridorStartingPoints { get => _corridorStartingRects; set => _corridorStartingRects = value; }
+        public List<Rectangle> CorridorStartingRects { get => _corridorStartingRects; set => _corridorStartingRects = value; }
         public bool FinishedFirstZoneGrowth { get => _finishedFirstZoneGrowth; set => _finishedFirstZoneGrowth = value; }
         public bool FinishedSecondZoneGrowth { get => _finishedSecondZoneGrowth; set => _finishedSecondZoneGrowth = value; }
         public bool FinishedThirdZoneGrowth { get => _finishedThirdZoneGrowth; set => _finishedThirdZoneGrowth = value; }
+        public char[,] RoomGrid { get => _roomGrid; set => _roomGrid = value; }
+        public List<Rectangle> CorridorRects { get => _corridorRects; set => _corridorRects = value; }
 
         public Floor(int floorID, int averageSize, int gridDimensions) : base(gridDimensions, gridDimensions)
         {
@@ -39,7 +40,7 @@ namespace random_school_generator
             _stairRects = new List<Rectangle>();
             _entrance = new Rectangle(0, 0, 0, 0);
             _corridorStartingRects = new List<Rectangle>();
-            _finishedFirstZoneGrowth = false;            
+            _finishedFirstZoneGrowth = false;  
         }
 
         // - loading data -
@@ -153,8 +154,10 @@ namespace random_school_generator
         private bool CheckIfRectFitsBelow(Rectangle r, Floor f)
         {
             bool spacesFound = true;
+
             //check through each point of a rectangle and see if it fits in the floor rectangles
             //get all the points that go over and add to total area
+
             for (int x = r.X; x < r.X + r.Width; x++)
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
@@ -168,7 +171,6 @@ namespace random_school_generator
             }
             return spacesFound;
         }
-        //public void AddRectToGrid(Rectangle r, bool overwrite, char symbol = 'X')
         public void AddRectToGrid(Rectangle r, bool overwrite, char symbol = 'X')
         {
             base.AddRectToGrid(r, symbol, overwrite);
@@ -179,8 +181,10 @@ namespace random_school_generator
         {
             //add rectangle to stair list for drawing
             _stairRects.Add(r);
+
             //update the list of edge points so they don't contain any part of the stair block
             UpdateEdgePoints(r);
+
             //update grid with "S" symbol where the stair block is
             AddRectToGrid(r, true, 'S');
         }
@@ -188,8 +192,10 @@ namespace random_school_generator
         {
             //store entrance rectangle
             _entrance = r;
+
             //update edge points list to not include anything in the entrance block
             UpdateEdgePoints(r);
+
             //fill entrance rectangle with "E" symbols on the grid
             AddRectToGrid(r, true, 'E');
         }
@@ -309,17 +315,68 @@ namespace random_school_generator
             //now shift down; rectangle's Y position cannot go over the grid boundary   
             rectY = Math.Min(rectY + (corridorLength - j), _grid.GetUpperBound(1) - corridorLength);
         }
+        public void RemoveCorridorPoint(int x, int y, char replacementSymbol)
+        {
+            //easy solution is to add a grey rect to draw over the corridor - might add a lotta rects though
+            //or check each rect and remove it if it overlaps with the point......but inefficient?? 
+            _grid[x, y] = replacementSymbol;
+            Rectangle r;
+            for (int i = 0; i < _corridorRects.Count; i++)
+            {
+                r = _corridorRects[i];
+                if (r.X <= x && r.X + r.Width > x && r.Y <= y && r.Y + r.Height > y)
+                {                   
+                    _corridorRects.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
+
+        // - adding rooms -
+        public void SetRoomGrid()
+        {
+            //ResetGrid(_grid.GetLength(0), _grid.GetLength(1), 'X');
+
+            _roomGrid = new char[_grid.GetLength(0), _grid.GetLength(1)];
+
+            for (int x = 0; x <= _roomGrid.GetUpperBound(0); x++)
+            {
+                for (int y = 0; y <= _roomGrid.GetUpperBound(1); y++)
+                {
+                    if (_grid[x, y] == ' ')
+                    {
+                        _roomGrid[x, y] = ' ';
+                    }
+                    else
+                    {
+                        _roomGrid[x, y] = 'X';
+                    }
+                }
+            }
+        }
+        public void AddToRoomGrid(Rectangle r)
+        {
+            for (int x = 0; x < r.Width; x++)
+            {
+                for (int y = 0; y < r.Height; y++)
+                {
+                    _roomGrid[x + r.X, y + r.Y] = 'R';
+                }
+            }
+        }
 
         // - drawing floor -
         public void DrawFloor(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
             List<List<Rectangle>> drawingList = new List<List<Rectangle>> { _floorRectangles, _corridorRects, _corridorStartingRects, _stairRects };
-            //TODO: make different colours...
+
+            //draw base rectangle first
             foreach (Rectangle r in drawingList[0])
             {
                 spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[0]);
             }
 
+            //then draw zone rectangles over the base
             foreach (Zone z in _zones)
             {
                 if (z.GrowthPoint.X > 0)

@@ -67,7 +67,7 @@ namespace random_school_generator
                 {"religious education", Color.MediumPurple},
                 {"languages", Color.PeachPuff },
                 {"computer science", Color.MidnightBlue },
-                {"art", Color.Lime },
+                {"art", Color.Khaki },
                 {"design technology", Color.Olive },
                 {"music", Color.Plum}
             };

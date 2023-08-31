@@ -12,32 +12,35 @@ namespace random_school_generator
     {
         private string _type;
         public static Dictionary<string, Color> TypeColours;
+
+        public string Type { get => _type; set => _type = value; }
+
         public RoomType(string type)
         {
             _type = type;
         }
-        //TODO: add colours for a type!
-        //darker variations of each type?
 
         public static void SetTypeColours()
         {
+            //setting colours for each type of room
+
             TypeColours = new Dictionary<string, Color>
             {
-                {"hall", Color.Ivory },
-                {"gym", Color.CornflowerBlue },
-                {"office", Color.Brown},
-                {"canteen", Color.Chocolate },
-                {"staffroom", Color.BurlyWood },
-                {"toilets", Color.SeaShell },
-                {"english", Color.LightGoldenrodYellow },
-                {"maths", Color.Orchid},
-                {"science", Color.Aqua },
-                {"religious education", Color.MediumPurple},
-                {"languages", Color.PeachPuff },
-                {"computer science", Color.MidnightBlue },
+                {"hall", Color.Gold },
+                {"gym", Color.AliceBlue },
+                {"office", Color.BlanchedAlmond},
+                {"canteen", Color.DarkGoldenrod},
+                {"staffroom", Color.Goldenrod },
+                {"toilets", Color.DeepPink },
+                {"english", Color.Goldenrod },
+                {"maths", Color.DarkOrchid},
+                {"science", Color.Azure },
+                {"religious education", Color.Indigo},
+                {"languages", Color.Lavender },
+                {"computer science", Color.BlueViolet },
                 {"art", Color.DarkKhaki },
-                {"design technology", Color.Olive },
-                {"music", Color.Plum}
+                {"design technology", Color.DarkGreen },
+                {"music", Color.DarkMagenta}
             };
 
         }

@@ -81,56 +81,17 @@ namespace random_school_generator
             }
 
         }
-        public void FindAllEdgePoints()
-        {
-            _edgepoints = new List<Point>();
-           bool atAnEdge;
-
-            //iterates through each point in the grid to find edge points
-            for (int x = 0; x <= _grid.GetUpperBound(0); x++)
-            {
-                for (int y = 0; y <= _grid.GetUpperBound(1); y++)
-                {
-                    if (_grid[x, y] != ' ')
-                    {
-                        atAnEdge = false;
-
-                        //if a point is adjacent to an empty space / edge of grid, it is at an edge
-                        if ((x > 0 && _grid[x - 1, y] == ' ') || x == 0)
-                        {
-                            atAnEdge = true;
-                        }
-                        else if ((x < _grid.GetUpperBound(0) && _grid[x + 1, y] == ' ') || x == _grid.GetUpperBound(0))
-                        {
-                            atAnEdge = true;
-                        }
-                        else if ((y > 0 && _grid[x, y - 1] == ' ') || y == 0)
-                        {
-                            atAnEdge = true;
-                        }
-                        else if ((y < _grid.GetUpperBound(1) && _grid[x, y + 1] == ' ') || y == _grid.GetUpperBound(1))
-                        {
-                            atAnEdge = true;
-                        }
-
-                        //add point to list if it is at an edge
-                        if (atAnEdge)
-                        {
-                            _edgepoints.Add(new Point(x, y));
-                        }
-                    }
-                }
-            }
-        }
         public void FindAllEdgePoints(char c)
         {
             _edgepoints = new List<Point>();
             bool atAnEdge;
 
+            //iterates through grid
             for (int x = 0; x <= _grid.GetUpperBound(0); x++)
             {
                 for (int y = 0; y <= _grid.GetUpperBound(1); y++)
                 {
+                    //c represents the "inside" character
                     if (_grid[x, y] == c)
                     {
                         atAnEdge = false;

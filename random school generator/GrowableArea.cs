@@ -10,6 +10,8 @@ namespace random_school_generator
 {
     internal class GrowableArea : Grid
     {
+        //base class for zones and rooms, since they both grow within another grid 
+
         protected int _rectWidth, _rectHeight;
         protected int[,] _weightedGrid;
         protected Point _growthPoint, _growthTopLeft;

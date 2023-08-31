@@ -15,6 +15,7 @@ namespace random_school_generator
         private bool _grown;
         private Point _growthFloorPoint;
         private int _idealSize;
+
         public Room(int ID, string roomType) : base()
         {
             _ID = ID;
@@ -28,12 +29,12 @@ namespace random_school_generator
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
-            //draws the base of the zone
+            //draws the base of the room
             if (_floorRectangles.Count > 0)
             {
                 foreach (Rectangle r in _floorRectangles)
                 {
-                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), Color.CadetBlue);
+                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.TypeColours[_roomType.Type]);
                 }
             }
         }

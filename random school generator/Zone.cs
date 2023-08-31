@@ -10,9 +10,9 @@ namespace random_school_generator
 {
     internal class Zone : GrowableArea
     {
-        private int _numberOfRooms, _idealSize, _ID, _area;
+        private int _numberOfRooms, _idealSize, _ID, _area, _roomGrowthRetries;
         private ZoneType _zoneType;
-        private bool _firstGrown, _secondGrown, _thirdGrown;
+        private bool _firstGrown, _secondGrown, _thirdGrown, _roomGrowthFailed;
         private List<Room> _rooms;
         private List<Point> _badGrowthPoints;
         public Zone(int numberOfRooms, int idealSize, string zoneType, int id) : base() 
@@ -29,6 +29,8 @@ namespace random_school_generator
             _ID = id;
             _area = 0;
             _rooms = new List<Room>();
+            _roomGrowthRetries = 0;
+            _roomGrowthFailed = false;
         }
 
         public int NumberOfRooms { get => _numberOfRooms; set => _numberOfRooms = value; }
@@ -39,12 +41,14 @@ namespace random_school_generator
         public bool SecondGrown { get => _secondGrown; set => _secondGrown = value; }
         public bool ThirdGrown { get => _thirdGrown; set => _thirdGrown = value; }
         internal List<Room> Rooms { get => _rooms; set => _rooms = value; }
-        public int NumberOfRooms1 { get => _numberOfRooms; set => _numberOfRooms = value; }
         public int Area { get => _area; set => _area = value; }
         public List<Point> BadGrowthPoints { get => _badGrowthPoints; set => _badGrowthPoints = value; }
+        public int RoomGrowthRetries { get => _roomGrowthRetries; set => _roomGrowthRetries = value; }
+        public bool RoomGrowthFailed { get => _roomGrowthFailed; set => _roomGrowthFailed = value; }
 
         public void UpdateArea()
         {
+            //go through grid + find total number of points belonging to the zone
             _area = 0;
             for (int x = 0; x < _rectWidth; x++)
             {
@@ -68,6 +72,8 @@ namespace random_school_generator
                     spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), ZoneType.TypeColours[_zoneType.Type]);
                 }
             }
+
+            //draws each room over the base
             foreach (Room r in _rooms)
             {
                 r.DrawRoom(spriteBatch, scrollX, scrollY);
