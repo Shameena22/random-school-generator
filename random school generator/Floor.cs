@@ -19,7 +19,7 @@ namespace random_school_generator
         private Rectangle _entrance;
         private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth;
         private char[,] _roomGrid;
-
+        private List<List<Rectangle>> _drawingList;
         public int TotalArea { get => _totalArea; set => _totalArea = value; }
         internal List<Zone> Zones { get => _zones; set => _zones = value; }
         public int FloorID { get => _floorID;  }
@@ -40,7 +40,8 @@ namespace random_school_generator
             _stairRects = new List<Rectangle>();
             _entrance = new Rectangle(0, 0, 0, 0);
             _corridorStartingRects = new List<Rectangle>();
-            _finishedFirstZoneGrowth = false;  
+            _finishedFirstZoneGrowth = false;
+            _drawingList = new List<List<Rectangle>> { _floorRectangles, _corridorRects, _corridorStartingRects, _stairRects };
         }
 
         // - loading data -
@@ -368,10 +369,10 @@ namespace random_school_generator
         // - drawing floor -
         public void DrawFloor(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
-            List<List<Rectangle>> drawingList = new List<List<Rectangle>> { _floorRectangles, _corridorRects, _corridorStartingRects, _stairRects };
+         
 
             //draw base rectangle first
-            foreach (Rectangle r in drawingList[0])
+            foreach (Rectangle r in _drawingList[0])
             {
                 spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[0]);
             }
@@ -386,9 +387,9 @@ namespace random_school_generator
             }
 
             //draw each rectangle from each type of component list, with its set colour
-            for (int i = 1; i < drawingList.Count; i++)
+            for (int i = 1; i < _drawingList.Count; i++)
             {
-                foreach (Rectangle r in drawingList[i])
+                foreach (Rectangle r in _drawingList[i])
                 {
                     spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[i]);
                 }

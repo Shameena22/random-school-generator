@@ -41,7 +41,7 @@ namespace random_school_generator
 
             //creating all input options
             _inputOptions.Add(new InputOption(validationType: "int", minNum: 75000, maxNum: 200000));
-            _inputOptions.Add(new InputOption(validationType: "int", minNum: 1, maxNum: 10));
+            _inputOptions.Add(new InputOption(validationType: "int", minNum: 2, maxNum: 10));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
