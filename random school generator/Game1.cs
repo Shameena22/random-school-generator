@@ -1910,6 +1910,7 @@ namespace random_school_generator
                     _currentFloorIndex++;
                     _currentZoneIndex = 0;
                     _currentRoomIndex = 0;
+                    return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
                 } 
                 else {
 
@@ -1918,8 +1919,10 @@ namespace random_school_generator
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
                         AddDoors(currentFloor, currentZone);
+                        RemoveDoors(currentZone);
                         _currentZoneIndex++;
                         _currentRoomIndex = 0;
+                        return $"> created doors: floor {_currentFloorIndex}, zone {_currentZoneIndex - 1}";
                     } 
                     //TODO: tweak the time
                     else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
@@ -1932,7 +1935,11 @@ namespace random_school_generator
 
                 }
 
-                return $"> creating furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
+                if (_currentFloorIndex < _allFloors.Count)
+                {
+                    return $"> created furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex - 1}";
+                }
+                return "> finished creating furniture";
             }
             else
             {
@@ -1972,7 +1979,7 @@ namespace random_school_generator
         // - each room must be connected somehow to a room which has an exit point
         // - go through each room - if exit point, add
         // - just add doors to each other adj room / at least one door to the outside
-        // - when making walls, delete extra doors
+        // - when making walls, delete extra doors...
 
         /*
          add all connections:
@@ -2433,7 +2440,7 @@ namespace random_school_generator
             //add cluster if so 
             Dictionary<Room, List<Point>> adjacencies = new Dictionary<Room, List<Point>>();
             List<List<Point>> clusters = new List<List<Point>>();
-            List<Point> tempCluster;
+            List<Point> tempCluster, tempEdgePoints;
 
             CheckRoomEdgesBetweenZones("left", roomTopLeft.X - 1, roomTopLeft.Y, roomWidth, roomHeight, zoneTopLeft, f.RoomGrid, ref clusters);
             CheckRoomEdgesBetweenZones("right", roomTopLeft.X + roomWidth, roomTopLeft.Y, roomWidth, roomHeight, zoneTopLeft, f.RoomGrid, ref clusters);
@@ -2454,10 +2461,13 @@ namespace random_school_generator
 
                         //check if the cluster is a subset of their edgepoints
                         //bool results = query2.All(i => query1.Contains(i));
-                        if (c.All(x => r.Edgepoints.Contains(new Point(x.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, x.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y)))) {
+
+                        tempEdgePoints = r.Edgepoints.Select(i => { return new Point(i.X + r.GrowthTopLeft.X + z.GrowthTopLeft.X, i.Y + r.GrowthTopLeft.Y + z.GrowthTopLeft.Y); }).ToList();
+
+                        if (c.All(x => tempEdgePoints.Contains(x))) {
                             //adjacencies.Add(r, c);
                             //collection.Select(c => {c.PropertyToSet = value; return c;}).ToList();
-                            tempCluster = c.Select(i => new Point(i.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, i.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y)).ToList();
+                            tempCluster = c.Select(i => { return new Point(i.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, i.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y); }).ToList();
                             adjacencies.Add(r, tempCluster);
                         }
                     }
@@ -2538,7 +2548,7 @@ namespace random_school_generator
             //TODO: should I add a door to both rooms if adjacent?
             //dont add a door if already connected
 
-            if (r2 is null || !(r2 is not null && r2.Connections.ContainsKey(r))) {
+            if (r2 is null || !(r2 is not null && r2.AdjacencyDoors.ContainsKey(r))) {
                 Rectangle tempRect;
                 int doorLength = 20;
                 int doorWidth = 5;
@@ -2590,14 +2600,66 @@ namespace random_school_generator
 
                     //so the room will have the pos of the door on the floor, not jsut the room
 
-                    r.Connections.Add(r2, tempRect);
-                    r2.Connections.Add(r, tempRect);
+                    r.AdjacencyDoors.Add(r2, tempRect);
+                    r2.AdjacencyDoors.Add(r, tempRect);
 
                 }
                 r.Doors.Add(tempRect);
+            }           
+
+        }
+
+        private void RemoveDoors(Zone z)
+        {
+            //add all valid to a queue
+            Room room;
+            Queue<Room> _roomsConnectedToOutside = new Queue<Room>();
+            foreach (Room r in z.Rooms)
+            {
+                if (r.Doors.Count > r.Adjacencies.Count)
+                {
+                    _roomsConnectedToOutside.Enqueue(r);
+                }
             }
 
-           
+            //while loop...
+            while (_roomsConnectedToOutside.Count > 0)
+            {
+                //for each in the queue..mark friends as conected with a link to the room
+                //make sure only new connections are marked
+                room = _roomsConnectedToOutside.Dequeue();
+                foreach (Room r in room.AdjacencyDoors.Keys)
+                {
+                    if (!room.Connections.Contains(r) && r.RoomType.Type == room.RoomType.Type)
+                    {
+                        r.Connections.Add(room);
+                        _roomsConnectedToOutside.Enqueue(r);
+                    }
+                }
+            }
+
+            //now actually remove em...
+            foreach (Room r in z.Rooms)
+            {
+                //if the room has more than one connection? choose a random one and discard all the rest
+                if (r.Connections.Count > 1)
+                {
+                    //choose a random room
+                    //remove all adjacencies from other rooms
+                    //and get rid of the rectangles too..for both rooms
+                    room = r.Connections[_random.Next(0, r.Connections.Count)];
+
+                    foreach (Room connectedRoom in r.Connections)
+                    {
+                        if (!Room.ReferenceEquals(connectedRoom, room))
+                        {
+                            //remove it...TODO: smth wrong here
+                            Room.RemoveRoomAdjacency(connectedRoom, r);
+                        }
+                    }
+
+                }
+            }
 
         }
 

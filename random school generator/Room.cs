@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,16 +18,18 @@ namespace random_school_generator
         private int _idealSize;
         private Dictionary<Room, List<Point>> _adjacencies;
         private List<Rectangle> _doors;
-        private Dictionary<Room, Rectangle> _connections;
+        private Dictionary<Room, Rectangle> _adjacencyDoors;
         private List<List<Rectangle>> _allDrawingRects;
         private static Dictionary<int, Color> _componentColours;
+        private List<Room> _connections;
         public Room(int ID, string roomType) : base()
         {
             _ID = ID;
             _roomType = new RoomType(roomType);
             _doors = new List<Rectangle>();
             _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors };
-            _connections = new Dictionary<Room, Rectangle>();
+            _adjacencyDoors = new Dictionary<Room, Rectangle>();
+            _connections = new List<Room>();
         }
 
         public bool Grown { get => _grown; set => _grown = value; }
@@ -35,8 +38,8 @@ namespace random_school_generator
         public int IdealSize { get => _idealSize; set => _idealSize = value; }
         public List<Rectangle> Doors { get => _doors; set => _doors = value; }
         internal Dictionary<Room, List<Point>> Adjacencies { get => _adjacencies; set => _adjacencies = value; }
-        internal Dictionary<Room, Rectangle> Connections { get => _connections; set => _connections = value; }
-
+        internal Dictionary<Room, Rectangle> AdjacencyDoors { get => _adjacencyDoors; set => _adjacencyDoors = value; }
+        internal List<Room> Connections { get => _connections; set => _connections = value; }
 
         public static void SetComponentColours()
         {
@@ -46,6 +49,23 @@ namespace random_school_generator
                 //door TODO: tweak
                 { 1, Color.DarkSeaGreen },
             };
+        }
+        public static void RemoveRoomAdjacency(Room r1, Room r2)
+        {
+            if (r1.AdjacencyDoors.ContainsKey(r2))
+            {
+                Rectangle door = r1.AdjacencyDoors[r2];
+
+                r1.AdjacencyDoors.Remove(r2);
+                r2.AdjacencyDoors.Remove(r1);
+
+                //now to remove the actual doors...
+
+                //TODO: check if this acc works
+                r1.Doors.Remove(door);
+                r2.Doors.Remove(door);
+            }
+           
         }
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
