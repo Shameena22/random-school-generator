@@ -1920,8 +1920,10 @@ namespace random_school_generator
                         foreach (Room r in z.Rooms)
                         {
                             f.AddToRoomGrid(new Rectangle(z.GrowthTopLeft.X + r.GrowthTopLeft.X, z.GrowthTopLeft.Y + r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight));
+                            RemoveCorridorsFromRoom(f, r, (char)('0' | z.ID));
                             r.Adjacencies = new Dictionary<Room, List<Point>>();
                         }
+                        AddCorridorsToZone(f, z);
                     }
                 }
 
@@ -1933,7 +1935,7 @@ namespace random_school_generator
 
                 if (_currentZoneIndex == currentFloor.Zones.Count && !currentFloor.MadeWalls)
                 {
-             
+                    
                     foreach (Zone z in currentFloor.Zones)
                     {
                         AddWalls(z, currentFloor.GetGrid.GetUpperBound(0), currentFloor.GetGrid.GetUpperBound(1));
@@ -1964,7 +1966,7 @@ namespace random_school_generator
                     else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
                         Room currentRoom = currentZone.Rooms[_currentRoomIndex];
                         //do the things...
-                        RemoveCorridorsFromRoom(currentFloor, currentRoom, (char)('0' | currentZone.ID));
+                       // RemoveCorridorsFromRoom(currentFloor, currentRoom, (char)('0' | currentZone.ID));
                         _previousUpdateTime = DateTime.Now;
                         _currentRoomIndex++;
                     }
@@ -2035,6 +2037,19 @@ namespace random_school_generator
             }
 
         }
+        private void AddCorridorsToZone(Floor f, Zone z)
+        {
+            for (int x = z.GrowthTopLeft.X; x < z.GrowthTopLeft.X + z.RectWidth; x++)
+            {
+                for (int y = z.GrowthTopLeft.Y; y < z.GrowthTopLeft.Y + z.RectHeight; y++)
+                {
+                    if (f.GetGrid[x + z.GrowthTopLeft.X, y + z.GrowthTopLeft.Y] == 'C')
+                    {
+                        z.GetGrid[x, y] = 'C';
+                    }
+                }
+            }
+        }
 
         private void AddDoors(Floor f, Zone z)
         {
@@ -2056,9 +2071,10 @@ namespace random_school_generator
                 //think i need the clusters that are good points to use
                 //and then....
                 //choose a door from there
-                List<List<Point>> outerEdgeClusters = GetRoomPointsAdjacentToOutside(f, z, r);
+                (List<List<Point>>, List<List<Point>>) outerEdgeClusters = GetRoomPointsAdjacentToOutside(f, z, r);
 
-                outerEdgeClusters.RemoveAll(x => x.Count < 30);
+                outerEdgeClusters.Item1.RemoveAll(x => x.Count < 30);
+                outerEdgeClusters.Item2.RemoveAll(x => x.Count < 10);
                 //now check if adjacent to another room in the zone <--- TODO
                 //looiofhisdfnakc depends HOW MUCH adjacency too
                 //check if edgepoints share with another room in the zone
@@ -2070,9 +2086,15 @@ namespace random_school_generator
                 //can add a door for these quire easily too
 
                 //now just add them
-                if (outerEdgeClusters.Count > 0)
+
+                if (outerEdgeClusters.Item2.Count > 0)
                 {
-                    AddDoorFromCluster(r, outerEdgeClusters[_random.Next(0, outerEdgeClusters.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerEdgeClusters.Item2[_random.Next(0, outerEdgeClusters.Item2.Count)], z.GrowthTopLeft);
+                }
+
+                else if (outerEdgeClusters.Item1.Count > 0)
+                {
+                    AddDoorFromCluster(r, outerEdgeClusters.Item1[_random.Next(0, outerEdgeClusters.Item1.Count)], z.GrowthTopLeft);
                 }
 
                 foreach (KeyValuePair<Room, List<Point>> kvp in r.Adjacencies)
@@ -2084,7 +2106,7 @@ namespace random_school_generator
 
                 }
 
-                if ((outerEdgeClusters.Count == 0 && r.Adjacencies.Count == 0) || f.FloorID == 0)
+                if ((outerEdgeClusters.Item1.Count == 0 && r.Adjacencies.Count == 0) || f.FloorID == 0)
                 {
                     //how to connect between zones? TODO
                     //use the floor grid
@@ -2109,11 +2131,12 @@ namespace random_school_generator
             }
         }
 
-        private List<List<Point>> GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
+        private (List<List<Point>>, List<List<Point>>) GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
         {
             List<Point> usableEdgePoints = new List<Point>(), stairPoints = new List<Point>();
             Point end = new Point(f.StairPoints[0].X, f.StairPoints[0].Y), tempPoint, tempStairPoint;
-            List<List<Point>> edgePointClusters = GetEdgePointClusters(f, z, r), finalClusters = new List<List<Point>> ();
+            List<List<Point>> edgePointClusters = GetEdgePointClusters(f, z, r, 10, (x, y, grid) => grid[x, y] == 'X'), finalClusters = new List<List<Point>> ();
+            List<List<Point>> corridorClusters = GetEdgePointClusters(f, z, r, 1, (x, y, grid) => grid[x, y] == 'C'),finalCorridorClusters = new List<List<Point>> ();
 
             foreach (Rectangle rect in f.CorridorRects)
             {
@@ -2142,28 +2165,45 @@ namespace random_school_generator
                     }
                 }
             }
-            return finalClusters;
+
+            //now how to return smth useful...
+            //final clusters that are also corridor points
+
+            foreach (List<Point> c1 in finalClusters)
+            {
+                foreach (List<Point> c2 in corridorClusters)
+                {
+                    if (c2.All(i => c1.Contains(i))) {
+                        finalCorridorClusters.Add(c1);
+                    }
+                }
+            }
+
+            return (finalClusters, finalCorridorClusters);
+
+
+
         }
-        private List<List<Point>> GetEdgePointClusters(Floor f, Zone z, Room r)
+        private List<List<Point>> GetEdgePointClusters(Floor f, Zone z, Room r, int minWidth, Func<int, int, char[,], bool> ValidPoint)
         {
             List<List<Point>> edgePointClusters = new List<List<Point>>();
             //TODO: tweak
-            int minWidth = 10;
+            //int minWidth = 10;
             Point tempPoint;
 
             //check left, right, up, down
 
             //left:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "left", minWidth, f.RoomGrid, ref edgePointClusters);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "left", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
 
             //right:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X + r.RectWidth - 1, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "right", minWidth, f.RoomGrid, ref edgePointClusters);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X + r.RectWidth - 1, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "right", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
 
             //up:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, "up", minWidth, f.RoomGrid, ref edgePointClusters);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, "up", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
 
             //down:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y + r.RectHeight - 1, r.RectWidth, "down", minWidth, f.RoomGrid, ref edgePointClusters);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y + r.RectHeight - 1, r.RectWidth, "down", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
 
             for (int i = 0; i < edgePointClusters.Count; i++)
             {
@@ -2181,7 +2221,7 @@ namespace random_school_generator
                 }
             }
 
-            char[,] tempG = new char[f.RoomGrid.GetUpperBound(0) - 251, f.RoomGrid.GetUpperBound(1) - 399];
+            //char[,] tempG = new char[f.RoomGrid.GetUpperBound(0) - 251, f.RoomGrid.GetUpperBound(1) - 399];
 
             return edgePointClusters;
         }
@@ -2196,7 +2236,7 @@ namespace random_school_generator
             }
             return false;
         }
-        private void CheckAreaAroundEdge(int x, int y, int length, string direction, int minWidth, char[,] grid, ref List<List<Point>> edgePointClusters  )
+        private void CheckAreaAroundEdge(int x, int y, int length, string direction, int minWidth, char[,] grid, ref List<List<Point>> edgePointClusters, Func<int, int, char[,], bool> ValidPoint  )
         {
             int tempLength = 0;
             bool broken = false;
@@ -2218,9 +2258,9 @@ namespace random_school_generator
                             tempLength = x + i;
                         }
 
-                        if (!(WithinBounds(tempLength, tempY, grid.GetUpperBound(0), grid.GetUpperBound(1)) && grid[tempLength, tempY] == 'X'))
+                        if (!(WithinBounds(tempLength, tempY, grid.GetUpperBound(0), grid.GetUpperBound(1)) && ValidPoint(tempLength, tempY, grid)))
                         {
-                            //this point can't be added
+                            //this point can't be added grid[tempLength, tempY] == 'X'
                             broken = true;
                             break;
                         }
@@ -2256,7 +2296,7 @@ namespace random_school_generator
                             tempLength = y + i;
                         }
 
-                        if (!(WithinBounds(tempX, tempLength, grid.GetUpperBound(0), grid.GetUpperBound(1)) && grid[tempX, tempLength] == 'X'))
+                        if (!(WithinBounds(tempX, tempLength, grid.GetUpperBound(0), grid.GetUpperBound(1)) && ValidPoint(tempX, tempLength, grid)))
                         {
                             //this point can't be added
                             broken = true;
