@@ -17,19 +17,25 @@ namespace random_school_generator
         private Point _growthFloorPoint;
         private int _idealSize;
         private Dictionary<Room, List<Point>> _adjacencies;
-        private List<Rectangle> _doors;
+        private List<Rectangle> _doors, _walls;
         private Dictionary<Room, Rectangle> _adjacencyDoors;
         private List<List<Rectangle>> _allDrawingRects;
         private static Dictionary<int, Color> _componentColours;
         private List<Room> _connections;
-        public Room(int ID, string roomType) : base()
+        private List<Point> _clearPoints;
+        private Point _zoneTopLeft;
+        public Room(int ID, string roomType, Point zoneTopLeft) : base()
         {
             _ID = ID;
             _roomType = new RoomType(roomType);
             _doors = new List<Rectangle>();
-            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors };
+            _walls = new List<Rectangle>();
+            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, _walls };
             _adjacencyDoors = new Dictionary<Room, Rectangle>();
             _connections = new List<Room>();
+            _clearPoints = new List<Point>();
+            _zoneTopLeft = zoneTopLeft;
+            _doors = new List<Rectangle>();
         }
 
         public bool Grown { get => _grown; set => _grown = value; }
@@ -40,6 +46,10 @@ namespace random_school_generator
         internal Dictionary<Room, List<Point>> Adjacencies { get => _adjacencies; set => _adjacencies = value; }
         internal Dictionary<Room, Rectangle> AdjacencyDoors { get => _adjacencyDoors; set => _adjacencyDoors = value; }
         internal List<Room> Connections { get => _connections; set => _connections = value; }
+        internal RoomType RoomType { get => _roomType; set => _roomType = value; }
+        public List<Point> ClearPoints { get => _clearPoints; set => _clearPoints = value; }
+        public List<Rectangle> Walls { get => _walls; set => _walls = value; }
+        public Point ZoneTopLeft { get => _zoneTopLeft; set => _zoneTopLeft = value; }
 
         public static void SetComponentColours()
         {
@@ -48,6 +58,7 @@ namespace random_school_generator
             {
                 //door TODO: tweak
                 { 1, Color.DarkSeaGreen },
+                {2, Color.Black }
             };
         }
         public static void RemoveRoomAdjacency(Room r1, Room r2)
@@ -70,7 +81,7 @@ namespace random_school_generator
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
-            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors };
+            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, _walls };
             //draws the base of the room
             if (_floorRectangles.Count > 0)
             {

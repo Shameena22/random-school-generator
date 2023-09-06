@@ -17,7 +17,7 @@ namespace random_school_generator
         private List<Zone> _zones;
         private List<Rectangle> _stairRects, _corridorStartingRects, _corridorRects = new List<Rectangle>();
         private Rectangle _entrance;
-        private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth;
+        private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth, _madeWalls;
         private char[,] _roomGrid;
         private List<List<Rectangle>> _drawingList;
         public int TotalArea { get => _totalArea; set => _totalArea = value; }
@@ -31,6 +31,7 @@ namespace random_school_generator
         public bool FinishedThirdZoneGrowth { get => _finishedThirdZoneGrowth; set => _finishedThirdZoneGrowth = value; }
         public char[,] RoomGrid { get => _roomGrid; set => _roomGrid = value; }
         public List<Rectangle> CorridorRects { get => _corridorRects; set => _corridorRects = value; }
+        public bool MadeWalls { get => _madeWalls; set => _madeWalls = value; }
 
         public Floor(int floorID, int averageSize, int gridDimensions) : base(gridDimensions, gridDimensions)
         {
@@ -42,6 +43,7 @@ namespace random_school_generator
             _corridorStartingRects = new List<Rectangle>();
             _finishedFirstZoneGrowth = false;
             _drawingList = new List<List<Rectangle>> { _floorRectangles, _corridorRects, _corridorStartingRects, _stairRects };
+            _madeWalls = false;
         }
 
         // - loading data -
