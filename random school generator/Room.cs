@@ -16,7 +16,6 @@ namespace random_school_generator
         private bool _grown;
         private Point _growthFloorPoint;
         private int _idealSize;
-        private Dictionary<Room, List<Point>> _adjacencies;
         private List<Rectangle> _doors, _walls;
         private Dictionary<Room, Rectangle> _adjacencyDoors;
         private List<List<Rectangle>> _allDrawingRects;
@@ -43,7 +42,6 @@ namespace random_school_generator
         public int ID { get => _ID; set => _ID = value; }
         public int IdealSize { get => _idealSize; set => _idealSize = value; }
         public List<Rectangle> Doors { get => _doors; set => _doors = value; }
-        internal Dictionary<Room, List<Point>> Adjacencies { get => _adjacencies; set => _adjacencies = value; }
         internal Dictionary<Room, Rectangle> AdjacencyDoors { get => _adjacencyDoors; set => _adjacencyDoors = value; }
         internal List<Room> Connections { get => _connections; set => _connections = value; }
         internal RoomType RoomType { get => _roomType; set => _roomType = value; }
@@ -57,31 +55,28 @@ namespace random_school_generator
             _componentColours = new Dictionary<int, Color>
             {
                 //door TODO: tweak
-                { 1, Color.DarkSeaGreen },
-                {2, Color.Black }
+                {1, Color.DarkSeaGreen },
+               // {2, Color.Black }
             };
         }
         public static void RemoveRoomAdjacency(Room r1, Room r2)
         {
             if (r1.AdjacencyDoors.ContainsKey(r2))
             {
-                Rectangle door = r1.AdjacencyDoors[r2];
+                Rectangle door1 = r1.AdjacencyDoors[r2], door2 = r2.AdjacencyDoors[r1];
+
+                r1.Doors.Remove(door1);
+                r2.Doors.Remove(door2);
 
                 r1.AdjacencyDoors.Remove(r2);
                 r2.AdjacencyDoors.Remove(r1);
-
-                //now to remove the actual doors...
-
-                //TODO: check if this acc works
-                r1.Doors.Remove(door);
-                r2.Doors.Remove(door);
             }
-           
+    
         }
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
-            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, _walls };
+            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors };
             //draws the base of the room
             if (_floorRectangles.Count > 0)
             {
@@ -97,6 +92,11 @@ namespace random_school_generator
                 {
                     spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[i]);
                 }
+            }
+
+            foreach (Rectangle r in _walls)
+            {
+                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.WallColours[_roomType.Type]);
             }
 
         }

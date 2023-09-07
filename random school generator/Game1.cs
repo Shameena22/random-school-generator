@@ -839,7 +839,6 @@ namespace random_school_generator
         private string UpdateZoneGrowth()
         {
             //if a floor's zone growth has been completed (or if this is the first call of the subroutine), move onto the next floor
-            // _currentZoneIndex >= _allFloors[_currentFloorIndex].Zones.Count
             if (_currentFloorIndex == -1 || (_allFloors[_currentFloorIndex].FinishedFirstZoneGrowth && _allFloors[_currentFloorIndex].FinishedSecondZoneGrowth && _allFloors[_currentFloorIndex].FinishedThirdZoneGrowth))
             {
                 _currentFloorIndex++;
@@ -853,7 +852,7 @@ namespace random_school_generator
                 //if the current floor hasn't finished the first growth stage
                 if (!currentFloor.FinishedFirstZoneGrowth)
                 {
-                    //and if the zone is bigger then the count...only happens when stuff has been deleted
+                    //and if the zone index is bigger than the amount of rooms present...only happens when zones has been deleted
                     if (_currentZoneIndex == currentFloor.Zones.Count)
                     {
                         currentFloor.FinishedFirstZoneGrowth = true;
@@ -1367,11 +1366,11 @@ namespace random_school_generator
                     //if the entrance and stairs are in the grid...might have been overwritten by C; add them in again
                     if (f.FloorID == 0)
                     {
-                        UpdateStairsOrCorridorsToZone(f.Entrance, z);
+                        UpdateStairsOrCorridorsToZone(f.Entrance, z, 'E');
                     }
                     foreach (Rectangle r in f.StairPoints)
                     {
-                        UpdateStairsOrCorridorsToZone(r, z);
+                        UpdateStairsOrCorridorsToZone(r, z, 'S');
                     }
 
                     //update all edgepoints of the zone
@@ -1380,15 +1379,16 @@ namespace random_school_generator
                 }
             }
         }
-        private void UpdateStairsOrCorridorsToZone(Rectangle r, Zone z)
+        private void UpdateStairsOrCorridorsToZone(Rectangle r, Zone z, char c)
         {
+            //transfers information from the floor grid into its relative position on the given zone grid
             for (int x = r.X; x < r.X + r.Width; x++)
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
                 {
                     if (WithinBounds(x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y, z.RectWidth - 1, z.RectHeight - 1))
                     {
-                        z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = 'E';
+                        z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = c;
                     }
                 }
             }
@@ -1564,6 +1564,7 @@ namespace random_school_generator
                 }
             }
 
+            //there may be no path found, especially when this function is used to choose door positions
             if (nextPoints.Count != 0)
             {
                 //trace back shortest path from end to start
@@ -1789,15 +1790,17 @@ namespace random_school_generator
         }
         private void SetRoomGrowthPoint(Room r, Zone z, Rectangle entrance)
         {
+            //create the room's weighted grid and growth point
             r.WeightedGrid = MakeRoomWeightedGrid(r, z, entrance);
             r.GrowthPoint = ChooseGrowthPoint(r.WeightedGrid);
 
+            //if the room's growth point is in a bad position - e.g. outside building - better to delete it
             if (r.WeightedGrid[r.GrowthPoint.X, r.GrowthPoint.Y] < 0)
             {
                 z.Rooms.Remove(r);
-                //_currentRoomIndex--;
             } else
             {
+                //setting up room properties
                 r.RectWidth = 1;
                 r.RectHeight = 1;
                 r.FloorRectangles.Add(new Rectangle(0, 0, 0, 0));
@@ -1844,11 +1847,12 @@ namespace random_school_generator
             {
                 UpdateClosePoints(ref weightedGrid, p, (int)(Math.Sqrt(estArea)), -10);
             }
+
+            //encourage growth in a place such that the room is likely to grow adjacent to other rooms
             foreach (Room room in z.Rooms)
             {
                 if (!Room.ReferenceEquals(r, room) && room.Grown)
                 {
-                    //not too close to the edgepoints...but adjacency is nice actually
                     foreach (Point p in room.Edgepoints)
                     {
                         if (weightedGrid[p.X, p.Y] > 0)
@@ -1860,7 +1864,7 @@ namespace random_school_generator
                 }
             }
 
-            //encourage a distance away from the edge...
+            //encourage a distance away from the edge to prevent unrealistic shapes being formed
             foreach (Point p in z.Edgepoints)
             {
                 if (weightedGrid[p.X, p.Y] > 0)
@@ -1906,43 +1910,25 @@ namespace random_school_generator
         {
             if (_currentFloorIndex == -1)
             {
-                //initialise furniture creation
-                _currentFloorIndex = 0;
-                _currentZoneIndex = 0;
-                _currentRoomIndex = 0;
-                _previousUpdateTime = DateTime.Now;
-
-                foreach (Floor f in _allFloors)
-                {
-                    f.SetRoomGrid();
-                    foreach (Zone z in f.Zones)
-                    {
-                        foreach (Room r in z.Rooms)
-                        {
-                            f.AddToRoomGrid(new Rectangle(z.GrowthTopLeft.X + r.GrowthTopLeft.X, z.GrowthTopLeft.Y + r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight));
-                            RemoveCorridorsFromRoom(f, r, (char)('0' | z.ID));
-                            r.Adjacencies = new Dictionary<Room, List<Point>>();
-                        }
-                        AddCorridorsToZone(f, z);
-                    }
-                }
-
+                //at the first call of this function, set up the rooms appropriately
+                InitialiseFurnitureCreation();
                 return "> initialising furniture creation";
             }
+
+            //if a floor currently needs furniture added...
             else if (_currentFloorIndex < _allFloors.Count)
             {
                 Floor currentFloor = _allFloors[_currentFloorIndex];
 
+                //if all the zones in a floor have just had furniture and doors added, create the walls for every room
                 if (_currentZoneIndex == currentFloor.Zones.Count && !currentFloor.MadeWalls)
                 {
-                    
-                    foreach (Zone z in currentFloor.Zones)
-                    {
-                        AddWalls(z, currentFloor.GetGrid.GetUpperBound(0), currentFloor.GetGrid.GetUpperBound(1));
-                    }
-                    currentFloor.MadeWalls = true;
+                    AddWallsToFloor(currentFloor);
                     _previousUpdateTime = DateTime.Now;
-                } 
+                    return $"> adding floors: floor {_currentFloorIndex}";
+                }
+
+                //if everything has been added to a floor (and enough time has passed for display), move onto the next floor
                 else if (_currentZoneIndex == currentFloor.Zones.Count && currentFloor.MadeWalls && DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange))
                 {
                     _currentFloorIndex++;
@@ -1950,86 +1936,80 @@ namespace random_school_generator
                     _currentRoomIndex = 0;
                     return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
                 }
+
+                //if zones in the floor still need furniture added...
                 else if (_currentZoneIndex < currentFloor.Zones.Count){
 
                     Zone currentZone = currentFloor.Zones[_currentZoneIndex];
 
+                    //if all rooms in a zone have furniture, add the doors and move onto the next zone
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
                         AddDoors(currentFloor, currentZone);
-                       // RemoveDoors(currentZone);
                         _currentZoneIndex++;
                         _currentRoomIndex = 0;
                         return $"> created doors: floor {_currentFloorIndex}, zone {_currentZoneIndex - 1}";
                     } 
-                    //TODO: tweak the time
+
+                    //if some rooms still need furniture (and enough time has passed between last update), create furniture <--- TODO
                     else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
                         Room currentRoom = currentZone.Rooms[_currentRoomIndex];
-                        //do the things...
-                       // RemoveCorridorsFromRoom(currentFloor, currentRoom, (char)('0' | currentZone.ID));
+
+                        //do stuff here
+
                         _previousUpdateTime = DateTime.Now;
                         _currentRoomIndex++;
+
+                        return $"> created furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex - 1}";
                     }
-
                 }
 
-                if (_currentFloorIndex < _allFloors.Count)
-                {
-                    return $"> created furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex}, room {_currentRoomIndex}";
-                }
-                return "> finished creating furniture";
+                //don't return a message if nothing has been updated
+                return "";
             }
             else
             {
                 return "> finished creating furniture";
             }
         }
+        private void InitialiseFurnitureCreation()
+        {
+            //set indexes
+            _currentFloorIndex = 0;
+            _currentZoneIndex = 0;
+            _currentRoomIndex = 0;
+            _previousUpdateTime = DateTime.Now;
 
-        //for each room
-        // - remove corridors if present (done)
-        // - add door adjacent to corridor / not building edge <---
-        // - - careful with room adjacencies
-        // - add furniture (depends on room type)
-        // - add walls
+            foreach (Floor f in _allFloors)
+            {
+                //set up the floor's "room grid" which only shows the position of rooms
+                f.SetRoomGrid();
 
-        //TODO: 
-        // - force the rooms to add a door to all "corridor" cluster
-        // - - just fix up CheckAreaAroundEdge to check for a 'C' in the door? but what if zone doesn't have Cs?? just re-add them before this happens
-        // - - then use the actual clusters made by that sub and see if they have a C in em
-        // - - if they do, call sub to add doors
-
-        /*
-         * check for corridor zones
-         * check for outer edge points (as an ext of point 1)
-         * add corridor zones if available
-         * if not, add another door to outside
-         * do the rest as usual
-         */
-
-        // - fix up the RemoveRooms() sub
-
-        /*
-         * starts with rooms connected to outside
-         * then "reach over" to others connected (if not already)
-         * if a room is connected to the outside and has a connection - remove all connections
-         * or if not connected to outside multiple connections - remove all but one
-         */
-
-        // - fix up presentation of walls
-
+                foreach (Zone z in f.Zones)
+                {
+                    foreach (Room r in z.Rooms)
+                    {
+                        //add each room to the floor's room grid
+                        f.AddToRoomGrid(new Rectangle(z.GrowthTopLeft.X + r.GrowthTopLeft.X, z.GrowthTopLeft.Y + r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight));
+                        
+                        //remove corridors that may have been left inside a room
+                        RemoveCorridorsFromRoom(f, r, (char)('0' | z.ID));
+                    }
+                    //corridors may have been previously omitted from zone grid - add them now
+                    AddCorridorsToZone(f, z);
+                }
+            }
+        }
         private void RemoveCorridorsFromRoom(Floor f, Room r, char zoneID)
         {
-            //if corridor present...
+            //iterate across whole room
             for (int x = 0; x < r.RectWidth; x++)
             {
                 for (int y = 0; y < r.RectHeight; y++)
                 {
-                    //how to actually locate?
-                    //C will not be present in zone grid
+                    //if the floor shows that a position is a corridor point, remove that corridor point
                     if (f.GetGrid[r.FloorRectangles[0].X + x, r.FloorRectangles[0].Y + y] == 'C')
                     {
-                        //TODO: remove from floor grid, remove from floor rects
-                        //using a Floor sub?
                         f.RemoveCorridorPoint(r.FloorRectangles[0].X + x, r.FloorRectangles[0].Y + y, zoneID);
                     }
                 }
@@ -2039,191 +2019,311 @@ namespace random_school_generator
         }
         private void AddCorridorsToZone(Floor f, Zone z)
         {
+            //iterate through zone grid and re-add corridors where appropriate
             for (int x = z.GrowthTopLeft.X; x < z.GrowthTopLeft.X + z.RectWidth; x++)
             {
                 for (int y = z.GrowthTopLeft.Y; y < z.GrowthTopLeft.Y + z.RectHeight; y++)
                 {
-                    if (f.GetGrid[x + z.GrowthTopLeft.X, y + z.GrowthTopLeft.Y] == 'C')
+                    if (f.GetGrid[x, y] == 'C')
                     {
-                        z.GetGrid[x, y] = 'C';
+                        z.GetGrid[x - z.GrowthTopLeft.X, y - z.GrowthTopLeft.Y] = 'C';
                     }
                 }
             }
         }
 
+        // - - creating doors - -
         private void AddDoors(Floor f, Zone z)
         {
             List<List<Room>> roomConnections = new List<List<Room>>();
-            //for each room - add door if adjacent to a corridor and add door if adjacent to another room
-            //don't add if already done...
-            //store these in a list of lists
-            //so do it by zone; store graph in zone
 
             foreach (Room r in z.Rooms)
             {
-                
-                //check if room adjacent to a valid outside place <-- TODO: check
-                // - - - repeat this for all of the points along the edge to get ones that can be used for the door
-                //done!
-                //might want the clusters too...just think bout that later
+                bool doneOuterEdgeCluster = false;
+                List<List<Point>> tempCluster = new List<List<Point>>();
 
-                //okay how am i actually meant to use this
-                //think i need the clusters that are good points to use
-                //and then....
-                //choose a door from there
-                (List<List<Point>>, List<List<Point>>) outerEdgeClusters = GetRoomPointsAdjacentToOutside(f, z, r);
+                //retreiving lists of suitable edge clusters to use
+                //"clusters" = consecutive room edge points with no barrier between them
+                (List<List<Point>>, List<List<Point>>, List<List<Point>>, List<List<Point>>) outerEdgeClusters = GetRoomPointsAdjacentToOutside(f, z, r);
+                List<List<Point>> outerPoints = outerEdgeClusters.Item1;
 
-                outerEdgeClusters.Item1.RemoveAll(x => x.Count < 30);
-                outerEdgeClusters.Item2.RemoveAll(x => x.Count < 10);
-                //now check if adjacent to another room in the zone <--- TODO
-                //looiofhisdfnakc depends HOW MUCH adjacency too
-                //check if edgepoints share with another room in the zone
-                //then how many fit
-                //and add cluster if they fit
+                //corridor / stair / entrance clusters = suitable clusters that have some points adjacent to corridor / stair / entrance
+                List<List<Point>> outerCorridorPoints = outerEdgeClusters.Item2;
+                List<List<Point>> outerStairPoints = outerEdgeClusters.Item3;
+                List<List<Point>> outerEntrancePoints = outerEdgeClusters.Item4;
 
-                GetRoomAdjacencies(f, z, r);
+                //remove clusters with less than 30 points available, as there wouldn't be enough room for the door to be placed
+                outerPoints.RemoveAll(x => x.Count < 30);
+                outerCorridorPoints.RemoveAll(x => x.Count < 30);
+                outerStairPoints.RemoveAll(x => x.Count < 30);
+                outerEntrancePoints.RemoveAll(x => x.Count < 30);
 
-                //can add a door for these quire easily too
-
-                //now just add them
-
-                if (outerEdgeClusters.Item2.Count > 0)
-                {
-                    AddDoorFromCluster(r, outerEdgeClusters.Item2[_random.Next(0, outerEdgeClusters.Item2.Count)], z.GrowthTopLeft);
-                }
-
-                else if (outerEdgeClusters.Item1.Count > 0)
-                {
-                    AddDoorFromCluster(r, outerEdgeClusters.Item1[_random.Next(0, outerEdgeClusters.Item1.Count)], z.GrowthTopLeft);
-                }
-
-                foreach (KeyValuePair<Room, List<Point>> kvp in r.Adjacencies)
-                {
-                    if (WithinBounds(kvp.Value[0].X, kvp.Value[0].Y, r.RectWidth, r.RectHeight))
-                    {
-                        AddDoorFromCluster(r, kvp.Value, z.GrowthTopLeft, kvp.Key);
-                    }
-
-                }
-
-                if ((outerEdgeClusters.Item1.Count == 0 && r.Adjacencies.Count == 0) || f.FloorID == 0)
-                {
-                    //how to connect between zones? TODO
-                    //use the floor grid
-                    //find adjacencies left, right, up, down
-                    //then find the zone based on the coordinates
-                    // - loop through and see which contains them
-                    //then add a door to there, and to the room
-                    //should still work as a Door rect and in the dictionary
-                    Dictionary<Room, List<Point>> adjacencies = GetRoomAdjacenciesBetweenZones(r.GrowthTopLeft, r.RectWidth, r.RectHeight, z.GrowthTopLeft, f);
-
-
-                    foreach (KeyValuePair<Room, List<Point>> kvp in adjacencies)
-                    {
-                        AddDoorFromCluster(kvp.Key, kvp.Value, z.GrowthTopLeft, r);
-                    }
-
-                }
-             
-
-              
+                CreateOuterRoomDoors(z, r, ref doneOuterEdgeCluster, ref tempCluster, outerPoints, outerCorridorPoints, outerStairPoints, outerEntrancePoints);
+                CreateAdjacentDoors(f, z, r, outerPoints);
 
             }
         }
+        private void CreateAdjacentDoors(Floor f, Zone z, Room r, List<List<Point>> outerPoints)
+        {
+            Dictionary<Room, List<Point>> interZoneAdjacencies = new Dictionary<Room, List<Point>>();
 
-        private (List<List<Point>>, List<List<Point>>) GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
+            //find clusters that are adjacent to other rooms
+            Dictionary<Room, List<Point>> adjacencies = GetAllRoomAdjacencies(r.GrowthTopLeft, r.RectWidth, r.RectHeight, z.GrowthTopLeft, f);
+
+            //automatically add doors for adjacent rooms within zones
+            foreach (KeyValuePair<Room, List<Point>> kvp in adjacencies)
+            {
+                if (kvp.Key.RoomType.Type == r.RoomType.Type)
+                {
+                    AddDoorFromCluster(kvp.Key, kvp.Value, z.GrowthTopLeft, r);
+                }
+                else
+                {
+                    interZoneAdjacencies.Add(kvp.Key, kvp.Value);
+                }
+            }
+
+            //rooms between zones are only connected if there are no other places for a door to go
+            //they are also created on the ground floor where large rooms often destroy all corridors
+            //this is done to ensure that there is a route to all rooms
+            if ((outerPoints.Count == 0 && adjacencies.Count - interZoneAdjacencies.Count == 0) || f.FloorID == 0)
+            {        
+                foreach (KeyValuePair<Room, List<Point>> kvp in interZoneAdjacencies)
+                {
+                    AddDoorFromCluster(kvp.Key, kvp.Value, z.GrowthTopLeft, r);
+                }
+            }
+        }
+        private void CreateOuterRoomDoors(Zone z, Room r, ref bool doneOuterEdgeCluster, ref List<List<Point>> tempCluster, List<List<Point>> outerPoints, List<List<Point>> outerCorridorPoints, List<List<Point>> outerStairPoints, List<List<Point>> outerEntrancePoints)
+        {
+
+            //adding a door connected to the empty spaces between rooms...
+            //to ensure accessibility, if there is a cluster with a stair / entrance / corridor, a door must be added there
+            //trying to reduce the amount of doors added by finding clusters that have combinations of these items
+
+            //if there are corridor, stair, and entrance clusters...
+            if (outerCorridorPoints.Count > 0 && outerStairPoints.Count > 0 && outerEntrancePoints.Count > 0)
+            {
+                //try use a cluster connected to the stairs, entrance, and corridor
+                tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints, outerEntrancePoints);
+                if (tempCluster.Count > 0)
+                {
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                    doneOuterEdgeCluster = true;
+                }
+
+                //if the above isn't possible, find a cluster connected to the corridor and stairs and use an entrance cluster separately
+                if (!doneOuterEdgeCluster)
+                {
+                    tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints);
+                    if (tempCluster.Count > 0)
+                    {
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                        doneOuterEdgeCluster = true;
+                    }
+                }
+
+                //if the above isn't possible, find a cluster connected to the corridor and entrance and use a stair cluster separately
+                if (!doneOuterEdgeCluster)
+                {
+                    tempCluster = GetClusterIntersections(outerCorridorPoints, outerEntrancePoints);
+                    if (tempCluster.Count > 0)
+                    {
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                        doneOuterEdgeCluster = true;
+                    }
+                }
+
+                //if the above isn't possible, find a cluster connected to the entrance and stairs and use a corridor cluster separately
+                if (!doneOuterEdgeCluster)
+                {
+                    tempCluster = GetClusterIntersections(outerStairPoints, outerEntrancePoints);
+                    if (tempCluster.Count > 0)
+                    {
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                        doneOuterEdgeCluster = true;
+                    }
+                }
+
+                //if none of this is possible, just use all three clusters separately
+                if (!doneOuterEdgeCluster)
+                {
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                    doneOuterEdgeCluster = true;
+                }
+            }
+            //if only corridor and stair clusters are present
+            else if (outerCorridorPoints.Count > 0 && outerStairPoints.Count > 0)
+            {
+                //try to use a cluster with corridor- and stair- adjacent points
+                tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints);
+                if (tempCluster.Count > 0)
+                {
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                }
+                //if not, just use separate clusters
+                else
+                {
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                }
+            }
+
+            //if only corridor and entrance clusters are present
+            else if (outerCorridorPoints.Count > 0 && outerEntrancePoints.Count > 0)
+            {
+                //try to use a cluster with both a corridor and stairs
+                tempCluster = GetClusterIntersections(outerCorridorPoints, outerEntrancePoints);
+                if (tempCluster.Count > 0)
+                {
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                }
+                //if not possible, just use clusters separately
+                else
+                {
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                }
+            }
+
+            //if only stair and entrance clusters are present
+            else if (outerStairPoints.Count > 0 && outerEntrancePoints.Count > 0)
+            {
+                //try to find a cluster with stairs and the entrance
+                tempCluster = GetClusterIntersections(outerStairPoints, outerEntrancePoints);
+                if (tempCluster.Count > 0)
+                {
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                }
+                //if impossible, just use separate clusters
+                else
+                {
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                }
+            }
+            //use cluster with corridor points if it's the only type available
+            else if (outerCorridorPoints.Count > 0)
+            {
+                AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
+            }
+            //use cluster with stair points if it's the only type available
+            else if (outerStairPoints.Count > 0)
+            {
+                AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+            }
+            //use cluster with entrance points if it's the only type available
+            else if (outerEntrancePoints.Count > 0)
+            {
+                AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+            }
+            //if no special cluster types are available, just use a regular cluster
+            else if (outerPoints.Count > 0)
+            {
+                AddDoorFromCluster(r, outerPoints[_random.Next(0, outerPoints.Count)], z.GrowthTopLeft);
+            }
+        }
+        private List<List<Point>> GetClusterIntersections(List<List<Point>> c1, List<List<Point>> c2, List<List<Point>> c3)
+        {
+            List<List<Point>> sharedClusters = new List<List<Point>>();
+
+            foreach (List<Point> l3 in c3)
+            {
+                foreach (List<Point> l2 in c2)
+                {
+                    foreach (List<Point> l1 in c1)
+                    {
+                        if (l1 == l2 && l1 == l3)
+                        {
+                            sharedClusters.Add(l1);
+                        }
+                    }
+                }
+            }
+
+            return sharedClusters;
+        }
+        private List<List<Point>> GetClusterIntersections(List<List<Point>> c1, List<List<Point>> c2)
+        {
+            List<List<Point>> sharedClusters = new List<List<Point>>();
+
+            foreach (List<Point> l2 in c2)
+            {
+                foreach (List<Point> l1 in c1)
+                {
+                    if (l1 == l2)
+                    {
+                        sharedClusters.Add(l1);
+                    }
+                }
+            }
+            return sharedClusters;
+        }
+        private (List<List<Point>>, List<List<Point>>, List<List<Point>>, List<List<Point>>) GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
         {
             List<Point> usableEdgePoints = new List<Point>(), stairPoints = new List<Point>();
-            Point end = new Point(f.StairPoints[0].X, f.StairPoints[0].Y), tempPoint, tempStairPoint;
-            List<List<Point>> edgePointClusters = GetEdgePointClusters(f, z, r, 10, (x, y, grid) => grid[x, y] == 'X'), finalClusters = new List<List<Point>> ();
-            List<List<Point>> corridorClusters = GetEdgePointClusters(f, z, r, 1, (x, y, grid) => grid[x, y] == 'C'),finalCorridorClusters = new List<List<Point>> ();
+            Point tempPoint, tempStairPoint;
 
+            //getting all types of clusters in a room's edge points
+            List<List<Point>> edgePointClusters = GetEdgePointClusters(f, z, r, 5, f.RoomGrid, (x, y, grid) => grid[x, y] == 'X'), finalClusters = new List<List<Point>>();
+            List<List<Point>> corridorClusters = GetEdgePointClusters(f, z, r, 1, f.GetGrid, (x, y, grid) => grid[x, y] == 'C'), finalCorridorClusters = new List<List<Point>>();
+            List<List<Point>> stairClusters = GetEdgePointClusters(f, z, r, 1, f.GetGrid, (x, y, grid) => grid[x, y] == 'S'), finalStairClusters = new List<List<Point>>();
+            List<List<Point>> entranceClusters = GetEdgePointClusters(f, z, r, 1, f.GetGrid, (x, y, grid) => grid[x, y] == 'E'), finalEntranceClusters = new List<List<Point>>();
+
+            //adding each stair rectangle in the floor as a point in the stairPoints list
             foreach (Rectangle rect in f.CorridorRects)
             {
                 stairPoints.Add(rect.Center);
             }
 
-            //TODO: make this faster by 'grouping' consecutive edgepoints
-            //on each side...
-            //broken if there is an obstruction adjacent
-
+            //iterate through each edgepoint in the room
             foreach (Point p in r.Edgepoints)
             {
-                if (!usableEdgePoints.Contains(p) && ContainedInClusterLists(p, edgePointClusters)) //check if in cluster first
+                //if the point hasn't already been examined, and the point is part of a suitable cluster...
+                if (!usableEdgePoints.Contains(p) && ContainedInClusterLists(p, edgePointClusters))
                 {
+                    //tempPoint = position of current edpe point relative to entire floor
                     tempPoint = new Point(p.X + r.GrowthTopLeft.X + z.GrowthTopLeft.X, p.Y + r.GrowthTopLeft.Y + z.GrowthTopLeft.Y);
-                    tempStairPoint = FindClosestStairPoint(tempPoint, stairPoints);
-                    //how to quickly check adjacency? Point, char[]...
-                    //mark rooms onto floor?? with an R
-                    //then make sure points are an X..
 
-                    //STEP OVER THIS
+                    //find the closest stair point to the current point
+                    tempStairPoint = FindClosestStairPoint(tempPoint, stairPoints);
+
+                    //if there is a path between this point and the stairs, the point (and all clusters containing it) is usable
                     if (FindShortestPath(tempPoint, tempStairPoint, (char[,])f.RoomGrid.Clone(), (p, grid) => grid[p.X, p.Y] == 'X').Count > 0)
                     {
-                        //TODO: make to add every other in a cluster
+                        //add the point (and related clusters) to the list of suitable clusters
                         AddEdgesInACluster(p, edgePointClusters, ref finalClusters, ref usableEdgePoints);
                     }
                 }
             }
 
-            //now how to return smth useful...
-            //final clusters that are also corridor points
+            //find which clusters contain parts adjacent to corridor points, stair points, and edge points
+            GetSharedClusters(finalClusters, corridorClusters, ref finalCorridorClusters);
+            GetSharedClusters(finalClusters, stairClusters, ref finalStairClusters);
+            GetSharedClusters(finalClusters, entranceClusters, ref finalEntranceClusters);
 
-            foreach (List<Point> c1 in finalClusters)
-            {
-                foreach (List<Point> c2 in corridorClusters)
-                {
-                    if (c2.All(i => c1.Contains(i))) {
-                        finalCorridorClusters.Add(c1);
-                    }
-                }
-            }
-
-            return (finalClusters, finalCorridorClusters);
-
-
+            return (finalClusters, finalCorridorClusters, finalStairClusters, finalEntranceClusters);
 
         }
-        private List<List<Point>> GetEdgePointClusters(Floor f, Zone z, Room r, int minWidth, Func<int, int, char[,], bool> ValidPoint)
+        private void GetSharedClusters(List<List<Point>> largerClusters, List<List<Point>> smallerClusters, ref List<List<Point>> sharedClusters)
         {
-            List<List<Point>> edgePointClusters = new List<List<Point>>();
-            //TODO: tweak
-            //int minWidth = 10;
-            Point tempPoint;
-
-            //check left, right, up, down
-
-            //left:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "left", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
-
-            //right:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X + r.RectWidth - 1, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "right", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
-
-            //up:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, "up", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
-
-            //down:
-            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y + r.RectHeight - 1, r.RectWidth, "down", minWidth, f.RoomGrid, ref edgePointClusters, ValidPoint);
-
-            for (int i = 0; i < edgePointClusters.Count; i++)
+            //check if a smaller cluster is contained in a larger cluster
+            //creates a list of the larger clusters that contain one or more of the smaller clusters
+            foreach (List<Point> list1 in largerClusters)
             {
-                if (edgePointClusters[i].Count == 0)
+                foreach (List<Point> list2 in smallerClusters)
                 {
-                    edgePointClusters.RemoveAt(i);
-                    i--;
-                } else
-                {
-                    for (int j = 0; j < edgePointClusters[i].Count; j++)
+                    if (list2.All(i => list1.Contains(i)))
                     {
-                        tempPoint = edgePointClusters[i][j];
-                        edgePointClusters[i][j] = new Point(tempPoint.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, tempPoint.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y);
+                        sharedClusters.Add(list1);
                     }
                 }
             }
-
-            //char[,] tempG = new char[f.RoomGrid.GetUpperBound(0) - 251, f.RoomGrid.GetUpperBound(1) - 399];
-
-            return edgePointClusters;
         }
         private bool ContainedInClusterLists(Point p, List<List<Point>> c)
         {
@@ -2236,18 +2336,56 @@ namespace random_school_generator
             }
             return false;
         }
-        private void CheckAreaAroundEdge(int x, int y, int length, string direction, int minWidth, char[,] grid, ref List<List<Point>> edgePointClusters, Func<int, int, char[,], bool> ValidPoint  )
+        private List<List<Point>> GetEdgePointClusters(Floor f, Zone z, Room r, int minWidth, char[,] grid, Func<int, int, char[,], bool> ValidPoint)
         {
-            int tempLength = 0;
-            bool broken = false;
+            List<List<Point>> edgePointClusters = new List<List<Point>>();
+            Point tempPoint;
+
+            //check edgepoints left, right, up, and down to make clusters
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "left", minWidth, grid, ref edgePointClusters, ValidPoint);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X + r.RectWidth - 1, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectHeight, "right", minWidth, grid, ref edgePointClusters, ValidPoint);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, "up", minWidth, grid, ref edgePointClusters, ValidPoint);
+            CheckAreaAroundEdge(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y + r.RectHeight - 1, r.RectWidth, "down", minWidth, grid, ref edgePointClusters, ValidPoint);
+
+            for (int i = 0; i < edgePointClusters.Count; i++)
+            {
+                //remove clusters that have no points in them
+                if (edgePointClusters[i].Count == 0)
+                {
+                    edgePointClusters.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    //remake the points in each cluster to be relative to the room grid rather than the floor grid
+                    for (int j = 0; j < edgePointClusters[i].Count; j++)
+                    {
+                        tempPoint = edgePointClusters[i][j];
+                        edgePointClusters[i][j] = new Point(tempPoint.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, tempPoint.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y);
+                    }
+                }
+            }
+
+            return edgePointClusters;
+        }
+        private void CheckAreaAroundEdge(int x, int y, int length, string direction, int extWidth, char[,] grid, ref List<List<Point>> edgePointClusters, Func<int, int, char[,], bool> ValidPoint)
+        {
+            int tempLength;
+            bool broken;
             List<Point> tempCluster = new List<Point>();
+
+            //iterate through edge points at a side of the room, creating clusters
 
             if (direction == "left" || direction == "right")
             {
+                //iterate through points at left / right of room
                 for (int tempY = y; tempY < y + length; tempY++)
                 {
                     broken = false;
-                    for (int i = 1; i <= minWidth; i++)
+
+                    //for each point, "extend" to points further left / right to check if they are valid
+                    //extWidth = length to extend by
+                    for (int i = 1; i <= extWidth; i++)
                     {
                         if (direction == "left")
                         {
@@ -2258,14 +2396,15 @@ namespace random_school_generator
                             tempLength = x + i;
                         }
 
+                        //the point can't be part of a cluster if it's out of bounds / invalid
                         if (!(WithinBounds(tempLength, tempY, grid.GetUpperBound(0), grid.GetUpperBound(1)) && ValidPoint(tempLength, tempY, grid)))
                         {
-                            //this point can't be added grid[tempLength, tempY] == 'X'
                             broken = true;
                             break;
                         }
                     }
 
+                    //if the current point breaks the cluster, add the previous cluster and reset the list
                     if (broken)
                     {
                         if (tempCluster.Count > 0)
@@ -2273,19 +2412,26 @@ namespace random_school_generator
                             edgePointClusters.Add(tempCluster);
                             tempCluster = new List<Point>();
                         }
-                    } else
+                    }
+                    //if the current point hasn't broken the cluster, add it to the current cluster list
+                    else
                     {
                         tempCluster.Add(new Point(x, tempY));
                     }
-
                 }
 
-            } else if (direction == "up" || direction == "down")
+            }
+            else if (direction == "up" || direction == "down")
             {
+
+                //iterate through points at up / down edges of room
                 for (int tempX = x; tempX < x + length; tempX++)
                 {
                     broken = false;
-                    for (int i = 1; i <= minWidth; i++)
+
+                    //for each point, "extend" to points further up / down to check if they are valid
+                    //extWidth = length to extend by
+                    for (int i = 1; i <= extWidth; i++)
                     {
                         if (direction == "up")
                         {
@@ -2296,14 +2442,15 @@ namespace random_school_generator
                             tempLength = y + i;
                         }
 
+                        //the point can't be part of a cluster if it's out of bounds / invalid
                         if (!(WithinBounds(tempX, tempLength, grid.GetUpperBound(0), grid.GetUpperBound(1)) && ValidPoint(tempX, tempLength, grid)))
                         {
-                            //this point can't be added
                             broken = true;
                             break;
                         }
                     }
 
+                    //if the current point breaks the cluster, add the previous cluster and reset the list
                     if (broken)
                     {
                         if (tempCluster.Count > 0)
@@ -2312,6 +2459,7 @@ namespace random_school_generator
                             tempCluster = new List<Point>();
                         }
                     }
+                    //if the current point hasn't broken the cluster, add it to the current cluster list
                     else
                     {
                         tempCluster.Add(new Point(tempX, y));
@@ -2319,328 +2467,42 @@ namespace random_school_generator
 
                 }
             }
+
+            //add the final cluster to the list of clusters
             if (tempCluster.Count > 0)
             {
                 edgePointClusters.Add(tempCluster);
             }
         }
-        private bool AddEdgesInACluster(Point p, List<List<Point>> clusters, ref List<List<Point>> edgePoints, ref List<Point> usableEdgePoints)
+        private void AddEdgesInACluster(Point p, List<List<Point>> clusters, ref List<List<Point>> edgePoints, ref List<Point> usedEdgePoints)
         {
-            bool found = false;
+            //iterate through each cluster list
             foreach (List<Point> l in clusters)
             {
+                //if the cluster contains the given point
                 if (l.Contains(p))
                 {
-                    found = true;
+                    //add the points that aren't already present to a list of used points
                     foreach (Point point in l)
                     {
-                        if (!usableEdgePoints.Contains(point))
+                        if (!usedEdgePoints.Contains(point))
                         {
-                            usableEdgePoints.Add(point);
+                            usedEdgePoints.Add(point);
                         }
                     }
 
-                    //now add that to the clusters..
+                    //add the cluster to the list of edge point clusters
                     edgePoints.Add(l);
-
                 }
             }
-            return found;
         }
-        private void GetRoomAdjacencies(Floor f, Zone z, Room r)
+        private Dictionary<Room, List<Point>> GetAllRoomAdjacencies(Point roomTopLeft, int roomWidth, int roomHeight, Point zoneTopLeft, Floor f)
         {
-            //check edges
-            //check adj
-            //add if not already added
-            //gotta make sure its the same other room too...store the char value
-            Room tempRoom;
-            Dictionary<char, List<Point>> adjLists = new Dictionary<char, List<Point>>();
-
-            //left
-            CheckAdjacencyBySide("left", r.GrowthTopLeft.X - 1, f, z, r, ref adjLists);
-            //right
-            CheckAdjacencyBySide("right", r.GrowthTopLeft.X + r.RectWidth, f, z, r, ref adjLists);
-            //up
-            CheckAdjacencyBySide("up", r.GrowthTopLeft.Y - 1, f, z, r, ref adjLists);
-            //down
-            CheckAdjacencyBySide("down", r.GrowthTopLeft.Y + r.RectHeight, f, z, r, ref adjLists);
-
-
-            foreach (KeyValuePair<char, List<Point>> kvp in adjLists) {
-                if (kvp.Value.Count >= 30)
-                {
-                    //now actually store it with the rooms
-                    //means getting the room from the char
-                    tempRoom = GetRoomByChar(z.Rooms, kvp.Key, z.ID);
-                    if (tempRoom is not null && !r.Adjacencies.ContainsKey(tempRoom)) //this shouldnt ever happen..
-                    {
-
-                        //r.Adjacencies.Add(tempRoom, MakeClusterForOtherRoom(r, kvp.Value));
-                        ////gonna need a new list for the new room too...along the edge
-                        //tempRoom.Adjacencies.Add(r, kvp.Value);
-
-                        //TODO: sometimes the cluster ends up weird 
-                        //like forgetting to subtract the room'a growth point
-                       
-                        if (kvp.Value[0].X != -1 && kvp.Value[0].X != r.RectWidth && kvp.Value[0].Y != -1 && kvp.Value[0].Y != r.RectHeight)
-                        {
-
-                        }
-
-                        if (MakeClusterForFirstRoom(r, kvp.Value).Count > 30)
-                        {
-                            //glossing over that weird error i get sometimes
-                            r.Adjacencies.Add(tempRoom, MakeClusterForFirstRoom(r, kvp.Value));
-                            tempRoom.Adjacencies.Add(r, MakeClusterForSecondRoom(tempRoom, r, kvp.Value));
-                        }
-
-                        //making cluster for room 1 - shift it 
-                    }
-                }
-            }
-
-        }
-
-        private void CheckAdjacencyBySide(string side, int start, Floor f, Zone z, Room r, ref Dictionary<char, List<Point>> adjLists)
-        {
-
-            List<Point> adjList = new List<Point>();          
-            char c = '-';
-            //left
-           
-
-            if (side == "left" || side == "right")
-            {
-                for (int y = r.GrowthTopLeft.Y; y < r.GrowthTopLeft.Y + r.RectHeight; y++)
-                {
-
-                    if (WithinBounds(start, y, z.GetGrid.GetUpperBound(0), z.GetGrid.GetUpperBound(1)) && z.GetGrid[start, y] != (char)('0' | z.ID))
-                    {
-                        //now gotta check if the different num still belongs to that zone
-                        //floor will only have different num if different zone
-                        if (f.GetGrid[z.GrowthTopLeft.X + start, z.GrowthTopLeft.Y + y] == (char)('0' | z.ID))
-                        {
-                            if (z.GetGrid[start, y] == c)
-                            {
-                                //add it to the list
-                                adjList.Add(new Point(start, y));
-                            }
-                            else
-                            {
-                                //TODO: check this behaviour, i'm worried its by ref here
-                                if (adjList.Count > 0)
-                                {
-                                    adjLists.Add(c, adjList.ToList());
-                                }
-                                c = z.GetGrid[start, y];
-                                adjList = new List<Point> { new Point(start, y) };
-                                //add a new entry in the dictionary
-
-                            }
-                        }
-                    }
-
-                }
-            }
-            else if (side == "up" || side == "down")
-            {
-                for (int x = r.GrowthTopLeft.X; x < r.GrowthTopLeft.X + r.RectWidth; x++)
-                {
-
-                    if (WithinBounds(x, start, z.GetGrid.GetUpperBound(0), z.GetGrid.GetUpperBound(1)) && z.GetGrid[x, start] != (char)('0' | z.ID))
-                    {
-                        //now gotta check if the different num still belongs to that zone
-                        //floor will only have different num if different zone
-                        if (f.GetGrid[z.GrowthTopLeft.X + x, z.GrowthTopLeft.Y + start] == (char)('0' | z.ID))
-                        {
-                            if (z.GetGrid[x, start] == c)
-                            {
-                                //add it to the list
-                                adjList.Add(new Point(x, start));
-                            }
-                            else
-                            {
-                                //TODO: check this behaviour, i'm worried its by ref here
-                                if (adjList.Count > 0)
-                                {
-                                    adjLists.Add(c, adjList.ToList());
-                                }
-                                c = z.GetGrid[x, start];
-                                adjList = new List<Point> { new Point(x, start) };
-                                //add a new entry in the dictionary
-
-                            }
-                        }
-                    }
-
-                }
-            }
-
-            if (adjList.Count > 2)
-            {
-                for (int i = 0; i < adjList.Count; i++)
-                {
-                    adjList[i] = new Point(adjList[i].X - r.GrowthTopLeft.X, adjList[i].Y - r.GrowthTopLeft.Y);
-                }
-                adjLists.Add(c, adjList.ToList());
-            }
-          
-        }
-
-        private Room GetRoomByChar(List<Room> rooms, char c, int zoneID)
-        {
-            foreach (Room r in rooms)
-            {
-                if ((char)('0' | r.ID) == c || (r.ID == zoneID && c == 'U'))
-                {
-                    return r;
-                } 
-            }
-            return null;
-        }
-        private List<Point> MakeClusterForFirstRoom(Room r1, List<Point> cluster)
-        {
-            List<Point> cluster2 = new List<Point>();
-
-            if (cluster[0].X == cluster[1].X)
-            {
-                if (cluster[0].X == -1)
-                {
-                    //left of the original room...
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X + 1, p.Y));
-                    }
-                }
-                else if (cluster[0].X == r1.RectWidth)
-                {
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X - 1, p.Y));
-                    }
-                }
-                else
-                {
-
-                }
-
-                //if (!WithinBounds(cluster[0].X, cluster[0].Y - 1, r1.GetGrid.GetUpperBound(0), r1.GetGrid.GetUpperBound(1)))
-                //{
-                //    //left
-
-
-                //} else
-                //{
-                //    //right
-                //    foreach (Point p in cluster)
-                //    {
-                //        cluster2.Add(new Point(p.X, p.Y + 1));
-                //    }
-                //}
-            }
-            else
-            {
-                //if (!WithinBounds(cluster[0].X - 1, cluster[0].Y, r1.GetGrid.GetUpperBound(0), r1.GetGrid.GetUpperBound(1)))
-                //{
-                //    foreach (Point p in cluster)
-                //    {
-                //        cluster2.Add(new Point(p.X - 1, p.Y));
-                //    }
-                //} else
-                //{
-                //    foreach (Point p in cluster)
-                //    {
-                //        cluster2.Add(new Point(p.X + 1, p.Y));
-                //    }
-                //}
-                if (cluster[0].Y == -1)
-                {
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X, p.Y + 1));
-                    }
-                }
-                else if (cluster[0].Y == r1.RectHeight)
-                {
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X, p.Y - 1));
-                    }
-                }
-                else
-                {
-
-                }
-            }
-
-            return cluster2;
-        }
-        private List<Point> MakeClusterForSecondRoom(Room r1, Room r2, List<Point> cluster)
-        {
-            List<Point> cluster2 = new List<Point>();
-
-            if (cluster[0].X == cluster[1].X)
-            {
-                if (cluster[0].X == -1)
-                {
-                    //left of the original room, so will be right of the new room
-                    //e.g., -1 and 67 to 70
-                    //will need room width and ...
-
-                    //how to get the height relative to second room?
-                    //add the og room top left
-                    //then subtract the new room top left y
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(r1.RectWidth - 1, p.Y + r2.GrowthTopLeft.Y - r1.GrowthTopLeft.Y));
-                    }
-                }
-                else if (cluster[0].X == r2.RectWidth)
-                {
-                    //so the left
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(0, p.Y + r2.GrowthTopLeft.Y - r1.GrowthTopLeft.Y));
-                    }
-                }
-            }
-            else
-            {
-                if (cluster[0].Y == -1)
-                {
-                    //left of the original room, so will be right of the new room
-                    //e.g., -1 and 67 to 70
-                    //will need room width and ...
-
-                    //how to get the height relative to second room?
-                    //add the og room top left
-                    //then subtract the new room top left y
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X + r2.GrowthTopLeft.X - r1.GrowthTopLeft.X, r1.RectHeight - 1 ));
-                    }
-                }
-                else if (cluster[0].Y == r2.RectHeight)
-                {
-                    //so the left
-                    foreach (Point p in cluster)
-                    {
-                        cluster2.Add(new Point(p.X + r2.GrowthTopLeft.X - r1.GrowthTopLeft.X, 0));
-                    }
-                }
-            }
-
-            return cluster2;
-        }
-
-        private Dictionary<Room, List<Point>> GetRoomAdjacenciesBetweenZones(Point roomTopLeft, int roomWidth, int roomHeight, Point zoneTopLeft, Floor f)
-        {
-            //check left, right, up, down for R
-            //add cluster if so 
             Dictionary<Room, List<Point>> adjacencies = new Dictionary<Room, List<Point>>();
             List<List<Point>> clusters = new List<List<Point>>();
             List<Point> tempCluster, tempEdgePoints;
 
+            //check left, right, top, bottom edges to see whether they are adjacent to rooms from another zone
             CheckRoomEdgesBetweenZones("left", roomTopLeft.X - 1, roomTopLeft.Y, roomWidth, roomHeight, zoneTopLeft, f.RoomGrid, ref clusters, f);
             CheckRoomEdgesBetweenZones("right", roomTopLeft.X + roomWidth, roomTopLeft.Y, roomWidth, roomHeight, zoneTopLeft, f.RoomGrid, ref clusters, f);
             CheckRoomEdgesBetweenZones("up", roomTopLeft.X, roomTopLeft.Y - 1, roomWidth, roomHeight, zoneTopLeft, f.RoomGrid, ref clusters, f);
@@ -2648,24 +2510,21 @@ namespace random_school_generator
 
             clusters.RemoveAll(x => x.Count < 30);
 
-            //now actually have the room associated with the cluster
-            //actually just need to search for edgepoints that are contained
-
+            //finding the specific adjacent room associated with each cluster found
             foreach (List<Point> c in clusters)
             {
                 foreach (Zone z in f.Zones)
                 {
+                    //look through all rooms
                     foreach (Room r in z.Rooms)
                     {
-
-                        //check if the cluster is a subset of their edgepoints
-                        //bool results = query2.All(i => query1.Contains(i));
-
+                        //use a list of the room's edgepoints that are relative to the floor rather than the room grid
                         tempEdgePoints = r.Edgepoints.Select(i => { return new Point(i.X + r.GrowthTopLeft.X + z.GrowthTopLeft.X, i.Y + r.GrowthTopLeft.Y + z.GrowthTopLeft.Y); }).ToList();
 
-                        if (c.All(x => tempEdgePoints.Contains(x))) {
-                            //adjacencies.Add(r, c);
-                            //collection.Select(c => {c.PropertyToSet = value; return c;}).ToList();
+                        //if the edge points form part of the cluster, this is the adjacent room
+                        if (c.All(x => tempEdgePoints.Contains(x)))
+                        {
+                            //make a cluster relative to this room's grid and add it to the adjacency dictionary
                             tempCluster = c.Select(i => { return new Point(i.X - r.GrowthTopLeft.X - z.GrowthTopLeft.X, i.Y - r.GrowthTopLeft.Y - z.GrowthTopLeft.Y); }).ToList();
                             adjacencies.Add(r, tempCluster);
                         }
@@ -2673,43 +2532,45 @@ namespace random_school_generator
                 }
             }
 
-            //return clusters;
             return adjacencies;
         }
         private void CheckRoomEdgesBetweenZones(string direction, int roomX, int roomY, int roomWidth, int roomHeight, Point zoneTopLeft, char[,] grid, ref List<List<Point>> clusters, Floor f)
         {
-            List<List<Point>> allClusters = new List<List<Point>>();
             List<Point> cluster = new List<Point>();
-            int tempPos;
             Room r = null;
+
+            //get clusters of room edges that are adjacent to rooms from different zones
 
             if (direction == "left" || direction == "right")
             {
+                //looking along left / right edge
                 for (int y = roomY + zoneTopLeft.Y; y < roomY + zoneTopLeft.Y + roomHeight; y++)
                 {
-                    //if (direction == "left")
-                    //{
-                    //    tempPos = roomX - 1;
-                    //}
-                    //else
-                    //{
-                    //    tempPos = roomX + 1;
-                    //}
+                    //if another room is to the left / right
                     if (roomX + zoneTopLeft.X > 0 && roomX + zoneTopLeft.X < grid.GetUpperBound(0) && grid[roomX + zoneTopLeft.X, y] == 'R')
                     {
-                        if (r is null || (!Room.ReferenceEquals(FindRoomFromGrid(roomX + zoneTopLeft.X, y, f ), r )))
+                        //if the point is adjacent to a new room / different room than point before
+                        if (r is null || (!Room.ReferenceEquals(FindRoomFromGrid(roomX + zoneTopLeft.X, y, f), r)))
                         {
+                            //add the previous cluster to the cluster list
                             if (cluster.Count > 0)
                             {
                                 clusters.Add(cluster);
                             }
+
+                            //reset the current cluster to contain the new point
                             cluster = new List<Point> { new Point(roomX + zoneTopLeft.X, y) };
                             r = FindRoomFromGrid(roomX + zoneTopLeft.X, y, f);
-                        } else
+                        }
+
+                        //if adjacent to same room as previous point, add current point to cluster
+                        else
                         {
                             cluster.Add(new Point(roomX + zoneTopLeft.X, y));
                         }
                     }
+
+                    //if point isn't adjacent to a room, it's broken the current cluster
                     else
                     {
                         if (cluster.Count > 0)
@@ -2722,35 +2583,32 @@ namespace random_school_generator
             }
             else if (direction == "up" || direction == "down")
             {
+                //looking along top / bottom edge
                 for (int x = roomX + zoneTopLeft.X; x < roomX + zoneTopLeft.X + roomWidth; x++)
                 {
-                    //if (direction == "up")
-                    //{
-                    //    tempPos = roomY - 1;
-                    //}
-                    //else
-                    //{
-                    //    tempPos = roomY + 1;
-                    //}
+                    //if another room is above / below
                     if (roomY + zoneTopLeft.Y > 0 && roomY + zoneTopLeft.Y < grid.GetUpperBound(1) && grid[x, roomY + zoneTopLeft.Y] == 'R')
                     {
-
+                        //if the point is adjacent to a new room / different room than point before
                         if (r is null || (!Room.ReferenceEquals(FindRoomFromGrid(x, roomY + zoneTopLeft.Y, f), r)))
                         {
+                            //add the previous cluster to the cluster list
                             if (cluster.Count > 0)
                             {
                                 clusters.Add(cluster);
                             }
+
+                            //reset the current cluster to contain the new point
                             cluster = new List<Point> { new Point(x, roomY + zoneTopLeft.Y) };
                             r = FindRoomFromGrid(x, roomY + zoneTopLeft.Y, f);
                         }
+                        //if adjacent to same room as previous point, add current point to cluster
                         else
                         {
                             cluster.Add(new Point(x, roomY + zoneTopLeft.Y));
                         }
-
-                       // cluster.Add(new Point(x, roomY + zoneTopLeft.Y));
                     }
+                    //if point isn't adjacent to a room, it's broken the current cluster
                     else
                     {
                         if (cluster.Count > 0)
@@ -2761,15 +2619,18 @@ namespace random_school_generator
                     }
                 }
             }
+
+            //add final cluster to cluster list
             if (cluster.Count > 0)
             {
                 clusters.Add(cluster);
-               // cluster = new List<Point>();
             }
 
         }
         private Room FindRoomFromGrid(int x, int y, Floor f)
         {
+            //identify a room in the floor by one of its edgepoints
+
             foreach (Zone z in f.Zones)
             {
                 foreach (Room r in z.Rooms)
@@ -2787,39 +2648,42 @@ namespace random_school_generator
         }
         private void AddDoorFromCluster(Room r, List<Point> cluster, Point zoneTopLeft, Room r2 = null)
         {
-            //TODO: should I add a door to both rooms if adjacent?
-            //dont add a door if already connected
-            // && r2.AdjacencyDoors.ContainsKey(r)
+            //only make new doors if adjacent to outside
+            //or adjacent to other room and this room hasn't had a door between them made for it already
+            if (r2 is null || (r2 is not null && !r.AdjacencyDoors.ContainsKey(r2)))
+            {
 
-            //if this room doesn't have a set pair
-            if (r2 is null || (r2 is not null && !r.AdjacencyDoors.ContainsKey(r2))) {
                 Rectangle tempRect;
                 int doorLength = 20;
                 int doorWidth = 5;
                 Point startPoint;
-                //door length goes parallel to the cluster
-                //just add the rec from a random point
 
+                //if cluster is on left / right
                 if (cluster[0].X == cluster[1].X)
                 {
+                    //make suitable rectangle
                     tempRect = new Rectangle(0, 0, doorWidth, doorLength);
                     startPoint = cluster[_random.Next(0, cluster.Count - doorLength)];
+
+                    //set door position based on whether it's on the left of right
                     if (cluster[0].X - 1 >= 0)
                     {
                         tempRect.X = startPoint.X - doorWidth + 1;
-                        tempRect.Y = startPoint.Y;
                     }
                     else
                     {
                         tempRect.X = startPoint.X;
-                        tempRect.Y = startPoint.Y;
                     }
+                    tempRect.Y = startPoint.Y;
                 }
+                //if cluster is at top / bottom edge
                 else
                 {
+                    //make suitable rectangle
                     tempRect = new Rectangle(0, 0, doorLength, doorWidth);
                     startPoint = cluster[_random.Next(0, cluster.Count - doorLength)];
 
+                    //set door position based on whether it's above or below
                     if (cluster[0].Y - 1 >= 0)
                     {
                         tempRect.Y = startPoint.Y - doorWidth + 1;
@@ -2831,35 +2695,21 @@ namespace random_school_generator
                     tempRect.X = startPoint.X;
                 }
 
-                //make sure the width goes the right way!! ughhhhfoeifheslf <----- TODO
-
-                //r.Doors.Add(tempRect);
-
-
+                //if this door connects two rooms, need to make door for other room too
                 if (r2 is not null)
                 {
-                    //only 1 room needs a rectangle
-                    //just make sure both know trhat they have a door
-
-                    //so the room will have the pos of the door on the floor, not jsut the room
-
-                    //r.AdjacencyDoors.Add(r2, tempRect);
-                    //r2.AdjacencyDoors.Add(r, tempRect);
-                    // r2.Doors.Add(tempRect);
-                    //make the door....but make it at the same x or y coordinates
-                    //store x / y end of door in original room
                     Rectangle tempR = new Rectangle(0, 0, 0, 0);
                     int tempLength = 0;
-                    //make r2 rect
+
+                    //set other room's door position and dimensions based on first door's position and which side the first door is on
                     if (cluster[0].X == cluster[1].X)
                     {
                         tempLength = tempRect.Y + r.ZoneTopLeft.Y + r.GrowthTopLeft.Y - r2.ZoneTopLeft.Y - r2.GrowthTopLeft.Y;
                         if (cluster[0].X == 0)
                         {
-                            
-                            //make on right
                             tempR = new Rectangle(r2.RectWidth - doorWidth, tempLength, doorWidth, doorLength);
-                        } else
+                        }
+                        else
                         {
                             tempR = new Rectangle(0, tempLength, doorWidth, doorLength);
                         }
@@ -2870,176 +2720,135 @@ namespace random_school_generator
                         if (cluster[0].Y == 0)
                         {
                             tempR = new Rectangle(tempLength, r2.RectHeight - doorWidth, doorLength, doorWidth);
-                        } else
+                        }
+                        else
                         {
-                            tempR = new Rectangle(tempLength, 0 , doorLength, doorWidth);
+                            tempR = new Rectangle(tempLength, 0, doorLength, doorWidth);
                         }
                     }
+
+                    //make points on second room's door relative to floor grid
                     tempR.X += r2.GrowthTopLeft.X + r2.ZoneTopLeft.X;
                     tempR.Y += r2.GrowthTopLeft.Y + r2.ZoneTopLeft.Y;
+
                     r2.Doors.Add(tempR);
                     r2.AdjacencyDoors.Add(r, tempR);
                 }
+
+                //make points on first room's door relative to floor grid
                 tempRect.X += r.GrowthTopLeft.X + r.ZoneTopLeft.X;
                 tempRect.Y += r.GrowthTopLeft.Y + r.ZoneTopLeft.Y;
+
                 if (r2 is not null)
                 {
                     r.AdjacencyDoors.Add(r2, tempRect);
                 }
                 r.Doors.Add(tempRect);
-
-            }           
-
+            }
         }
         private void RemoveDoors(Zone z)
         {
-            //add all valid to a queue
+            //add all rooms with door adjacent to corridor to a queue
             Room room;
-            Queue<Room> _roomsConnectedToOutside = new Queue<Room>();
+            Queue<Room> _roomsConnectedToCorridor = new Queue<Room>();
             foreach (Room r in z.Rooms)
             {
-                if (r.Doors.Count > r.Adjacencies.Count)
+                if (r.Doors.Count > r.AdjacencyDoors.Count)
                 {
-                    _roomsConnectedToOutside.Enqueue(r);
+                    _roomsConnectedToCorridor.Enqueue(r);
                 }
             }
 
-            //while loop...
-            while (_roomsConnectedToOutside.Count > 0)
+            while (_roomsConnectedToCorridor.Count > 0)
             {
-                //for each in the queue..mark friends as conected with a link to the room
-                //make sure only new connections are marked
-                room = _roomsConnectedToOutside.Dequeue();
+                room = _roomsConnectedToCorridor.Dequeue();
+                //for each room connected to the corridor directly or indirectly, look at rooms connected to it
                 foreach (Room r in room.AdjacencyDoors.Keys)
                 {
+                    //if both rooms are part of the same zone and this information isn't already stored, store the connection between the two rooms
                     if (!room.Connections.Contains(r) && r.RoomType.Type == room.RoomType.Type)
                     {
                         r.Connections.Add(room);
-                        _roomsConnectedToOutside.Enqueue(r);
+                        _roomsConnectedToCorridor.Enqueue(r);
                     }
                 }
             }
 
-            //now actually remove em...
+            //iterate through all rooms in the zone
             foreach (Room r in z.Rooms)
             {
-                //if the room has more than one connection? choose a random one and discard all the rest
-                if (r.Doors.Count > r.Adjacencies.Count &&r.Connections.Count > 0 )
+                //if the room is connected to the corridor through one of its own doors, doesn't need connections from other rooms, so remove them
+                if (r.Doors.Count > r.AdjacencyDoors.Count && r.Connections.Count > 0)
                 {
                     foreach (Room connectedRoom in r.Connections)
                     {
                         Room.RemoveRoomAdjacency(connectedRoom, r);
                     }
                 }
+                //alternatively, if a room is connected to a corridor indirectly via multiple rooms, remove extra connections to only leave with one
                 else if (r.Connections.Count > 1)
                 {
-                    //choose a random room
-                    //remove all adjacencies from other rooms
-                    //and get rid of the rectangles too..for both rooms
                     room = r.Connections[_random.Next(0, r.Connections.Count)];
 
                     foreach (Room connectedRoom in r.Connections)
                     {
                         if (!Room.ReferenceEquals(connectedRoom, room))
                         {
-                            //remove it...TODO: smth wrong here
                             Room.RemoveRoomAdjacency(connectedRoom, r);
                         }
                     }
-
                 }
             }
-
         }
 
-        //TODO: add walls
-        //after doors added
-        //wall width and height goes inside rooms
-        //decide on dimensions
-
-        private void AddWalls(Zone z, int xUpperBound, int yUpperBound)
+        // - - creating walls - -
+        private void AddWallsToFloor(Floor currentFloor)
         {
-            int wallWidth = 5; //TODO: tweak
-            //go left, right, up, down
-            //how to check for doors?
-            //if own door
-            // - avoid intersection of edge and door
-            // - also add the place to avoid for the other room
-            
-            //what if room has adjacency from another zone??
-            //gotta do it for all rooms on the floor
+            int wallWidth = 5;
 
-            //for doors - add clear points
-            AddClearEdges(z, xUpperBound, yUpperBound);
-            //now add the walls for that zone
-            foreach (Room r in z.Rooms)
+            foreach (Zone z in currentFloor.Zones)
             {
-                AddWalls(r, wallWidth, z.GrowthTopLeft);
-            }
-            
-        }
+                //remove excess connections between room before wall creation
+                RemoveDoors(z);
 
-        private void AddClearEdges(Zone z, int xUpperBound, int yUpperBound)
+                //store spaces that must be kept clear for each room in the zone
+                AddClearEdges(z);
+
+                //then add walls for each room in the zone
+                foreach (Room r in z.Rooms)
+                {
+                    AddWalls(r, wallWidth, z.GrowthTopLeft);
+                }
+            }
+            currentFloor.MadeWalls = true;
+        }
+        private void AddClearEdges(Zone z)
         {
             List<Point> tempEdgePoints;
+
+            //iterate through each room
             foreach (Room r in z.Rooms)
             {
+                //create list of edge points relative to floor grid rather than room grid
                 tempEdgePoints = r.Edgepoints.Select(i => { return new Point(i.X + r.GrowthTopLeft.X + z.GrowthTopLeft.X, i.Y + r.GrowthTopLeft.Y + z.GrowthTopLeft.Y); }).ToList();
+
+                //find points that must be kept clear for each door in the room to go
                 foreach (Rectangle door in r.Doors)
                 {
                     r.ClearPoints.AddRange(GetClearPointsFromDoor(tempEdgePoints, door));
                 }
-                foreach (KeyValuePair<Room, Rectangle> kvp in r.AdjacencyDoors)
-                {
-                    //r.ClearPoints.AddRange(GetClearPointsFromDoor(tempEdgePoints, kvp.Value));
-                    //kvp.Key.ClearPoints.AddRange(GetClearPointsFromDoor(tempEdgePoints, kvp.Value));
-                    //r.ClearPoints.AddRange(GetClearPointsFromOtherDoor(tempEdgePoints, kvp.Value, xUpperBound, yUpperBound));
-                    //kvp.Key.ClearPoints.AddRange(GetClearPointsFromOtherDoor(tempEdgePoints, kvp.Value, xUpperBound, yUpperBound));
-                }
             }
         }
-
-        private List<Point> GetClearPointsFromOtherDoor(List<Point> edgePoints, Rectangle door, int xUpperBound, int yUpperBound)
-        {
-            //list of edgepoints
-            //check depending on door alignment
-            // - horizontal: check above top, or below bottom
-            // - vertical: check left to left, or right of right
-            List<Point> pointsToAdd = new List<Point>();
-            if (door.Width > door.Height )
-            {
-                //horizontal
-                if (door.X > 0)
-                {
-                    pointsToAdd.AddRange(GetClearPointsFromDoor(edgePoints, new Rectangle(door.X - 1, door.Y, door.Width, door.Height)));
-                }
-
-                if (pointsToAdd.Count == 0 && door.X + door.Width <= xUpperBound )
-                {
-                    pointsToAdd.AddRange(GetClearPointsFromDoor(edgePoints, new Rectangle(door.X, door.Y, door.Width + 1, door.Height)));
-                }
-            } else
-            {
-                if (door.Y > 0)
-                {
-                    pointsToAdd.AddRange(GetClearPointsFromDoor(edgePoints, new Rectangle(door.X, door.Y - 1, door.Width, door.Height)));
-                }
-
-                if (pointsToAdd.Count == 0 && door.Y + door.Height <= yUpperBound )
-                {
-                    pointsToAdd.AddRange(GetClearPointsFromDoor(edgePoints, new Rectangle(door.X, door.Y, door.Width, door.Height + 1)));
-                }
-            }
-            return pointsToAdd;
-        }
-
-        private List<Point> GetClearPointsFromDoor( List<Point> edgePoints, Rectangle door)
+        private List<Point> GetClearPointsFromDoor(List<Point> edgePoints, Rectangle door)
         {
             bool foundEdge = false;
             List<Point> pointsToAdd = new List<Point>();
             Point tempPoint;
 
-            //left
+            //iterate through points on each side of the door and see if they intersect with the room's edge points
+            //if they do, these are the points that must be kept clear
+
+            //check left
             for (int y = door.Y; y < door.Y + door.Height; y++)
             {
                 tempPoint = new Point(door.X, y);
@@ -3053,6 +2862,7 @@ namespace random_school_generator
                 }
             }
 
+            //check right
             if (!foundEdge)
             {
                 for (int y = door.Y; y < door.Y + door.Height; y++)
@@ -3069,6 +2879,7 @@ namespace random_school_generator
                 }
             }
 
+            //check up
             if (!foundEdge)
             {
                 for (int x = door.X; x < door.X + door.Width; x++)
@@ -3085,7 +2896,7 @@ namespace random_school_generator
                 }
             }
 
-
+            //check down
             if (!foundEdge)
             {
                 for (int x = door.X; x < door.X + door.Width; x++)
@@ -3097,96 +2908,106 @@ namespace random_school_generator
                     }
                 }
             }
+
             return pointsToAdd;
         }
-
         private void AddWalls(Room r, int width, Point zoneTopLeft)
         {
-            //but need to stay away from clear points :(
-
             List<(int, int)> clusters = new List<(int, int)>();
 
-            clusters = GetRectPairs("left", r, zoneTopLeft, rectX: r.GrowthTopLeft.X);
+            //go through each side of a room, adding wall rectangles while keeping certain points clear for doors
 
+            //add walls to left
+            clusters = GetWallPositionPairs("left", r, zoneTopLeft, rectX: r.GrowthTopLeft.X);
             foreach ((int, int) c in clusters)
             {
                 r.Walls.Add(new Rectangle(r.GrowthTopLeft.X + zoneTopLeft.X, c.Item1, width, c.Item2 - c.Item1 + 1));
             }
 
-            clusters = GetRectPairs("right", r, zoneTopLeft, rectX: r.GrowthTopLeft.X + r.RectWidth - 1);
-
+            //add walls to right
+            clusters = GetWallPositionPairs("right", r, zoneTopLeft, rectX: r.GrowthTopLeft.X + r.RectWidth - 1);
             foreach ((int, int) c in clusters)
             {
                 r.Walls.Add(new Rectangle(r.GrowthTopLeft.X + zoneTopLeft.X + r.RectWidth - width, c.Item1, width, c.Item2 - c.Item1 + 1));
             }
 
-            clusters = GetRectPairs("up", r, zoneTopLeft, rectY: r.GrowthTopLeft.Y);
-
+            //add walls above
+            clusters = GetWallPositionPairs("up", r, zoneTopLeft, rectY: r.GrowthTopLeft.Y);
             foreach ((int, int) c in clusters)
             {
                 r.Walls.Add(new Rectangle(c.Item1, r.GrowthTopLeft.Y + zoneTopLeft.Y, c.Item2 - c.Item1 + 1, width));
             }
 
-            clusters = GetRectPairs("down", r, zoneTopLeft, rectY: r.GrowthTopLeft.Y + r.RectHeight - 1);
-
+            //add walls below
+            clusters = GetWallPositionPairs("down", r, zoneTopLeft, rectY: r.GrowthTopLeft.Y + r.RectHeight - 1);
             foreach ((int, int) c in clusters)
             {
                 r.Walls.Add(new Rectangle(c.Item1, zoneTopLeft.Y + r.GrowthTopLeft.Y + r.RectHeight - width, c.Item2 - c.Item1 + 1, width));
             }
         }
-
-        private List<(int, int)> GetRectPairs(string direction, Room r, Point zoneTopLeft, int rectX = 0, int rectY = 0)
+        private List<(int, int)> GetWallPositionPairs(string direction, Room r, Point zoneTopLeft, int rectX = 0, int rectY = 0)
         {
-            List<(int, int)> clusters = new List<(int, int)>();
-            (int, int) rectPair = (-1, -1);
-            //iterate and check? 
-            //store the one you end at and the one you start again at
+            //a position pair contains the start and end x or y position of a continuous wall along an edge
+            List<(int, int)> positionPairs = new List<(int, int)>();
+            (int, int) positionPair = (-1, -1);
 
             if (direction == "left" || direction == "right")
             {
+                //iterate through points on left / right edge
                 for (int y = r.GrowthTopLeft.Y; y < r.GrowthTopLeft.Y + r.RectHeight; y++)
                 {
-                    if (!r.ClearPoints.Contains(new Point(rectX + zoneTopLeft.X, y + zoneTopLeft.Y)) && rectPair.Item1 == -1)
+                    //if current point doesn't need to be kept clear and isn't part of an existing pair, start a new pair
+                    if (!r.ClearPoints.Contains(new Point(rectX + zoneTopLeft.X, y + zoneTopLeft.Y)) && positionPair.Item1 == -1)
                     {
-                        rectPair.Item1 = y + zoneTopLeft.Y;
+                        positionPair.Item1 = y + zoneTopLeft.Y;
                     }
-                    else if (r.ClearPoints.Contains(new Point(rectX + zoneTopLeft.X, y + zoneTopLeft.Y)) && rectPair.Item1 != -1)
+
+                    //if current point needs to be kept clear, the cluster can't be continued
+                    else if (r.ClearPoints.Contains(new Point(rectX + zoneTopLeft.X, y + zoneTopLeft.Y)) && positionPair.Item1 != -1)
                     {
-                        rectPair.Item2 = y + zoneTopLeft.Y;
-                        clusters.Add(rectPair);
-                        rectPair = (-1, -1);
+                        //add the pair to the list and reset the position pair
+                        positionPair.Item2 = y + zoneTopLeft.Y;
+                        positionPairs.Add(positionPair);
+                        positionPair = (-1, -1);
                     }
                 }
 
-
-                if (rectPair.Item1 != -1)
+                //add the final position pair to the list of pairs
+                if (positionPair.Item1 != -1)
                 {
-                    rectPair.Item2 = r.GrowthTopLeft.Y + r.RectHeight + zoneTopLeft.Y - 1;
-                    clusters.Add(rectPair);
+                    positionPair.Item2 = r.GrowthTopLeft.Y + r.RectHeight + zoneTopLeft.Y - 1;
+                    positionPairs.Add(positionPair);
                 }
             }
             else
             {
+                //iterate through points on top / bottom edge
                 for (int x = r.GrowthTopLeft.X; x < r.GrowthTopLeft.X + r.RectWidth; x++)
                 {
-                    if (!r.ClearPoints.Contains(new Point(x + zoneTopLeft.X, rectY + zoneTopLeft.Y)) && rectPair.Item1 == -1)
+                    //if current point doesn't need to be kept clear and isn't part of an existing pair, start a new pair
+                    if (!r.ClearPoints.Contains(new Point(x + zoneTopLeft.X, rectY + zoneTopLeft.Y)) && positionPair.Item1 == -1)
                     {
-                        rectPair.Item1 = x + zoneTopLeft.X;
+                        positionPair.Item1 = x + zoneTopLeft.X;
                     }
-                    else if (r.ClearPoints.Contains(new Point(x + zoneTopLeft.X, rectY + zoneTopLeft.Y)) && rectPair.Item1 != -1)
+
+                    //if current point needs to be kept clear, the cluster can't be continued
+                    else if (r.ClearPoints.Contains(new Point(x + zoneTopLeft.X, rectY + zoneTopLeft.Y)) && positionPair.Item1 != -1)
                     {
-                        rectPair.Item2 = x + zoneTopLeft.X;
-                        clusters.Add(rectPair);
-                        rectPair = (-1, -1);
+                        //add the pair to the list and reset the position pair
+                        positionPair.Item2 = x + zoneTopLeft.X;
+                        positionPairs.Add(positionPair);
+                        positionPair = (-1, -1);
                     }
                 }
-                if (rectPair.Item1 != -1)
+
+                //add the final position pair to the list of pairs
+                if (positionPair.Item1 != -1)
                 {
-                    rectPair.Item2 = r.GrowthTopLeft.X + zoneTopLeft.X + r.RectWidth - 1;
-                    clusters.Add(rectPair);
+                    positionPair.Item2 = r.GrowthTopLeft.X + zoneTopLeft.X + r.RectWidth - 1;
+                    positionPairs.Add(positionPair);
                 }
             }
-            return clusters;
+            return positionPairs;
         }
 
         // - update message queue -
