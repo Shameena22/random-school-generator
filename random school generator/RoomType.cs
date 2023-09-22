@@ -1,30 +1,43 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace random_school_generator
 {
-    internal class RoomType
+    abstract class RoomType
     {
-        private string _type;
-        public static Dictionary<string, Color> TypeColours;
-        public static Dictionary<string, Color> WallColours;
-        public string Type { get => _type; set => _type = value; }
+       // private string _type;
+        private static Dictionary<string, Color> _typeColours;
+        private static Dictionary<string, Color> _wallColours;
+       // public string Type { get => _type; set => _type = value; }
+        private static Random _random = new Random();
+        private static Dictionary<string, int> _sideLengths;
 
-        public RoomType(string type)
+        public static Dictionary<string, Color> TypeColours { get => _typeColours; set => _typeColours = value; }
+        public static Dictionary<string, Color> WallColours { get => _wallColours; set => _wallColours = value; }
+        public static Dictionary<string, int> SideLengths { get => _sideLengths; set => _sideLengths = value; }
+
+
+        //public RoomType(string type)
+        //{
+        //    _type = type;
+        //    _random = new Random();
+        //}
+
+        //public static void LoadData()
+        //{
+
+        //}
+        public static void LoadData()
         {
-            _type = type;
-        }
-
-        public static void SetTypeColours()
-        {
-            //setting colours for each type of room
-
-            TypeColours = new Dictionary<string, Color>
+            //setting colours of base for each type of room
+            _typeColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Gold },
                 {"gym", Color.AliceBlue }, //homage to sgs pre-dutton era gym floor
@@ -43,7 +56,8 @@ namespace random_school_generator
                 {"music", Color.DarkMagenta}
             };
 
-            WallColours = new Dictionary<string, Color>
+            //setting colours of wall for each type of room
+            _wallColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Brown },
                 {"gym", Color.PowderBlue },
@@ -62,7 +76,16 @@ namespace random_school_generator
                 {"music", Color.Purple}
             };
 
+            //setting min side lengths based on room's zone secondary type
+            _sideLengths = new Dictionary<string, int>
+            {
+                {"classroom", 125 },
+                {"large", 150 },
+                { "service", 75},
+                {"staff", 100 }
+            };
         }
+
 
     }
 }

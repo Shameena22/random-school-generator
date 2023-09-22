@@ -12,7 +12,7 @@ namespace random_school_generator
     {
         private int _numberOfRooms, _idealSize, _ID, _area, _roomGrowthRetries;
         private ZoneType _zoneType;
-        private bool _firstGrown, _secondGrown, _thirdGrown, _roomGrowthFailed;
+        private bool _firstGrown, _secondGrown, _thirdGrown, _roomGrowthFailed, _finishedDoors;
         private List<Room> _rooms;
         private List<Point> _badGrowthPoints;
         public Zone(int numberOfRooms, int idealSize, string zoneType, int id) : base() 
@@ -31,6 +31,7 @@ namespace random_school_generator
             _rooms = new List<Room>();
             _roomGrowthRetries = 0;
             _roomGrowthFailed = false;
+            _finishedDoors = false;
         }
 
         public int NumberOfRooms { get => _numberOfRooms; set => _numberOfRooms = value; }
@@ -45,6 +46,7 @@ namespace random_school_generator
         public List<Point> BadGrowthPoints { get => _badGrowthPoints; set => _badGrowthPoints = value; }
         public int RoomGrowthRetries { get => _roomGrowthRetries; set => _roomGrowthRetries = value; }
         public bool RoomGrowthFailed { get => _roomGrowthFailed; set => _roomGrowthFailed = value; }
+        public bool FinishedDoors { get => _finishedDoors; set => _finishedDoors = value; }
 
         public void UpdateArea()
         {
