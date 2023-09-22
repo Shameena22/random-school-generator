@@ -2201,7 +2201,6 @@ namespace random_school_generator
             r.TeacherDesk = r.MakeRectRelativeToFloor(desk);
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
         }
-
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth)
         {
             Rectangle enclosingRect;
@@ -2239,7 +2238,6 @@ namespace random_school_generator
 
             return enclosingRect;
         }
-
         private List<Point> FindEdgeRectPositions(int length, Room r, int wallWidth)
         {
             List<Point> validPositions = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
@@ -2341,9 +2339,123 @@ namespace random_school_generator
             Rectangle tempRect;
             for (int i = 0; i < j; i++)
             {
-                tempRect = AddEdgeRect(r, 15, 8);
+                tempRect = AddEdgeRect(r, 15, 10);
                 r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(tempRect));
             }
+        }
+
+        private void MakeNormalTablesAndChairs(Room r)
+        {
+            //break down room into smaller section (done)
+            //choose a type of table (done-ish)
+            //make table based on choice...start with lined separate
+
+            char[,] innerGrid = new char[r.RectWidth - 30, r.RectHeight - 30];
+            int tableTypeChoice = _random.Next(0, 3);
+
+            switch (tableTypeChoice)
+            {
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+            }
+
+        }
+
+        private void MakeSeparateLinedTables(char[,] grid, Room r, int wallWidth)
+        {
+            //make enclosing rectangles..a new sub??
+            string facingTowards = "";
+            //choose width and length - TODO: change
+            int outerWidth = 25, outerLength = 30;
+            List<Rectangle> outerRects = new List<Rectangle>();
+            List<(Rectangle, Rectangle)> tablesAndChairs = new List<(Rectangle, Rectangle)>();
+
+            //choose orientation, based on r's door??? or what
+            if (r.TeacherDesk.Width > r.TeacherDesk.Height)
+            {
+                //left
+                outerRects = MakeEnclosingRectangles(outerWidth, outerLength, grid.GetUpperBound(1), grid.GetUpperBound(0));
+                if (r.TeacherChair.X == wallWidth)
+                {
+                    facingTowards = "left";
+                } else
+                {
+                    facingTowards = "right";
+                }
+
+            }
+            else
+            {
+                outerRects = MakeEnclosingRectangles(outerLength, outerWidth, grid.GetUpperBound(1), grid.GetUpperBound(0));
+                if (r.TeacherChair.Y == wallWidth)
+                {
+                    facingTowards = "up";
+                } else
+                {
+                    facingTowards = "down";
+                }
+            }
+            
+
+            //to make the tables and chairs...its own sub with length and width and pos?
+
+            foreach (Rectangle outerRect in outerRects)
+            {
+                tablesAndChairs.Add(MakeTablesAndChairsFromRect(outerRect, facingTowards, 15, 10, 3));
+            }
+            
+        }
+        private (Rectangle, Rectangle) MakeTablesAndChairsFromRect(Rectangle rect, string facingTowards, int tableWidth, int chairLength, int tableGap = 0)
+        {
+            //table squished up to one rect.. need a table gap between rect
+            //then chair for each rect table .... 
+            //if chair.X = 5 or chair.Y = 5
+
+            //how to return??? as a tuple rect?
+            Rectangle table, chair;
+            
+            switch (facingTowards)
+            {
+                case "left":
+                    table = new Rectangle(rect.X, rect.Y + tableGap, tableWidth, rect.Height - tableGap * 2);
+                    chair = new Rectangle(rect.X + tableWidth, rect.Y + tableGap + table.Height / 2 - chairLength / 2, chairLength, chairLength);
+                    break;
+                case "right":
+                    table = new Rectangle(rect.X + rect.Width - tableWidth, rect.Y + tableGap, tableWidth, rect.Height - tableGap * 2);
+                    chair = new Rectangle(table.X - chairLength, rect.Y + tableGap + table.Height / 2 - chairLength / 2, chairLength, chairLength);
+                    break;
+                case "up":
+                    table = new Rectangle(rect.X + tableGap, rect.Y, rect.Width - tableGap * 2, tableWidth);
+                    chair = new Rectangle(rect.X + tableGap + table.Width / 2 - chairLength / 2, rect.Y + tableWidth, chairLength, chairLength);
+                    break;
+                case "down":
+                    table = new Rectangle(rect.X + tableGap, rect.Y + rect.Height - tableWidth, rect.Width - tableGap * 2, tableWidth);
+                    chair = new Rectangle(rect.X = tableGap + table.Width / 2 - chairLength / 2, table.Y - chairLength, chairLength, chairLength);
+                    break;
+                default:
+                    table = new Rectangle(0, 0, 0, 0);
+                    chair = new Rectangle(0, 0, 0, 0);
+                    break;
+            }
+            return (table, chair);
+            
+        }
+
+        private List<Rectangle> MakeEnclosingRectangles(int rectLength, int rectWidth, int gridLength, int gridWidth)
+        {
+            List<Rectangle> rects = new List<Rectangle>();
+            for (int width = 0; width <= gridWidth / rectWidth; width++)
+            {
+                for (int length = 0; length <= gridLength / rectLength; length++)
+                {
+                    rects.Add(new Rectangle(rectWidth * width, rectLength * length, rectWidth, rectLength));
+                }
+            }
+            return rects;
         }
 
         // - - creating doors - -
