@@ -920,6 +920,10 @@ namespace random_school_generator
                             return $"> expanding zone: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
                         }
                         return "";
+                    } else
+                    {
+                        _currentZoneIndex = currentFloor.Zones.Count - 1;
+                        currentFloor.FinishedSecondZoneGrowth = true;
                     }
 
                 }
@@ -2143,6 +2147,7 @@ namespace random_school_generator
             //so add chairs and tables too... TODO
             //add them all as units
             AddCupboard(r);
+            MakeNormalTablesAndChairs(r);
 
         }
         private void MakeScienceClassroom(Room r)
@@ -2349,23 +2354,27 @@ namespace random_school_generator
             //break down room into smaller section (done)
             //choose a type of table (done-ish)
             //make table based on choice...start with lined separate
+            //TODO: wallWidth should be a class property at this point
 
             char[,] innerGrid = new char[r.RectWidth - 30, r.RectHeight - 30];
             int tableTypeChoice = _random.Next(0, 3);
 
-            switch (tableTypeChoice)
-            {
-                case 1:
-                    break;
-                case 2:
-                    break;
-                case 3:
-                    break;
-            }
+            MakeSeparateLinedTables(innerGrid, r, 5, 30);
+
+            //switch (tableTypeChoice)
+            //{
+            //    case 1:
+            //        MakeSeparateLinedTables(innerGrid);
+            //        break;
+            //    case 2:
+            //        break;
+            //    case 3:
+            //        break;
+            //}
 
         }
 
-        private void MakeSeparateLinedTables(char[,] grid, Room r, int wallWidth)
+        private void MakeSeparateLinedTables(char[,] grid, Room r, int wallWidth, int innerGap)
         {
             //make enclosing rectangles..a new sub??
             string facingTowards = "";
@@ -2375,11 +2384,11 @@ namespace random_school_generator
             List<(Rectangle, Rectangle)> tablesAndChairs = new List<(Rectangle, Rectangle)>();
 
             //choose orientation, based on r's door??? or what
-            if (r.TeacherDesk.Width > r.TeacherDesk.Height)
+            if (r.TeacherDesk.Width < r.TeacherDesk.Height)
             {
                 //left
                 outerRects = MakeEnclosingRectangles(outerWidth, outerLength, grid.GetUpperBound(1), grid.GetUpperBound(0));
-                if (r.TeacherChair.X == wallWidth)
+                if (r.TeacherChair.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X == wallWidth)
                 {
                     facingTowards = "left";
                 } else
@@ -2391,7 +2400,7 @@ namespace random_school_generator
             else
             {
                 outerRects = MakeEnclosingRectangles(outerLength, outerWidth, grid.GetUpperBound(1), grid.GetUpperBound(0));
-                if (r.TeacherChair.Y == wallWidth)
+                if (r.TeacherChair.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y == wallWidth)
                 {
                     facingTowards = "up";
                 } else
@@ -2406,6 +2415,13 @@ namespace random_school_generator
             foreach (Rectangle outerRect in outerRects)
             {
                 tablesAndChairs.Add(MakeTablesAndChairsFromRect(outerRect, facingTowards, 15, 10, 3));
+            }
+
+            //now just add these to the room?
+            foreach ((Rectangle, Rectangle) tableAndChairPair in tablesAndChairs)
+            {
+                r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item1, innerGap / 2, innerGap / 2));
+                r.Chairs.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item2, innerGap / 2, innerGap / 2));
             }
             
         }
@@ -2448,9 +2464,9 @@ namespace random_school_generator
         private List<Rectangle> MakeEnclosingRectangles(int rectLength, int rectWidth, int gridLength, int gridWidth)
         {
             List<Rectangle> rects = new List<Rectangle>();
-            for (int width = 0; width <= gridWidth / rectWidth; width++)
+            for (int width = 0; width < gridWidth / rectWidth; width++)
             {
-                for (int length = 0; length <= gridLength / rectLength; length++)
+                for (int length = 0; length < gridLength / rectLength; length++)
                 {
                     rects.Add(new Rectangle(rectWidth * width, rectLength * length, rectWidth, rectLength));
                 }

@@ -15,7 +15,7 @@ namespace random_school_generator
         private string _roomType;
         private bool _grown;
         private Point _growthFloorPoint;
-        private List<Rectangle> _doors, _walls, _equipmentDesks;
+        private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs;
         private Rectangle _teacherDesk, _teacherChair, _cupboard;
         private Dictionary<Room, Rectangle> _adjacencyDoors;
         private List<List<Rectangle>> _allDrawingRects;
@@ -36,6 +36,8 @@ namespace random_school_generator
             _zoneTopLeft = zoneTopLeft;
             _doors = new List<Rectangle>();
             _equipmentDesks = new List<Rectangle>();
+            _tables = new List<Rectangle>();
+            _chairs = new List<Rectangle>();
         }
 
         public bool Grown { get => _grown; set => _grown = value; }
@@ -55,6 +57,8 @@ namespace random_school_generator
         public List<Rectangle> EquipmentDesks { get => _equipmentDesks; set => _equipmentDesks = value; }
         public List<Point> InnerClearPoints { get => _innerClearPoints; set => _innerClearPoints = value; }
         public List<Point> InnerEdgePoints { get => _innerEdgePoints; set => _innerEdgePoints = value; }
+        public List<Rectangle> Tables { get => _tables; set => _tables = value; }
+        public List<Rectangle> Chairs { get => _chairs; set => _chairs = value; }
 
         public static void SetComponentColours()
         {
@@ -65,7 +69,9 @@ namespace random_school_generator
                 {2, Color.Firebrick },
                 {3, Color.LemonChiffon },
                 {4, Color.LavenderBlush },
-                {5, Color.Teal }
+                {5, Color.Teal },
+                {6, Color.Maroon },
+                {7, Color.PaleVioletRed }
             };
         }
         public static void RemoveRoomAdjacency(Room r1, Room r2)
@@ -85,7 +91,7 @@ namespace random_school_generator
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
-            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, new List<Rectangle> { _teacherDesk }, new List<Rectangle> { _teacherChair }, new List<Rectangle> { _cupboard }, _equipmentDesks };
+            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, new List<Rectangle> { _teacherDesk }, new List<Rectangle> { _teacherChair }, new List<Rectangle> { _cupboard }, _equipmentDesks, _tables, _chairs };
 
             //draw the base of the room
             if (_floorRectangles.Count > 0)
@@ -116,9 +122,9 @@ namespace random_school_generator
 
         }
 
-        public Rectangle MakeRectRelativeToFloor(Rectangle r)
+        public Rectangle MakeRectRelativeToFloor(Rectangle r, int extraX = 0, int extraY = 0)
         {
-            return new Rectangle(r.X + _growthTopLeft.X + _zoneTopLeft.X, r.Y + _growthTopLeft.Y + _zoneTopLeft.Y, r.Width, r.Height);
+            return new Rectangle(r.X + _growthTopLeft.X + _zoneTopLeft.X + extraX, r.Y + _growthTopLeft.Y + _zoneTopLeft.Y + extraY, r.Width, r.Height);
         }
 
         public Point MakePointRelativeToFloor(Point p)
