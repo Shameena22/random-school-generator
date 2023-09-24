@@ -2356,10 +2356,10 @@ namespace random_school_generator
             //make table based on choice...start with lined separate
             //TODO: wallWidth should be a class property at this point
 
-            char[,] innerGrid = new char[r.RectWidth - 30, r.RectHeight - 30];
+            char[,] innerGrid = new char[r.RectWidth - 40, r.RectHeight - 40];
             int tableTypeChoice = _random.Next(0, 3);
 
-            MakeSeparateLinedTables(innerGrid, r, 5, 30);
+            MakeSeparateLinedTables(innerGrid, r, 5, 40);
 
             //switch (tableTypeChoice)
             //{
@@ -2382,6 +2382,7 @@ namespace random_school_generator
             int outerWidth = 25, outerLength = 30;
             List<Rectangle> outerRects = new List<Rectangle>();
             List<(Rectangle, Rectangle)> tablesAndChairs = new List<(Rectangle, Rectangle)>();
+            int extraX = 0, extraY = 0;
 
             //choose orientation, based on r's door??? or what
             if (r.TeacherDesk.Width < r.TeacherDesk.Height)
@@ -2391,9 +2392,11 @@ namespace random_school_generator
                 if (r.TeacherChair.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X == wallWidth)
                 {
                     facingTowards = "left";
+                    extraX = 10;
                 } else
                 {
                     facingTowards = "right";
+                    extraX = -5;
                 }
 
             }
@@ -2403,9 +2406,11 @@ namespace random_school_generator
                 if (r.TeacherChair.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y == wallWidth)
                 {
                     facingTowards = "up";
+                    extraY = 10;
                 } else
                 {
                     facingTowards = "down";
+                    extraY = -5;
                 }
             }
             
@@ -2420,8 +2425,8 @@ namespace random_school_generator
             //now just add these to the room?
             foreach ((Rectangle, Rectangle) tableAndChairPair in tablesAndChairs)
             {
-                r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item1, innerGap / 2, innerGap / 2));
-                r.Chairs.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item2, innerGap / 2, innerGap / 2));
+                r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
+                r.Chairs.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item2, innerGap / 2 + extraX, innerGap / 2 + extraY));
             }
             
         }
@@ -2450,7 +2455,7 @@ namespace random_school_generator
                     break;
                 case "down":
                     table = new Rectangle(rect.X + tableGap, rect.Y + rect.Height - tableWidth, rect.Width - tableGap * 2, tableWidth);
-                    chair = new Rectangle(rect.X = tableGap + table.Width / 2 - chairLength / 2, table.Y - chairLength, chairLength, chairLength);
+                    chair = new Rectangle(rect.X + tableGap + table.Width / 2 - chairLength / 2, table.Y - chairLength, chairLength, chairLength);
                     break;
                 default:
                     table = new Rectangle(0, 0, 0, 0);
@@ -2461,12 +2466,12 @@ namespace random_school_generator
             
         }
 
-        private List<Rectangle> MakeEnclosingRectangles(int rectLength, int rectWidth, int gridLength, int gridWidth)
+        private List<Rectangle> MakeEnclosingRectangles(int rectLength, int rectWidth, double gridLength, double gridWidth)
         {
             List<Rectangle> rects = new List<Rectangle>();
-            for (int width = 0; width < gridWidth / rectWidth; width++)
+            for (int width = 0; width < Math.Floor(gridWidth / rectWidth); width++)
             {
-                for (int length = 0; length < gridLength / rectLength; length++)
+                for (int length = 0; length < Math.Floor(gridLength / rectLength); length++)
                 {
                     rects.Add(new Rectangle(rectWidth * width, rectLength * length, rectWidth, rectLength));
                 }
