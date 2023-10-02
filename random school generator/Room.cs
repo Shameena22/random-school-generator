@@ -12,7 +12,7 @@ namespace random_school_generator
     internal class Room: GrowableArea
     {
         private int _ID, _idealSize;
-        private string _roomType;
+        private string _roomType, _facingTowards;
         private bool _grown;
         private Point _growthFloorPoint;
         private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs;
@@ -59,6 +59,7 @@ namespace random_school_generator
         public List<Point> InnerEdgePoints { get => _innerEdgePoints; set => _innerEdgePoints = value; }
         public List<Rectangle> Tables { get => _tables; set => _tables = value; }
         public List<Rectangle> Chairs { get => _chairs; set => _chairs = value; }
+        public string FacingTowards { get => _facingTowards; set => _facingTowards = value; }
 
         public static void SetComponentColours()
         {
