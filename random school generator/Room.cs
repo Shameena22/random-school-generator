@@ -13,7 +13,7 @@ namespace random_school_generator
     {
         private int _ID, _idealSize;
         private string _roomType, _facingTowards;
-        private bool _grown;
+        private bool _grown, _firstGrown;
         private Point _growthFloorPoint;
         private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs;
         private Rectangle _teacherDesk, _teacherChair, _cupboard;
@@ -60,6 +60,7 @@ namespace random_school_generator
         public List<Rectangle> Tables { get => _tables; set => _tables = value; }
         public List<Rectangle> Chairs { get => _chairs; set => _chairs = value; }
         public string FacingTowards { get => _facingTowards; set => _facingTowards = value; }
+        public bool FirstGrown { get => _firstGrown; set => _firstGrown = value; }
 
         public static void SetComponentColours()
         {

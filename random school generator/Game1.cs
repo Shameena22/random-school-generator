@@ -986,7 +986,7 @@ namespace random_school_generator
                 z.UpdateBaseRect(z.GrowthTopLeft.X, z.GrowthTopLeft.Y, z.RectWidth, z.RectHeight);
 
                 //delete the zone if the shape is too narrow
-                if (((!left && !right && z.RectWidth < 75) || (!up && !down && z.RectHeight < 75)) && !z.FirstGrown)
+                if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.Type]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.Type])) && !z.FirstGrown)
                 {
                     f.Zones.Remove(z);
                    // _currentZoneIndex--;
@@ -1704,8 +1704,13 @@ namespace random_school_generator
                             }     
                         }
                         //if rooms have been grown successfully, move onto the next zone
+                        else if (!currentZone.Rooms[0].Grown)
+                        {
+                            _currentRoomIndex = 0;
+                        }
                         else
                         {
+
                             _currentZoneIndex++;
                             _currentRoomIndex = 0;
                         }
@@ -1718,7 +1723,15 @@ namespace random_school_generator
                             //grows the current room and moves onto the next once it is done
                             if (GrowRoom(currentZone.Rooms[_currentRoomIndex], currentZone, currentFloor))
                             {
-                                currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                //currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                //currentZone.Rooms[_currentRoomIndex].FirstGrown = true;
+                                if (!currentZone.Rooms[_currentRoomIndex].FirstGrown)
+                                {
+                                    currentZone.Rooms[_currentRoomIndex].FirstGrown = true;
+                                } else
+                                {
+                                    currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                }
                                 _currentRoomIndex++;
                             }
                         }
@@ -1777,7 +1790,7 @@ namespace random_school_generator
                 r.UpdateBaseRect(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
 
                 //if the room is too narrow, remove it
-                if ((!left && !right && r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType]))
+                if (((!left && !right && r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !r.FirstGrown)
                 {
                     z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                     z.Rooms.Remove(r);
@@ -1785,12 +1798,13 @@ namespace random_school_generator
                 }
 
                 //if no more growth available (or required area reached on first growth), finish growth
-                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= r.IdealSize && r.RectWidth > RoomType.SideLengths[z.ZoneType.SecondaryType] && r.RectHeight > RoomType.SideLengths[z.ZoneType.SecondaryType]))
+                //&& r.RectWidth > RoomType.SideLengths[z.ZoneType.SecondaryType] && r.RectHeight > RoomType.SideLengths[z.ZoneType.SecondaryType]
+                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= r.IdealSize && !r.FirstGrown ))
                 {
 
                     //remove the room if it is too long
                     //|| r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType] || r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType]
-                    if (r.RectHeight >= r.RectWidth * 3 || r.RectWidth >= r.RectHeight * 3)
+                    if (r.FirstGrown && (r.RectHeight >= r.RectWidth * 3 || r.RectWidth >= r.RectHeight * 3))
                     {
                         z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                         z.Rooms.Remove(r);
@@ -1801,8 +1815,32 @@ namespace random_school_generator
                         SetRoomRect(r, z);
                         return true;
                     }
-                   
+                    ////delete the zone if the shape is too narrow
+                    //if (((!left && !right && z.RectWidth < 75) || (!up && !down && z.RectHeight < 75)) && !z.FirstGrown)
+                    //{
+                    //    f.Zones.Remove(z);
+                    //    // _currentZoneIndex--;
+                    //    f.RemoveFromGrid((char)('0' | z.ID));
+                    //}
+
+                    ////if no more growth available (or required area reached on first growth), finish
+                    //else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
+                    //{
+                    //    if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
+                    //    {
+                    //        f.Zones.Remove(z);
+                    //        ///_currentZoneIndex--;
+                    //        f.RemoveFromGrid((char)('0' | z.ID));
+                    //    }
+                    //    else
+                    //    {
+                    //        SetZoneRect(z, f);
+                    //        return true;
+                    //    }
+                    //}
                 }
+                
+
             }
             return false;
         
@@ -2512,12 +2550,22 @@ namespace random_school_generator
             // - choose a random and add (to grid as well)...or use room grid??? 
             //loop until no places left or num of tables reached
 
-            int numOfTables = _random.Next(3, 5); //TODO: tweak, maybe depending on room size??
-            List<Rectangle> possibleRects = new List<Rectangle>();
-            Rectangle currentRect;
+            int numOfTables = r.RectWidth * r.RectHeight / 6500; //TODO: tweak, maybe depending on room size??
+
+            List<Rectangle> possibleRects = new List<Rectangle>(), enclosingRects = new List<Rectangle>();
+            Rectangle currentRect, tempRect;
             (Rectangle, List<Rectangle>) tableAndChairs;
-            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0;
+            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = 6500;
             //TODO: shift to left, right, up, down depending on room? should just have this as a prooerty at this point
+
+            //split it into squares
+            //how to get the square length???
+            //want num of sq to be >= num of desks
+            //so...
+            //big area - num of desks
+            //sqrt
+
+            enclosingRects = MakeEnclosingRectangles(encRectSide, encRectSide, grid.GetUpperBound(1), grid.GetUpperBound(0));
 
             //tweak these values
             switch (r.FacingTowards)
@@ -2526,21 +2574,39 @@ namespace random_school_generator
                     extraX = 10;
                     break;
                 case "right":
-                    extraX = -5;
+                    extraX = -10;
                     break;
                 case "up":
                     extraY = 10;
                     break;
                 case "down":
-                    extraY = -5;
+                    extraY = -10;
                     break;
             }
 
             do
             {
                 possibleRects.Clear();
-                possibleRects.AddRange(GetPossibleRectsInGrid(grid, length, width));
-                possibleRects.AddRange(GetPossibleRectsInGrid(grid, width, length));
+
+                //foreach rect r in encrects
+                //run sub
+
+                foreach (Rectangle encRect in enclosingRects)
+                {
+                    tempRect = GetGroupedTableRectFromBlock(grid, length, width, encRect);
+                    if (tempRect.Height > 0)
+                    {
+                        possibleRects.Add(tempRect);
+                    }
+                    tempRect = GetGroupedTableRectFromBlock(grid, width, length, encRect);
+                    if (tempRect.Height > 0)
+                    {
+                        possibleRects.Add(tempRect);
+                    }
+                }
+
+                //possibleRects.AddRange(GetPossibleRectsInGrid(grid, length, width));
+                //possibleRects.AddRange(GetPossibleRectsInGrid(grid, width, length));
 
                 if (possibleRects.Count > 0)
                 {
@@ -2582,6 +2648,14 @@ namespace random_school_generator
 
         private List<Rectangle> GetPossibleRectsInGrid(char[,] grid, int length, int width)
         {
+
+            //ALT METHOD - TODO
+            //split grid into blocks based on grid
+            //split by length and width
+            //then for each block, try find a valid rect
+            //if valid rect found, add + move onto next block
+            //if not valid, move on
+
             bool valid = false;
             List<Rectangle> rects = new List<Rectangle>();
             //grid marked with X if occupied
@@ -2607,10 +2681,46 @@ namespace random_school_generator
                     if (valid)
                     {
                         rects.Add(new Rectangle(x, y, width, length));
+                        //speed up the process a bit...
+                       
                     }
                 }
             }
             return rects;
+        }
+        private Rectangle GetGroupedTableRectFromBlock(char[,] grid, int length, int width, Rectangle block)
+        {
+            bool valid = false;
+            List<Rectangle> rects = new List<Rectangle>();
+            //grid marked with X if occupied
+            for (int x = block.X; x < block.X + block.Width; x++)
+            {
+                for (int y = block.Y; y < block.Y + block.Height; y++)
+                {
+
+                    //now within points
+                    valid = true;
+
+                    for (int rectX = 0; rectX < width; rectX++)
+                    {
+                        for (int rectY = 0; rectY < length; rectY++)
+                        {
+                            if (!WithinBounds(rectX + x, rectY + y, grid.GetUpperBound(0), grid.GetUpperBound(1)) || grid[rectX + x, rectY + y] == 'X')
+                            {
+                                valid = false;
+                            }
+                        }
+                    }
+
+                    if (valid)
+                    {
+                        return new Rectangle(x, y, width, length);
+                        //speed up the process a bit...
+
+                    }
+                }
+            }
+            return new Rectangle(0, 0, 0, 0);
         }
 
         private (Rectangle, List<Rectangle>) MakeGroupedTable(Rectangle r, int tableLength, int tableWidth, int chairLength, int chairGap, int outerGap)
