@@ -986,7 +986,7 @@ namespace random_school_generator
                 z.UpdateBaseRect(z.GrowthTopLeft.X, z.GrowthTopLeft.Y, z.RectWidth, z.RectHeight);
 
                 //delete the zone if the shape is too narrow
-                if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.Type]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.Type])) && !z.FirstGrown)
+                if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !z.FirstGrown)
                 {
                     f.Zones.Remove(z);
                    // _currentZoneIndex--;
@@ -2395,21 +2395,32 @@ namespace random_school_generator
             //TODO: wallWidth should be a class property at this point
             int innerGap = 40;
             char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
-            int tableTypeChoice = _random.Next(0, 3);
+            int tableTypeChoice = _random.Next(0, 2);
             // - - - - - - - 
 
-            switch (tableTypeChoice)
+            //switch (tableTypeChoice)
+            //{
+            //    case 0:
+            //        MakeLinedTables(innerGrid, r, innerGap, 3);
+            //        break;
+            //    case 1:
+            //        MakeLinedTables(innerGrid, r, innerGap, 0);
+            //        break;
+            //    case 2:
+            //        MakeGroupedTables(innerGrid, r, innerGap);
+            //        break;
+            //}
+
+            if (r.RectWidth * r.RectHeight >= 32500)
             {
-                case 0:
-                    MakeLinedTables(innerGrid, r, innerGap, 3);
-                    break;
-                case 1:
-                    MakeLinedTables(innerGrid, r, innerGap, 0);
-                    break;
-                case 2:
-                    MakeGroupedTables(innerGrid, r, innerGap);
-                    break;
-            }
+                MakeGroupedTables(innerGrid, r, innerGap);
+            } else if (tableTypeChoice == 0)
+            {
+                MakeLinedTables(innerGrid, r, innerGap, 3);
+            } else
+            {
+                MakeLinedTables(innerGrid, r, innerGap, 0);
+            };
 
         }
         private void SetRoomFacingTowards(Room r, int wallWidth)
@@ -2555,7 +2566,7 @@ namespace random_school_generator
             List<Rectangle> possibleRects = new List<Rectangle>(), enclosingRects = new List<Rectangle>();
             Rectangle currentRect, tempRect;
             (Rectangle, List<Rectangle>) tableAndChairs;
-            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = 6500;
+            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = (int)Math.Sqrt(6500);
             //TODO: shift to left, right, up, down depending on room? should just have this as a prooerty at this point
 
             //split it into squares
@@ -2593,12 +2604,12 @@ namespace random_school_generator
 
                 foreach (Rectangle encRect in enclosingRects)
                 {
-                    tempRect = GetGroupedTableRectFromBlock(grid, length, width, encRect);
+                    tempRect = GetGroupedTableRectFromBlock(grid, length, width, new Rectangle(encRect.X + 5, encRect.Y, encRect.Width, encRect.Height));
                     if (tempRect.Height > 0)
                     {
                         possibleRects.Add(tempRect);
                     }
-                    tempRect = GetGroupedTableRectFromBlock(grid, width, length, encRect);
+                    tempRect = GetGroupedTableRectFromBlock(grid, width, length, new Rectangle(encRect.X, encRect.Y + 5, encRect.Width, encRect.Height));
                     if (tempRect.Height > 0)
                     {
                         possibleRects.Add(tempRect);
@@ -2624,7 +2635,7 @@ namespace random_school_generator
                     }
 
                     //add it to the grid
-                    AddGroupedTableToGrid(ref grid, currentRect);
+                    AddGroupedTableToGrid(ref grid, new Rectangle(currentRect.X, currentRect.Y, currentRect.Width + 5, currentRect.Height + 5));
                     i++;
 
                 }
@@ -2641,6 +2652,7 @@ namespace random_school_generator
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
                 {
+                    if (WithinBounds(x, y, grid.GetUpperBound(0), grid.GetUpperBound(1)))
                     grid[x, y] = 'X';
                 }
             }
@@ -2708,7 +2720,12 @@ namespace random_school_generator
                             if (!WithinBounds(rectX + x, rectY + y, grid.GetUpperBound(0), grid.GetUpperBound(1)) || grid[rectX + x, rectY + y] == 'X')
                             {
                                 valid = false;
+                                break;
                             }
+                        }
+                        if (!valid)
+                        {
+                            break;
                         }
                     }
 
