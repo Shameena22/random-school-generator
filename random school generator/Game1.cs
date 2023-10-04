@@ -2185,6 +2185,7 @@ namespace random_school_generator
             //so add chairs and tables too... TODO
             //add them all as units
             AddCupboard(r);
+            AddSubjectDesks(r);
             MakeNormalTablesAndChairs(r);
 
         }
@@ -2374,16 +2375,17 @@ namespace random_school_generator
         }
         private void AddCupboard(Room r)
         {
-            Rectangle tempCupboard = AddEdgeRect(r, 14, 7);
+            Rectangle tempCupboard = AddEdgeRect(r, 28, 14);
             r.Cupboard = r.MakeRectRelativeToFloor(tempCupboard);
+
         }
         private void AddSubjectDesks(Room r)
         {
-            int j = _random.Next(0, 3);
+            int j = _random.Next(0, 5);
             Rectangle tempRect;
             for (int i = 0; i < j; i++)
             {
-                tempRect = AddEdgeRect(r, 15, 10);
+                tempRect = AddEdgeRect(r, 30, 17);
                 r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(tempRect));
             }
         }
@@ -2411,7 +2413,7 @@ namespace random_school_generator
             //        break;
             //}
 
-            if (r.RectWidth * r.RectHeight >= 32500)
+            if (r.RectWidth * r.RectHeight >= 40000)
             {
                 MakeGroupedTables(innerGrid, r, innerGap);
             } else if (tableTypeChoice == 0)
