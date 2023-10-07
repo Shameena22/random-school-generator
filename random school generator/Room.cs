@@ -133,5 +133,85 @@ namespace random_school_generator
         {
             return new Point(p.X + _growthTopLeft.X + _zoneTopLeft.X, p.Y + _growthTopLeft.Y + _zoneTopLeft.Y);
         }
+
+        public Rectangle MakeRectRelativeToRoom(Rectangle r)
+        {
+            return new Rectangle(r.X - _growthTopLeft.X - _zoneTopLeft.X, r.Y - _growthTopLeft.Y - _zoneTopLeft.Y, r.Width, r.Height);
+        }
+
+        public void CopyChairAndTableDataToGrid()
+        {
+            //teacher deskbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+            //teacher chair
+            //chairs
+            //tables
+
+            //check cupboard + add
+            //check subj desks + add
+
+            AddRectToGrid(MakeRectRelativeToRoom(_teacherChair), 'C', true, addRect: false);
+            AddRectToGrid(MakeRectRelativeToRoom(_teacherDesk), 'T', true, addRect: false);
+
+            foreach (Rectangle r in _chairs)
+            {
+                AddRectToGrid(MakeRectRelativeToRoom(r), 'C', true, addRect: false);
+            }
+
+            foreach (Rectangle r in _tables)
+            {
+                AddRectToGrid(MakeRectRelativeToRoom(r), 'C', true, addRect: false);
+            }
+
+            //int j;
+            //new sub for checking
+            AddCupboardOrSubjDesk(MakeRectRelativeToRoom(_cupboard), true);
+
+            //just gotta fix this...
+            for (int i = 0; i < _equipmentDesks.Count; i++)
+            {
+                i = AddCupboardOrSubjDesk(MakeRectRelativeToRoom(_equipmentDesks[i]), false, i);
+            }
+
+        }
+
+        private int AddCupboardOrSubjDesk(Rectangle r, bool cupboard, int i = 0)
+        {
+            bool add = true;
+            for (int x = r.X; x < r.X + r.Width; x++)
+            {
+                for (int y = r.Y; y < r.Y + r.Height; y++)
+                {
+                    if (_grid[x, y] == 'C' || _grid[x, y] == 'T')
+                    {
+                        //remove 
+                        add = false;
+
+                        if (cupboard)
+                        {
+                            _cupboard = new Rectangle(0, 0, 0, 0);
+                        }
+                        else
+                        {
+                            //this isn't working...
+                            
+                            _equipmentDesks.Remove(MakeRectRelativeToFloor(r));
+                            i--;
+                        }
+
+                        break;
+                    }
+                }
+                if (!add)
+                {
+                    break;
+                }
+            }
+
+            if (add)
+            {
+                AddRectToGrid(r, 'S', true, addRect: false);
+            }
+            return i;
+        }
     }
 }

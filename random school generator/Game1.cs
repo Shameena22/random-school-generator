@@ -2173,7 +2173,9 @@ namespace random_school_generator
                     break;
                 default:
                     break;
+
             }
+            r.CopyChairAndTableDataToGrid();
 
         }
         private void MakeNormalClassroom(Room r)
@@ -2385,7 +2387,7 @@ namespace random_school_generator
             Rectangle tempRect;
             for (int i = 0; i < j; i++)
             {
-                tempRect = AddEdgeRect(r, 30, 17);
+                tempRect = AddEdgeRect(r, 30, 14);
                 r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(tempRect));
             }
         }
@@ -2584,16 +2586,16 @@ namespace random_school_generator
             switch (r.FacingTowards)
             {
                 case "left":
-                    extraX = 10;
+                    extraX = 5;
                     break;
                 case "right":
-                    extraX = -10;
+                    extraX = -5;
                     break;
                 case "up":
-                    extraY = 10;
+                    extraY = 5;
                     break;
                 case "down":
-                    extraY = -10;
+                    extraY = -5;
                     break;
             }
 
@@ -2781,6 +2783,8 @@ namespace random_school_generator
             return (table, chairs);
 
         }
+
+
 
         // - - creating doors - -
         private void AddDoors(Floor f, Zone z)
