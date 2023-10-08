@@ -181,7 +181,7 @@ namespace random_school_generator
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
                 {
-                    if (_grid[x, y] == 'C' || _grid[x, y] == 'T')
+                    if (_grid[x, y] == 'C' || _grid[x, y] == 'T' || _grid[x, y] == 'S')
                     {
                         //remove 
                         add = false;
