@@ -1710,7 +1710,8 @@ namespace random_school_generator
                         }
                         else
                         {
-
+                            //TODO: room splitting here
+                            SplitZoneRooms(currentZone);
                             _currentZoneIndex++;
                             _currentRoomIndex = 0;
                         }
@@ -1731,6 +1732,7 @@ namespace random_school_generator
                                 } else
                                 {
                                     currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                    //here, do splitting? TODO
                                 }
                                 _currentRoomIndex++;
                             }
@@ -1945,7 +1947,7 @@ namespace random_school_generator
             //STEP OVER THIS
             return CheckValidGrowth(x, y, step, length, direction, grid, (grid, x, y) => !(grid[x, y] == zoneID));
         }
-        private void SetRoomRect(Room r, Zone z)
+        private void SetRoomRect(Room r, Zone z, bool overwrite = false, bool addRect = false)
         {
             char tempID;
 
@@ -1967,7 +1969,79 @@ namespace random_school_generator
             }
 
             //mark the zone's grid with the completed room shape
-            z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), tempID, false, (char)('0' | z.ID), false);
+            z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), tempID, overwrite, (char)('0' | z.ID), false);
+            //adding rect to room
+            if (addRect)
+            {
+                r.FloorRectangles.Add(new Rectangle(r.GrowthTopLeft.X + r.ZoneTopLeft.X, r.GrowthTopLeft.Y + r.ZoneTopLeft.Y, r.RectWidth, r.RectHeight));
+            }
+        }
+        private void SplitZoneRooms(Zone z)
+        {
+            for (int i = 0; i < z.Rooms.Count; i++)
+            {
+                SplitRoom(z, i);
+            }
+        }
+        private void SplitRoom(Zone z, int roomIndex)
+        {
+            //check room + if 75 more than the given type
+            //create two rooms
+            //delete the first room
+            //and split them
+            //add them to the end
+
+            Room originalRoom = z.Rooms[roomIndex], room1, room2;
+            //make 2 rooms from room if large
+            //then delete the room from the index
+            //add the two rooms on and run them with their index
+            //remember to SetRoomRect at the end too
+
+            if (z.ZoneType.SecondaryType != "large" && (originalRoom.RectWidth > RoomType.SideLengths[z.ZoneType.SecondaryType] * 2.15 || originalRoom.RectHeight > RoomType.SideLengths[z.ZoneType.SecondaryType] * 2.15))
+            {
+                //split....
+                if (originalRoom.RectWidth > originalRoom.RectHeight)
+                {
+                    //TODO: issue with allocating IDs to new rooms...
+                    //get the highest ID in the zone + add 1??
+                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth / 2 + 1, originalRoom.RectHeight);
+                    room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
+
+                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth / 2 - 1, originalRoom.RectHeight);
+                    room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X + room1.RectWidth, room1.GrowthTopLeft.Y);
+
+                    if (room2.GrowthTopLeft.X + room2.RectWidth < originalRoom.GrowthTopLeft.X + originalRoom.RectWidth)
+                    {
+                        room2.RectWidth += 1;
+                    }
+
+                } else
+                {
+                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, originalRoom.RectHeight / 2 + 1);
+                    room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
+
+                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, originalRoom.RectHeight / 2 - 1);
+                    room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X, room1.GrowthTopLeft.Y + room1.RectHeight);
+
+                    if (room2.GrowthTopLeft.Y + room2.RectHeight < originalRoom.GrowthTopLeft.Y + originalRoom.RectHeight)
+                    {
+                        room2.RectHeight += 1;
+                    }
+                }
+
+                //remove the 1st room
+                z.Rooms.RemoveAt(roomIndex);
+
+                //add the 1st room and recurse
+                z.Rooms.Add(room1);
+                SetRoomRect(z.Rooms[z.Rooms.Count - 1], z, true, true);
+                SplitRoom(z, z.Rooms.Count - 1);
+
+                z.Rooms.Add(room2);
+                SetRoomRect(z.Rooms[z.Rooms.Count - 1], z, true, true);
+                SplitRoom(z, z.Rooms.Count - 1);
+            }
+
         }
 
         // - create room furniture 

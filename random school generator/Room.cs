@@ -23,7 +23,7 @@ namespace random_school_generator
         private List<Room> _connections;
         private List<Point> _clearPoints, _innerClearPoints, _innerEdgePoints;
         private Point _zoneTopLeft;
-        public Room(int ID, string roomType, Point zoneTopLeft) : base()
+        public Room(int ID, string roomType, Point zoneTopLeft, int rectWidth = 0, int rectHeight = 0) : base()
         {
             _ID = ID;
             _roomType = roomType;
@@ -38,6 +38,8 @@ namespace random_school_generator
             _equipmentDesks = new List<Rectangle>();
             _tables = new List<Rectangle>();
             _chairs = new List<Rectangle>();
+            _rectWidth = rectWidth;
+            _rectHeight = rectHeight;
         }
 
         public bool Grown { get => _grown; set => _grown = value; }
@@ -212,6 +214,10 @@ namespace random_school_generator
                 AddRectToGrid(r, 'S', true, addRect: false);
             }
             return i;
+        }
+        public Point MakePointRelativeToRoom(Point p)
+        {
+            return new Point(p.X - _zoneTopLeft.X, p.Y - _zoneTopLeft.Y);
         }
     }
 }
