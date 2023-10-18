@@ -2004,10 +2004,10 @@ namespace random_school_generator
                 {
                     //TODO: issue with allocating IDs to new rooms...
                     //get the highest ID in the zone + add 1??
-                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth / 2 + 1, originalRoom.RectHeight);
+                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, (int)Math.Floor(originalRoom.RectWidth / 2f) + 1, originalRoom.RectHeight);
                     room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
 
-                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth / 2 - 1, originalRoom.RectHeight);
+                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, (int)Math.Ceiling(originalRoom.RectWidth / 2f) - 1, originalRoom.RectHeight);
                     room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X + room1.RectWidth, room1.GrowthTopLeft.Y);
 
                     if (room2.GrowthTopLeft.X + room2.RectWidth < originalRoom.GrowthTopLeft.X + originalRoom.RectWidth)
@@ -2017,10 +2017,10 @@ namespace random_school_generator
 
                 } else
                 {
-                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, originalRoom.RectHeight / 2 + 1);
+                    room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, (int)Math.Floor( originalRoom.RectHeight / 2f) + 1);
                     room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
 
-                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, originalRoom.RectHeight / 2 - 1);
+                    room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, (int)Math.Floor(originalRoom.RectHeight / 2f) - 1);
                     room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X, room1.GrowthTopLeft.Y + room1.RectHeight);
 
                     if (room2.GrowthTopLeft.Y + room2.RectHeight < originalRoom.GrowthTopLeft.Y + originalRoom.RectHeight)
@@ -2326,7 +2326,23 @@ namespace random_school_generator
         {
             Rectangle enclosingRect;
             //now make rect based on this
-            if (chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1)
+
+            //TODO: if rect is wedged into corner, error happens
+            //need another way to check orientation
+
+            if ((chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1) && (chosenPoint.Y == wallWidth || chosenPoint.Y == r.RectHeight - wallWidth - 1))
+            {
+                //ummm
+                //if on left
+                if (chosenPoint.Y + length > r.RectHeight)
+                {
+                    //unsuitable for vertical alignment
+                    //so act as if on Y end?
+                    //aaaarghJXBMscjk rewrite this sub
+                }
+            }
+
+            else if (chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1)
             {
                 enclosingRect.Width = width;
                 enclosingRect.Height = length;
