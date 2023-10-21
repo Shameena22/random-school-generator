@@ -2324,57 +2324,92 @@ namespace random_school_generator
         }
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth)
         {
-            Rectangle enclosingRect;
+            Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);
             //now make rect based on this
+
+            if (chosenPoint.X == wallWidth)
+            {
+                if (chosenPoint.Y + length < r.RectHeight)
+                {
+                    enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
+                } else
+                {
+                    enclosingRect = new Rectangle(wallWidth, r.RectHeight - width - wallWidth, length, width);
+                }
+            }
+            else if (chosenPoint.X == r.RectWidth - wallWidth - 1)
+            {
+                //shouldn't ever be on bottom right corner so fine here
+                enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, chosenPoint.Y, width, length);
+            }
+            else if (chosenPoint.Y == wallWidth)
+            {
+                if (chosenPoint.X + length < r.RectWidth)
+                {
+                    enclosingRect = new Rectangle(chosenPoint.X, wallWidth, length, width);
+                }
+                else
+                {
+                    enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, wallWidth, width, length);
+                }
+            }
+            else if (chosenPoint.Y == r.RectHeight - wallWidth - 1)
+            {
+                enclosingRect = new Rectangle(chosenPoint.X, r.RectHeight - wallWidth - width, length, width);
+            }
 
             //TODO: if rect is wedged into corner, error happens
             //need another way to check orientation
 
-            if ((chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1) && (chosenPoint.Y == wallWidth || chosenPoint.Y == r.RectHeight - wallWidth - 1))
-            {
-                //ummm
-                //if on left
-                if (chosenPoint.Y + length > r.RectHeight)
-                {
-                    //unsuitable for vertical alignment
-                    //so act as if on Y end?
-                    //aaaarghJXBMscjk rewrite this sub
-                }
-            }
+            //if ((chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1) && (chosenPoint.Y == wallWidth || chosenPoint.Y == r.RectHeight - wallWidth - 1))
+            //{
+            //    //ummm
+            //    //if on left
+            //    if (chosenPoint.Y + length > r.RectHeight)
+            //    {
+            //        //unsuitable for vertical alignment
+            //        //so act as if on Y end?
+            //        //aaaarghJXBMscjk rewrite this sub 
+            //    }
+            //}
 
-            else if (chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1)
-            {
-                enclosingRect.Width = width;
-                enclosingRect.Height = length;
+            //else if (chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1)
+            //{
+            //    enclosingRect.Width = width;
+            //    enclosingRect.Height = length;
 
-                if (chosenPoint.X == r.RectWidth - 1 - wallWidth)
-                {
-                    enclosingRect.X = r.RectWidth - width - wallWidth;
-                }
-                else
-                {
-                    enclosingRect.X = wallWidth;
-                }
-                enclosingRect.Y = chosenPoint.Y;
-            }
-            else
-            {
-                enclosingRect.Width = length;
-                enclosingRect.Height = width;
+            //    if (chosenPoint.X == r.RectWidth - 1 - wallWidth)
+            //    {
+            //        enclosingRect.X = r.RectWidth - width - wallWidth;
+            //    }
+            //    else
+            //    {
+            //        enclosingRect.X = wallWidth;
+            //    }
+            //    enclosingRect.Y = chosenPoint.Y;
+            //}
+            //else
+            //{
+            //    enclosingRect.Width = length;
+            //    enclosingRect.Height = width;
 
-                if (chosenPoint.Y == r.RectHeight - 1 - wallWidth)
-                {
-                    enclosingRect.Y = r.RectHeight - width - wallWidth;
-                }
-                else
-                {
-                    enclosingRect.Y = wallWidth;
-                }
-                enclosingRect.X = chosenPoint.X;
-            }
+            //    if (chosenPoint.Y == r.RectHeight - 1 - wallWidth)
+            //    {
+            //        enclosingRect.Y = r.RectHeight - width - wallWidth;
+            //    }
+            //    else
+            //    {
+            //        enclosingRect.Y = wallWidth;
+            //    }
+            //    enclosingRect.X = chosenPoint.X;
+            //}
 
             return enclosingRect;
         }
+
+
+
+
         private List<Point> FindEdgeRectPositions(int length, Room r, int wallWidth)
         {
             List<Point> validPositions = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
