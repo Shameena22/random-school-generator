@@ -2599,7 +2599,7 @@ namespace random_school_generator
                 } else
                 {
                    // facingTowards = "right";
-                    extraX = -5;
+                    extraX = -3;
                 }
 
             }
@@ -2613,7 +2613,7 @@ namespace random_school_generator
                 } else
                 {
                    // facingTowards = "down";
-                    extraY = -5;
+                    extraY = -3;
                 }
             }
             
