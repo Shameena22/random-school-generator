@@ -16,12 +16,28 @@ namespace random_school_generator
         private static Dictionary<string, Color> _typeColours;
         private static Dictionary<string, Color> _wallColours;
        // public string Type { get => _type; set => _type = value; }
-        private static Random _random = new Random();
+       // private static Random _random = new Random();
         private static Dictionary<string, int> _sideLengths;
-
+        private static Dictionary<string, Color> _chairColours;
+        private static Dictionary<string, Color> _deskColours;
+        private static Dictionary<string, Color> _teacherChairColours;
+        private static Dictionary<string, Color> _teacherDeskColours;
+        private static Dictionary<string, Color> _cupboardColours;
+        private static Dictionary<string, Color> _subjDeskColours;
         public static Dictionary<string, Color> TypeColours { get => _typeColours; set => _typeColours = value; }
         public static Dictionary<string, Color> WallColours { get => _wallColours; set => _wallColours = value; }
         public static Dictionary<string, int> SideLengths { get => _sideLengths; set => _sideLengths = value; }
+        public static Dictionary<string, Color> ChairColours { get => _chairColours; set => _chairColours = value; }
+        public static Dictionary<string, Color> DeskColours { get => _deskColours; set => _deskColours = value; }
+        public static Dictionary<string, Color> TeacherChairColours { get => _teacherChairColours; set => _teacherChairColours = value; }
+        public static Dictionary<string, Color> TeacherDeskColours { get => _teacherDeskColours; set => _teacherDeskColours = value; }
+        public static Dictionary<string, Color> CupboardColours { get => _cupboardColours; set => _cupboardColours = value; }
+        public static Dictionary<string, Color> SubjDeskColours { get => _subjDeskColours; set => _subjDeskColours = value; }
+
+        //dictionary of dictionary?
+        //or....
+
+
 
 
         //public RoomType(string type)
@@ -83,6 +99,121 @@ namespace random_school_generator
                 {"large", 150 },
                 {"service", 75},
                 {"staff", 100 }
+            };
+
+            //TODO: fix these
+            _deskColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.RosyBrown },
+                {"maths", Color.RosyBrown},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.RosyBrown},
+                {"languages", Color.RosyBrown },
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
+            };
+
+            _chairColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.Pink },
+                {"maths", Color.Pink},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.Pink},
+                {"languages", Color.Pink },
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
+            };
+
+            _teacherChairColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.BurlyWood },
+                {"maths", Color.BurlyWood},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.BurlyWood},
+                {"languages", Color.BurlyWood },
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
+            };
+
+            _teacherDeskColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.Chocolate },
+                {"maths", Color.Chocolate},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.Chocolate},
+                {"languages", Color.Chocolate },
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
+            };
+
+            _cupboardColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.BurlyWood },
+                {"maths", Color.BurlyWood},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.BurlyWood},
+                {"languages", Color.BurlyWood },
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
+            };
+
+            _subjDeskColours = new Dictionary<string, Color>
+            {
+                {"hall", Color.Brown },
+                {"gym", Color.PowderBlue },
+                {"office", Color.Silver},
+                {"canteen", Color.RosyBrown},
+                {"staffroom", Color.DarkGoldenrod },
+                {"toilets", Color.HotPink },
+                {"english", Color.SandyBrown },
+                {"maths", Color.SandyBrown},
+                {"science", Color.DarkBlue },
+                {"religious education", Color.SandyBrown},
+                {"languages", Color.SandyBrown},
+                {"computer science", Color.Purple },
+                {"art", Color.ForestGreen },
+                {"design technology", Color.GreenYellow },
+                {"music", Color.Purple}
             };
         }
 

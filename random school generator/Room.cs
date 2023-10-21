@@ -93,39 +93,6 @@ namespace random_school_generator
     
         }
 
-        public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
-        {
-            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors, new List<Rectangle> { _teacherDesk }, new List<Rectangle> { _teacherChair }, new List<Rectangle> { _cupboard }, _equipmentDesks, _tables, _chairs };
-
-            //draw the base of the room
-            if (_floorRectangles.Count > 0)
-            {
-                foreach (Rectangle r in _floorRectangles)
-                {
-                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.TypeColours[_roomType]);
-                }
-            }
-
-            //draw other components of the room
-            for (int i = 1; i < _allDrawingRects.Count; i++)
-            {
-                foreach (Rectangle r in _allDrawingRects[i])
-                {
-                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[i]);
-                }
-            }
-
-            //spriteBatch.Draw(_pixel, new Rectangle(_teacherDesk.X - scrollX, _teacherDesk.Y - scrollY, _teacherDesk.Width, _teacherDesk.Height), Color.Firebrick);
-            //spriteBatch.Draw(_pixel, new Rectangle(_teacherChair.X - scrollX, _teacherChair.Y - scrollY, _teacherChair.Width, _teacherChair.Height), Color.LemonChiffon);
-
-            //draw walls
-            foreach (Rectangle r in _walls)
-            {
-                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.WallColours[_roomType]);
-            }
-
-        }
-
         public Rectangle MakeRectRelativeToFloor(Rectangle r, int extraX = 0, int extraY = 0)
         {
             return new Rectangle(r.X + _growthTopLeft.X + _zoneTopLeft.X + extraX, r.Y + _growthTopLeft.Y + _zoneTopLeft.Y + extraY, r.Width, r.Height);
@@ -219,5 +186,61 @@ namespace random_school_generator
         {
             return new Point(p.X - _zoneTopLeft.X, p.Y - _zoneTopLeft.Y);
         }
+
+
+        public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
+        {
+            _allDrawingRects = new List<List<Rectangle>> { _floorRectangles, _doors };
+
+            //how to draw separate colours?
+
+            //draw the base of the room
+            if (_floorRectangles.Count > 0)
+            {
+                foreach (Rectangle r in _floorRectangles)
+                {
+                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.TypeColours[_roomType]);
+                }
+            }
+
+            //draw other components of the room
+            for (int i = 1; i < _allDrawingRects.Count; i++)
+            {
+                foreach (Rectangle r in _allDrawingRects[i])
+                {
+                    spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[i]);
+                }
+            }
+
+            //spriteBatch.Draw(_pixel, new Rectangle(_teacherDesk.X - scrollX, _teacherDesk.Y - scrollY, _teacherDesk.Width, _teacherDesk.Height), Color.Firebrick);
+            //spriteBatch.Draw(_pixel, new Rectangle(_teacherChair.X - scrollX, _teacherChair.Y - scrollY, _teacherChair.Width, _teacherChair.Height), Color.LemonChiffon);
+
+            DrawFurniture(spriteBatch, scrollX, scrollY, _teacherChair, RoomType.TeacherChairColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _teacherDesk, RoomType.TeacherDeskColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _cupboard, RoomType.CupboardColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _equipmentDesks, RoomType.SubjDeskColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _tables, RoomType.DeskColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _chairs, RoomType.ChairColours[_roomType]);
+
+            //draw walls
+            foreach (Rectangle r in _walls)
+            {
+                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), RoomType.WallColours[_roomType]);
+            }
+
+        }
+
+        private void DrawFurniture(SpriteBatch spriteBatch, int scrollX, int scrollY, Rectangle furniture, Color colour)
+        {
+            spriteBatch.Draw(_pixel, new Rectangle(furniture.X - scrollX, furniture.Y - scrollY, furniture.Width, furniture.Height), colour);
+        }
+        private void DrawFurniture(SpriteBatch spriteBatch, int scrollX, int scrollY, List<Rectangle> furniture, Color colour)
+        {
+            foreach (Rectangle r in furniture)
+            {
+                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), colour);
+            }
+        }
+
     }
 }
