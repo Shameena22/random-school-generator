@@ -2759,7 +2759,7 @@ namespace random_school_generator
                     currentRect = possibleRects[_random.Next(0, possibleRects.Count)];
 
                     //now just need a function to make the rectangle
-                    tableAndChairs = MakeGroupedTable(currentRect, 35, 20, 10, 5, 5);
+                    tableAndChairs = MakeGroupedTable(currentRect, 35, 30, 10, 5, 5);
 
                     //add it to the room
                     r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairs.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
@@ -2887,8 +2887,8 @@ namespace random_school_generator
 
                 table = new Rectangle(r.X + outerGap + chairLength, r.Y + outerGap + chairLength, tableLength, tableWidth);
                 //two on either side
-                chairs.Add(new Rectangle(r.X + outerGap, r.Y + 2 * chairGap + chairLength, chairLength, chairLength));
-                chairs.Add(new Rectangle(table.X + table.Width, r.Y + 2 * chairGap + chairLength, chairLength, chairLength));
+                chairs.Add(new Rectangle(r.X + outerGap, r.Y + 3 * chairGap + chairLength, chairLength, chairLength));
+                chairs.Add(new Rectangle(table.X + table.Width, r.Y + 3 * chairGap + chairLength, chairLength, chairLength));
                 //two at top
                 chairs.Add(new Rectangle(table.X + chairGap, r.Y + outerGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + chairLength + 2 * chairGap, r.Y + outerGap, chairLength, chairLength));
@@ -2901,8 +2901,8 @@ namespace random_school_generator
                 table = new Rectangle(r.X + outerGap + chairLength, r.Y + outerGap + chairLength, tableWidth, tableLength);
 
                 //top and bottom
-                chairs.Add(new Rectangle(table.X + chairGap, r.Y + outerGap, chairLength, chairLength));
-                chairs.Add(new Rectangle(table.X + chairGap, table.Y + table.Height, chairLength, chairLength));
+                chairs.Add(new Rectangle(table.X + chairGap * 2, r.Y + outerGap, chairLength, chairLength));
+                chairs.Add(new Rectangle(table.X + chairGap * 2, table.Y + table.Height, chairLength, chairLength));
                 //two on left
                 chairs.Add(new Rectangle(r.X + outerGap, table.Y + chairGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(r.X + outerGap, table.Y + 2 * chairGap + chairLength, chairLength, chairLength));
