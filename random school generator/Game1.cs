@@ -2293,15 +2293,18 @@ namespace random_school_generator
 
             if (enclosingRect.Width == width) //if left or right
             {
-                if (enclosingRect.X == wallWidth)
+                if (enclosingRect.X == wallWidth) //left
                 {
                     desk = new Rectangle(deskOffset, enclosingRect.Y + deskGap, deskWidth, deskLength);
-                    chair = new Rectangle(chairOffset, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+                    chair = new Rectangle(wallWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
                 }
-                else
+                else //up - TODO: fix
                 {
-                    desk = new Rectangle(enclosingRect.X, enclosingRect.Y + deskGap, deskWidth, deskLength);
-                    chair = new Rectangle(enclosingRect.X + deskWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+                    //desk = new Rectangle(enclosingRect.X, enclosingRect.Y + deskGap, deskWidth, deskLength);
+                    //chair = new Rectangle(enclosingRect.X + deskWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+
+                    chair = new Rectangle(enclosingRect.X + enclosingRect.Width - chairLength, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+                    desk = new Rectangle(chair.X - deskWidth, enclosingRect.Y + deskGap, deskWidth, deskLength);
                 }
             }
             else
@@ -2311,10 +2314,13 @@ namespace random_school_generator
                     desk = new Rectangle(enclosingRect.X + deskGap, deskOffset, deskLength, deskWidth);
                     chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, chairOffset, chairLength, chairLength);
                 }
-                else
+                else //down: TODO: fix
                 {
-                    desk = new Rectangle(enclosingRect.X + deskGap, enclosingRect.Y, deskLength, deskWidth);
-                    chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, enclosingRect.Y + deskWidth, chairLength, chairLength);
+                    //desk = new Rectangle(enclosingRect.X + deskGap, enclosingRect.Y, deskLength, deskWidth);
+                    //chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, enclosingRect.Y + deskWidth, chairLength, chairLength);
+
+                    chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, enclosingRect.Y + enclosingRect.Height - chairLength, chairLength, chairLength);
+                    desk = new Rectangle(enclosingRect.X + deskGap, chair.Y - deskWidth, deskLength, deskWidth);
                 }
             }
 
