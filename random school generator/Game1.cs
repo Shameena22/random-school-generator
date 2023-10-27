@@ -2204,7 +2204,7 @@ namespace random_school_generator
          * TODO: make normal chairs + tables
         */
 
-        // - - creating furniture - -
+        // - - creating furniture - - TODO: clean up this mess
         private void CreateFurniture(Room r)
         {
             //TODO: switch to an if statement at some point
@@ -2270,6 +2270,11 @@ namespace random_school_generator
             AddTeacherDesk(r);
             AddCupboard(r);
             AddSubjectDesks(r);
+            AddScienceDesks(r);
+        }
+        private void AddScienceDesks(Room r)
+        {
+            AddOuterTables(r, 25);
         }
         private void AddTeacherDesk(Room r, int wallWidth = 5)
         {
@@ -2412,8 +2417,6 @@ namespace random_school_generator
 
             return enclosingRect;
         }
-
-
 
 
         private List<Point> FindEdgeRectPositions(int length, Room r, int wallWidth)
@@ -2915,7 +2918,91 @@ namespace random_school_generator
 
         }
 
+        //science rooms - TODO
+        /*
+         * basically lined tables but in a different positioning
+         * with enough gap, also allow seats in the middle?
+         * 
+         * section off grid
+         * find out which row to exclude
+         * add in the other rows
+         * if enough middle space - add extra (how to centre???)
+         */
 
+        private void AddOuterTables(Room r, int addedGap)
+        {
+            List<(List<Rectangle>, string)> outerRects = new List<(List<Rectangle>, string)>();
+            int totalWidth = 25, chairLength = 10, tableLength = 15;
+            List<(Rectangle, Rectangle)> tableAndChairPairs = new List<(Rectangle, Rectangle)>();
+            List<Rectangle> tempRectList;
+            Rectangle tempRect, extraLeftRect = new Rectangle(0, 0, 0, 0), extraRightRect = new Rectangle(0, 0, 0, 0);
+
+            if (r.FacingTowards != "left")
+            {
+                //outerRects.Add((new Rectangle(addedGap, addedGap, totalWidth, r.RectHeight - 2 * addedGap), "right"));
+                
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(addedGap, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
+
+                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(addedGap + chairLength, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
+                }
+
+                outerRects.Add((tempRectList, "right"));
+            }
+            if (r.FacingTowards != "right")
+            {
+                // outerRects.Add((new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap, totalWidth, r.RectHeight - 2 * addedGap), "left"));
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
+                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.X, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
+                }
+                outerRects.Add((tempRectList, "left"));
+            }
+            if (r.FacingTowards != "up")
+            {
+                // outerRects.Add((new Rectangle(addedGap, addedGap, r.RectWidth - 2 * addedGap, totalWidth), "down"));
+               
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, addedGap, i.Width, i.Height)).ToList();
+
+                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right, addedGap + chairLength, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
+                }
+                outerRects.Add((tempRectList, "down"));
+            }
+            if (r.FacingTowards != "down")
+            {
+                // outerRects.Add((new Rectangle(addedGap, r.RectHeight - addedGap - totalWidth, r.RectWidth - 2 * addedGap, totalWidth), "up"));
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap -  2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, r.RectHeight - addedGap - totalWidth, i.Width, i.Height)).ToList();
+                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right, tempRect.Y, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
+                }
+                outerRects.Add((tempRectList, "up"));
+            }
+
+            //now to add the tables and chairs...
+            foreach ((List<Rectangle>, string) line in outerRects)
+            {
+                foreach (Rectangle outerRect in line.Item1)
+                {
+                    tableAndChairPairs.Add(MakeTablesAndChairsFromRect(outerRect, line.Item2, 15, 10));
+                }
+            }
+
+            foreach ((Rectangle, Rectangle) pair in tableAndChairPairs)
+            {
+                r.Tables.Add(r.MakeRectRelativeToFloor(pair.Item1));
+                r.Chairs.Add(r.MakeRectRelativeToFloor(pair.Item2));
+            }
+            
+        }
 
         // - - creating doors - -
         private void AddDoors(Floor f, Zone z)
