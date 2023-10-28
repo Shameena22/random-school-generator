@@ -2987,6 +2987,44 @@ namespace random_school_generator
                 outerRects.Add((tempRectList, "up"));
             }
 
+
+            //and check if a middle one fits?
+            
+            if (r.FacingTowards == "left" || r.FacingTowards == "right")
+            {
+                if (r.RectHeight / 2 - addedGap - 2 * totalWidth >= 15 && r.RectWidth - 2 * (addedGap + totalWidth) >= 30)
+                {
+                    tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * totalWidth);
+                    if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - 2 * addedGap - 2 * totalWidth)
+                    {
+                        tempRect = tempRectList[tempRectList.Count - 1];
+                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2 - tableLength, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
+                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
+                    }
+                    outerRects.Add((tempRectList.Select(i => new Rectangle(i.X + addedGap + totalWidth, r.RectHeight / 2 - totalWidth, i.Width, i.Height)).ToList(), "down"));
+                    outerRects.Add((tempRectList.Select(i => new Rectangle(i.X + addedGap + totalWidth, r.RectHeight / 2, i.Width, i.Height)).ToList(), "up"));
+
+                }
+            }
+            else
+            {
+                if (r.RectWidth / 2 - addedGap - 2 * totalWidth >= 15 && r.RectHeight - 2 * (addedGap + totalWidth) >= 30) //TODO: tweak
+                {
+                    //add one before and after split
+                    //need to add tables and chairs....
+
+                    tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * totalWidth, totalWidth);
+                    if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - 2 * addedGap - 2 * totalWidth)
+                    {
+                        tempRect = tempRectList[tempRectList.Count - 1];
+                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(r.RectWidth / 2 - tableLength, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
+                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(r.RectWidth / 2, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
+                    }
+                    outerRects.Add((tempRectList.Select(i => new Rectangle(r.RectWidth / 2 - totalWidth, i.Y + addedGap + totalWidth, i.Width, i.Height)).ToList(), "right"));
+                    outerRects.Add((tempRectList.Select(i => new Rectangle(r.RectWidth / 2, i.Y + addedGap + totalWidth, i.Width, i.Height)).ToList(), "left"));
+                }
+            }
+
             //now to add the tables and chairs...
             foreach ((List<Rectangle>, string) line in outerRects)
             {
