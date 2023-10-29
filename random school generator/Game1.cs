@@ -1714,6 +1714,7 @@ namespace random_school_generator
                             SplitZoneRooms(currentZone);
                             _currentZoneIndex++;
                             _currentRoomIndex = 0;
+                            return $"> splitting rooms: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
                         }
                     }
                     //if not all rooms have been grown yet
@@ -2226,6 +2227,7 @@ namespace random_school_generator
                     MakeScienceClassroom(r);
                     break;
                 case "computer science":
+                    MakeComputerScienceClassroom(r);
                     break;
                 case "art":
                     break;
@@ -2267,14 +2269,21 @@ namespace random_school_generator
         }
         private void MakeScienceClassroom(Room r)
         {
-            AddTeacherDesk(r);
+            AddTeacherDesk(r, 5, 40, 30, 15, 5, 30, 15, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
             AddScienceDesks(r);
         }
+        private void MakeComputerScienceClassroom(Room r)
+        {
+            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddCupboard(r);
+            AddSubjectDesks(r);
+            AddOuterTables(r, 30);
+        }
         private void AddScienceDesks(Room r)
         {
-            int innerGap = 25;
+            int innerGap = 30;
             double choice = _random.NextDouble();
             if (choice <= 0.75)
             {
@@ -2286,7 +2295,7 @@ namespace random_school_generator
                 MakeGroupedTables(innerGrid, r, innerGap + 10);
             }
         }
-        private void AddTeacherDesk(Room r, int wallWidth = 5)
+        private void AddTeacherDesk(Room r, int wallWidth = 5, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
             //get all possible rects, 50 * 30, 50 stuck to edge
             //choose random one
@@ -2297,7 +2306,7 @@ namespace random_school_generator
           //  Point chosenPoint = points[_random.Next(0, points.Count)];
             Rectangle enclosingRect = new Rectangle(0, 0, 0, 0), desk, chair;
             //width = 25, -5 because wallWidth = 5
-            int length = 35, width = 20, deskOffset = 15, deskGap = 5, deskLength = 25, deskWidth = 8, chairOffset = 5, chairLength = 10;
+            //int length = 35, width = 20, deskOffset = 15, deskGap = 5, deskLength = 25, deskWidth = 8, chairOffset = 5, chairLength = 10;
 
             //enclosingRect = GetEdgeRectFromPoint(r, chosenPoint, length, width);
             enclosingRect = AddEdgeRect(r, length, width);
