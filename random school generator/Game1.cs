@@ -2274,7 +2274,17 @@ namespace random_school_generator
         }
         private void AddScienceDesks(Room r)
         {
-            AddOuterTables(r, 25);
+            int innerGap = 25;
+            double choice = _random.NextDouble();
+            if (choice <= 0.75)
+            {
+                AddOuterTables(r, innerGap);
+            } 
+            else
+            {
+                char[,] innerGrid = new char[r.RectWidth - innerGap - 10, r.RectHeight - innerGap - 10];
+                MakeGroupedTables(innerGrid, r, innerGap + 10);
+            }
         }
         private void AddTeacherDesk(Room r, int wallWidth = 5)
         {
