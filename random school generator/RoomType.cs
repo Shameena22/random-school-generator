@@ -115,10 +115,10 @@ namespace random_school_generator
                 {"science", Color.DarkTurquoise },
                 {"religious education", Color.RosyBrown},
                 {"languages", Color.RosyBrown },
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.MediumSlateBlue },
+                {"art", Color.DarkSeaGreen },
+                {"design technology", Color.DarkOrchid }, //todo: find out difference between YellowGreen and GreenYellow
+                {"music", Color.Navy}
             };
 
             _chairColours = new Dictionary<string, Color>
@@ -134,10 +134,10 @@ namespace random_school_generator
                 {"science", Color.DodgerBlue },
                 {"religious education", Color.Pink},
                 {"languages", Color.Pink },
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.CadetBlue },
+                {"art", Color.GreenYellow },
+                {"design technology", Color.YellowGreen },
+                {"music", Color.PaleVioletRed}
             };
 
             _teacherChairColours = new Dictionary<string, Color>
@@ -153,10 +153,10 @@ namespace random_school_generator
                 {"science", Color.Gray },
                 {"religious education", Color.BurlyWood},
                 {"languages", Color.BurlyWood },
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.CornflowerBlue },
+                {"art", Color.SeaGreen },
+                {"design technology", Color.DarkSalmon },
+                {"music", Color.Pink}
             };
 
             _teacherDeskColours = new Dictionary<string, Color>
@@ -172,10 +172,10 @@ namespace random_school_generator
                 {"science", Color.LightSeaGreen },
                 {"religious education", Color.Chocolate},
                 {"languages", Color.Chocolate },
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.DarkCyan },
+                {"art", Color.DarkOliveGreen },
+                {"design technology", Color.DarkMagenta },
+                {"music", Color.RosyBrown}
             };
 
             _cupboardColours = new Dictionary<string, Color>
@@ -191,10 +191,10 @@ namespace random_school_generator
                 {"science", Color.LightCyan },
                 {"religious education", Color.BurlyWood},
                 {"languages", Color.BurlyWood },
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.DarkTurquoise },
+                {"art", Color.LightGreen },
+                {"design technology", Color.Firebrick },
+                {"music", Color.Tomato}
             };
 
             _subjDeskColours = new Dictionary<string, Color>
@@ -210,10 +210,10 @@ namespace random_school_generator
                 {"science", Color.DimGray },
                 {"religious education", Color.SandyBrown},
                 {"languages", Color.SandyBrown},
-                {"computer science", Color.Purple },
-                {"art", Color.ForestGreen },
-                {"design technology", Color.GreenYellow },
-                {"music", Color.Purple}
+                {"computer science", Color.DeepSkyBlue },
+                {"art", Color.LimeGreen },
+                {"design technology", Color.Honeydew },
+                {"music", Color.Plum}
             };
         }
 

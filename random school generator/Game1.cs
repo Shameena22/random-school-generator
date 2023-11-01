@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -239,11 +240,7 @@ namespace random_school_generator
         {
             //sets drawing speed of zone / room growth depending on floor size
 
-            if (_floorSize < 100000)
-            {
-                _growthSpeed = 5;
-            }
-            else if (_floorSize < 150000)
+            if (_floorSize < 150000)
             {
                 _growthSpeed = 7;
             } else
@@ -2212,28 +2209,31 @@ namespace random_school_generator
             switch (r.Type)
             {
                 case "english":
-                    MakeNormalClassroom(r);
+                    MakeNormalClassroomFurniture(r);
                     break;
                 case "maths":
-                    MakeNormalClassroom(r);
+                    MakeNormalClassroomFurniture(r);
                     break;
                 case "religious education":
-                    MakeNormalClassroom(r);
+                    MakeNormalClassroomFurniture(r);
                     break;
                 case "languages":
-                    MakeNormalClassroom(r);
+                    MakeNormalClassroomFurniture(r);
                     break;
                 case "science":
-                    MakeScienceClassroom(r);
+                    MakeScienceClassroomFurniture(r);
                     break;
                 case "computer science":
-                    MakeComputerScienceClassroom(r);
+                    MakeComputerScienceClassroomFurniture(r);
                     break;
                 case "art":
+                    MakeArtClassroomFurniture(r);
                     break;
                 case "design technology":
+                    MakeArtClassroomFurniture(r); //basically the same
                     break;
                 case "music":
+                    MakeMusicClassroomFurniture(r);
                     break;
                 case "hall":
                     break;
@@ -2254,7 +2254,7 @@ namespace random_school_generator
             r.CopyChairAndTableDataToGrid();
 
         }
-        private void MakeNormalClassroom(Room r)
+        private void MakeNormalClassroomFurniture(Room r)
         {
             //normal classroom things
             AddTeacherDesk(r);
@@ -2267,20 +2267,65 @@ namespace random_school_generator
             MakeNormalTablesAndChairs(r);
 
         }
-        private void MakeScienceClassroom(Room r)
-        {
-            AddTeacherDesk(r, 5, 40, 30, 15, 5, 30, 15, 5, 12);
-            AddCupboard(r);
-            AddSubjectDesks(r);
-            AddScienceDesks(r);
-        }
-        private void MakeComputerScienceClassroom(Room r)
+        private void MakeScienceClassroomFurniture(Room r)
         {
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
-            AddOuterTables(r, 30);
+            AddScienceDesks(r);
         }
+        private void MakeComputerScienceClassroomFurniture(Room r)
+        {
+            int gap = 30;
+            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddCupboard(r);
+            AddSubjectDesks(r);
+            if (r.RectHeight * r.RectWidth <= 19600)
+            {
+                MakeLinedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
+            }
+            else
+            {
+                AddOuterTables(r, gap);
+            }
+        }
+        private void MakeArtClassroomFurniture(Room r)
+        {
+            int innerGap = 40;
+            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddCupboard(r);
+            AddSubjectDesks(r);
+            if (r.RectWidth * r.RectHeight <= 1100)
+            {
+                MakeLinedTables(innerGrid, r, innerGap);
+            } else
+            {
+                MakeGroupedTables(innerGrid, r, innerGap);
+            }
+
+        }
+        private void MakeMusicClassroomFurniture(Room r)
+        {
+            //just want the grouped table things??
+            //or lined....
+            
+            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddCupboard(r);
+            AddSubjectDesks(r);
+            AddMusicTables(r);
+            //what tables??? definitely outer 
+            //and then lined too?
+        }
+
+        private void MakeHallFurniture(Room r)
+        {
+            //todo: add a nice big stage + set facingtowards
+            //then add normal tables + chairs??? / just leave it
+            
+
+        }
+
         private void AddScienceDesks(Room r)
         {
             int innerGap = 30;
@@ -2295,6 +2340,44 @@ namespace random_school_generator
                 MakeGroupedTables(innerGrid, r, innerGap + 10);
             }
         }
+        private void AddMusicTables(Room r)
+        {
+            int innerGap = 30;
+            char[,] innerGrid = new char[r.RectWidth - innerGap - 20, r.RectHeight - innerGap - 20];
+            double choice = _random.NextDouble();
+
+            if (choice < 0.6)
+            {
+                AddOuterTables(r, innerGap);
+            } else
+            {
+                MakeLinedTables(innerGrid, r, innerGap + 20);
+            }
+        }
+        private void AddHallStage(Room r, int wallWidth = 5)
+        {
+            /*for: length = max, width = room width / 5, try length - 5 in increments
+             * try up to length = 4/5 width
+             * for: length = max, width = room witdh / 5, try length - 5 
+             * up to width = 1/10 room
+             * if not....put it in the middle ig
+             */
+
+            int stageLength, stageWidth, i = 0;
+            bool valid = false;
+            List<Point> validStagePoints = new List<Point>();
+
+            do
+            {
+                //left + right
+                stageLength = r.RectHeight - 2 * wallWidth - i * 5;
+
+
+                i++;
+            } while (stageLength >= r.RectHeight * 0.8 || stageLength >= r.RectWidth * 0.8);
+            
+        }
+
         private void AddTeacherDesk(Room r, int wallWidth = 5, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
             //get all possible rects, 50 * 30, 50 stuck to edge
@@ -2437,7 +2520,6 @@ namespace random_school_generator
             return enclosingRect;
         }
 
-
         private List<Point> FindEdgeRectPositions(int length, Room r, int wallWidth)
         {
             List<Point> validPositions = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
@@ -2450,7 +2532,7 @@ namespace random_school_generator
                 validPoint = true;
                 for (int i = y; i < y + length; i++)
                 {
-                    if (clearPoints.Contains(new Point(wallWidth, i)))
+                    if (clearPoints.Contains(new Point(wallWidth, i)) || !WithinBounds(wallWidth, i, r.RectWidth, r.RectHeight))
                     {
                         validPoint = false;
                         break;
@@ -2464,7 +2546,7 @@ namespace random_school_generator
                 validPoint = true;
                 for (int i = y; i < y + length; i++)
                 {
-                    if (clearPoints.Contains(new Point(r.RectWidth - 1 - wallWidth, i)))
+                    if (clearPoints.Contains(new Point(r.RectWidth - 1 - wallWidth, i)) || !WithinBounds(r.RectWidth - 1 - wallWidth, i, r.RectWidth, r.RectHeight))
                     {
                         validPoint = false;
                         break;
@@ -2483,7 +2565,7 @@ namespace random_school_generator
                 validPoint = true;
                 for (int i = x; i < x + length; i++)
                 {
-                    if (clearPoints.Contains(new Point(i, wallWidth)))
+                    if (clearPoints.Contains(new Point(i, wallWidth)) || !WithinBounds(i, wallWidth, r.RectWidth, r.RectHeight))
                     {
                         validPoint = false;
                     }
@@ -2496,7 +2578,7 @@ namespace random_school_generator
                 validPoint = true;
                 for (int i = x; i < x + length; i++)
                 {
-                    if (clearPoints.Contains(new Point(i, r.RectHeight - 1 - wallWidth)))
+                    if (clearPoints.Contains(new Point(i, r.RectHeight - 1 - wallWidth)) || !WithinBounds(i, r.RectHeight - 1 - wallWidth, r.RectWidth, r.RectHeight))
                     {
                         validPoint = false;
                     }
@@ -2508,6 +2590,84 @@ namespace random_school_generator
             }
             return validPositions;
         }
+        private List<Point> FindEdgeRectPositions(int length, int width, Room r, int wallWidth)
+        {
+
+            List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
+            bool validPoint = true;
+            for (int x = wallWidth; x < r.RectWidth - length - wallWidth; x++)
+            {
+                validPoint = true;
+                for(int i = x; i < x + length; i++)
+                {
+                    for (int j = wallWidth; j < width + wallWidth; j++)
+                    {
+                        if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
+                        {
+                            validPoint = false;
+                        }
+                    }
+                }
+                if (validPoint)
+                {
+                    validPoints.Add(new Point(x, wallWidth));
+                }
+
+                validPoint = true;
+                for(int i = x; i < x + length; i++)
+                {
+                    for (int j = r.RectHeight - wallWidth - width; j < r.RectHeight - wallWidth; j++)
+                    {
+                        if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
+                        {
+                            validPoint = false;
+                        }
+                    }
+                }
+                if (validPoint)
+                {
+                    validPoints.Add(new Point(x, r.RectHeight - wallWidth - 1));
+                }
+            }
+
+            for (int y = wallWidth; y < r.RectHeight - wallWidth - length; y++)
+            {
+                validPoint = true;
+                for (int i = wallWidth; i < wallWidth + width; i++)
+                {
+                    for (int j = y; j < y + length; j++)
+                    {
+                        if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
+                        {
+                            validPoint = false;
+                        }
+                    }
+                }
+                if (validPoint)
+                {
+                    //TODO: finish
+                    validPoints.Add(new Point(wallWidth, y));
+                }
+                validPoint = true;
+
+                for (int i = r.RectWidth - width - wallWidth; i < r.RectWidth - wallWidth; i++)
+                {
+                    for (int j = y; j < y + length; j++)
+                    {
+                        if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
+                        {
+                            validPoint = false;
+                        }
+                    }
+                }
+                if (validPoint)
+                {
+                    validPoints.Add(new Point(r.RectWidth - wallWidth - 1, y));
+                }
+            }
+
+            return validPoints;
+        }
         private Rectangle AddEdgeRect(Room r, int length, int width, int wallWidth = 5)
         {
             List<Point> clearPoints = new List<Point>();
@@ -2515,7 +2675,7 @@ namespace random_school_generator
             Point p;
             Rectangle rect;
            // Rectangle cupboard;
-            List<Point> positions = FindEdgeRectPositions(length, r, wallWidth);
+            List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
             p = positions[_random.Next(0, positions.Count)];
 
             rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
@@ -2802,7 +2962,6 @@ namespace random_school_generator
 
 
         }
-
         private void AddGroupedTableToGrid(ref char[,] grid, Rectangle r)
         {
             for (int x = r.X; x < r.X + r.Width; x++)
@@ -2813,49 +2972,6 @@ namespace random_school_generator
                     grid[x, y] = 'X';
                 }
             }
-        }
-
-        private List<Rectangle> GetPossibleRectsInGrid(char[,] grid, int length, int width)
-        {
-
-            //ALT METHOD - TODO
-            //split grid into blocks based on grid
-            //split by length and width
-            //then for each block, try find a valid rect
-            //if valid rect found, add + move onto next block
-            //if not valid, move on
-
-            bool valid = false;
-            List<Rectangle> rects = new List<Rectangle>();
-            //grid marked with X if occupied
-            for (int x = 0; x < grid.GetUpperBound(0); x++)
-            {
-                for (int y = 0; y < grid.GetUpperBound(1); y++)
-                {
-
-                    //now within points
-                    valid = true;
-
-                    for(int rectX = 0; rectX < width; rectX ++)
-                    {
-                        for (int rectY = 0; rectY < length; rectY++)
-                        {
-                            if (!WithinBounds(rectX + x, rectY + y, grid.GetUpperBound(0), grid.GetUpperBound(1)) || grid[rectX + x, rectY + y] == 'X')
-                            {
-                                valid = false;
-                            }
-                        }
-                    }
-
-                    if (valid)
-                    {
-                        rects.Add(new Rectangle(x, y, width, length));
-                        //speed up the process a bit...
-                       
-                    }
-                }
-            }
-            return rects;
         }
         private Rectangle GetGroupedTableRectFromBlock(char[,] grid, int length, int width, Rectangle block)
         {
@@ -2896,7 +3012,6 @@ namespace random_school_generator
             }
             return new Rectangle(0, 0, 0, 0);
         }
-
         private (Rectangle, List<Rectangle>) MakeGroupedTable(Rectangle r, int tableLength, int tableWidth, int chairLength, int chairGap, int outerGap)
         {
             Rectangle table;
@@ -2936,18 +3051,6 @@ namespace random_school_generator
             return (table, chairs);
 
         }
-
-        //science rooms - TODO
-        /*
-         * basically lined tables but in a different positioning
-         * with enough gap, also allow seats in the middle?
-         * 
-         * section off grid
-         * find out which row to exclude
-         * add in the other rows
-         * if enough middle space - add extra (how to centre???)
-         */
-
         private void AddOuterTables(Room r, int addedGap)
         {
             List<(List<Rectangle>, string)> outerRects = new List<(List<Rectangle>, string)>();
