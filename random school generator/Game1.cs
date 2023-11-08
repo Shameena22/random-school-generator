@@ -2364,7 +2364,7 @@ namespace random_school_generator
              * if not....put it in the middle ig
              */
 
-            int stageHeight, stageWidth, stageHeightCount = 0, stageWidthCount = 0;
+            int stageHeight = 0, stageWidth = 0, stageHeightCount = 0, stageWidthCount = 0;
             bool valid = false;
             List<Point> validStagePoints = new List<Point>();
             Rectangle stage = new Rectangle(0, 0, 0, 0);
@@ -2372,65 +2372,57 @@ namespace random_school_generator
 
             do
             {
-                //left, right
-                stageWidth = (r.RectWidth - 10) / 5 - 5 * stageWidthCount;
-                if (stageWidth > (r.RectWidth - 10) / 10)
-                {
-                    stageHeightCount = 0;
-                    do
-                    {
-                        stageHeight = r.RectHeight - 11 - 5 * stageHeightCount;
+                
 
-                        //find stuff here
-                        //get valid points and remove ones that don't start at x = 5 or x = r.RectWidth - wallWidth - 1
-                        validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.X == 5 || i.X == r.RectWidth - wallWidth - 1).ToList();
-                        //what to do if in corner???
-                        if (validStagePoints.Count > 0)
+                stageHeightCount = 0;
+                do
+                {
+                    //left, right
+                    stageWidth = (r.RectWidth - 10) / 5 - 5 * stageWidthCount;
+                    if (stageWidth > (r.RectWidth - 10) / 10)
+                    {
+                        stageHeight = r.RectHeight - 10 - 5 * stageHeightCount;
+
+                        if (stageHeight >= (r.RectHeight - 10) * 0.8)
                         {
-                            valid = true;
-                            stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
-                            break;
+                            //find stuff here
+                            //get valid points and remove ones that don't start at x = 5 or x = r.RectWidth - wallWidth - 1
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.X == 5 || i.X == r.RectWidth - wallWidth - 1).ToList();
+                            //what to do if in corner???
+                            if (validStagePoints.Count > 0)
+                            {
+                                valid = true;
+                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
+                                break;
+                            }
                         }
-                        stageHeightCount++;
-                    } while (stageHeight >= (r.RectHeight - 10) * 0.8);
-
-                    if (valid)
-                    {
-                        break;
-                    }
-                }
-
-
-                //up, down
-                stageWidth = (r.RectHeight - 10) / 5 - 5 * stageWidthCount;
-                if (stageWidth > (r.RectHeight - 10) / 10)
-                {
-                    stageHeightCount = 0;
-                    do
-                    {
-                        stageHeight = r.RectWidth - 11 - 5 * stageHeightCount;
-
-                        //find stuff here
-                        validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1).ToList();
                         
-                        if (validStagePoints.Count > 0)
-                        {
-                            valid = true;
-                            stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
-                            break;
-                        }
-
-                        stageHeightCount++;
-                    } while (stageHeight >= (r.RectWidth - 10) * 0.8);
-
-                    if (valid)
-                    {
-                        break;
                     }
-                }
+
+                    //up, down
+                    stageWidth = (r.RectHeight - 10) / 5 - 5 * stageWidthCount;
+                    if (stageWidth > (r.RectHeight - 10) / 10)
+                    {
+                        stageHeight = r.RectWidth - 10 - 5 * stageHeightCount;
+
+                        if (stageHeight >= (r.RectWidth - 10) * 0.8)
+                        {
+                            //find stuff here
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1).ToList();
+
+                            if (validStagePoints.Count > 0)
+                            {
+                                valid = true;
+                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
+                                break;
+                            }
+                        }
+                        stageHeightCount++;
+                    }
+                } while (stageHeight >= (Math.Min(r.RectWidth - 10, r.RectHeight - 10) * 0.8) && !valid);
 
                 stageWidthCount++;
-            } while (stageWidth > (Math.Min(r.RectWidth - 10, r.RectHeight - 10) / 10));
+            } while (stageWidth > (Math.Min(r.RectWidth - 11, r.RectHeight - 10) / 10) && !valid);
 
             if (!valid)
             {
@@ -2550,7 +2542,7 @@ namespace random_school_generator
 
             List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
             bool validPoint = true;
-            for (int x = wallWidth; x < r.RectWidth - length - wallWidth; x++)
+            for (int x = wallWidth; x <= r.RectWidth - length - wallWidth; x++)
             {
                 validPoint = true;
                 for(int i = x; i < x + length; i++)
@@ -2585,7 +2577,7 @@ namespace random_school_generator
                 }
             }
 
-            for (int y = wallWidth; y < r.RectHeight - wallWidth - length; y++)
+            for (int y = wallWidth; y <= r.RectHeight - wallWidth - length; y++)
             {
                 validPoint = true;
                 for (int i = wallWidth; i < wallWidth + width; i++)

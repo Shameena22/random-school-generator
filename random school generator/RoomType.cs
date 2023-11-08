@@ -75,7 +75,7 @@ namespace random_school_generator
             //setting colours of wall for each type of room
             _wallColours = new Dictionary<string, Color>
             {
-                {"hall", Color.Brown },
+                {"hall", Color.SaddleBrown },
                 {"gym", Color.PowderBlue },
                 {"office", Color.Silver},
                 {"canteen", Color.RosyBrown},
