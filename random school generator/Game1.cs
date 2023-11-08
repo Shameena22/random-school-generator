@@ -2083,7 +2083,7 @@ namespace random_school_generator
                     _currentFloorIndex++;
                     _currentZoneIndex = 0;
                     _currentRoomIndex = 0;
-                    return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
+                     return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
                 }
 
                 //if zones in the floor still need furniture added...
@@ -2236,6 +2236,7 @@ namespace random_school_generator
                     MakeMusicClassroomFurniture(r);
                     break;
                 case "hall":
+                    MakeHallFurniture(r);
                     break;
                 case "gym":
                     break;
@@ -2322,7 +2323,7 @@ namespace random_school_generator
         {
             //todo: add a nice big stage + set facingtowards
             //then add normal tables + chairs??? / just leave it
-            
+            AddHallStage(r);
 
         }
 
@@ -2363,18 +2364,86 @@ namespace random_school_generator
              * if not....put it in the middle ig
              */
 
-            int stageLength, stageWidth, i = 0;
+            int stageHeight, stageWidth, stageHeightCount = 0, stageWidthCount = 0;
             bool valid = false;
             List<Point> validStagePoints = new List<Point>();
+            Rectangle stage = new Rectangle(0, 0, 0, 0);
+            //nested loop?
 
             do
             {
-                //left + right
-                stageLength = r.RectHeight - 2 * wallWidth - i * 5;
+                //left, right
+                stageWidth = (r.RectWidth - 10) / 5 - 5 * stageWidthCount;
+                if (stageWidth > (r.RectWidth - 10) / 10)
+                {
+                    stageHeightCount = 0;
+                    do
+                    {
+                        stageHeight = r.RectHeight - 11 - 5 * stageHeightCount;
+
+                        //find stuff here
+                        //get valid points and remove ones that don't start at x = 5 or x = r.RectWidth - wallWidth - 1
+                        validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.X == 5 || i.X == r.RectWidth - wallWidth - 1).ToList();
+                        //what to do if in corner???
+                        if (validStagePoints.Count > 0)
+                        {
+                            valid = true;
+                            stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
+                            break;
+                        }
+                        stageHeightCount++;
+                    } while (stageHeight >= (r.RectHeight - 10) * 0.8);
+
+                    if (valid)
+                    {
+                        break;
+                    }
+                }
 
 
-                i++;
-            } while (stageLength >= r.RectHeight * 0.8 || stageLength >= r.RectWidth * 0.8);
+                //up, down
+                stageWidth = (r.RectHeight - 10) / 5 - 5 * stageWidthCount;
+                if (stageWidth > (r.RectHeight - 10) / 10)
+                {
+                    stageHeightCount = 0;
+                    do
+                    {
+                        stageHeight = r.RectWidth - 11 - 5 * stageHeightCount;
+
+                        //find stuff here
+                        validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1).ToList();
+                        
+                        if (validStagePoints.Count > 0)
+                        {
+                            valid = true;
+                            stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
+                            break;
+                        }
+
+                        stageHeightCount++;
+                    } while (stageHeight >= (r.RectWidth - 10) * 0.8);
+
+                    if (valid)
+                    {
+                        break;
+                    }
+                }
+
+                stageWidthCount++;
+            } while (stageWidth > (Math.Min(r.RectWidth - 10, r.RectHeight - 10) / 10));
+
+            if (!valid)
+            {
+                if (r.RectWidth > r.RectHeight)
+                {
+                    stage = new Rectangle(15, 15, r.RectWidth - 2 * wallWidth - 20, (r.RectHeight - 10) / 5);
+                } else
+                {
+                    stage = new Rectangle(15, 15, r.RectHeight - 2 * wallWidth - 20, (r.RectWidth - 10) / 5);
+                }
+            }
+
+            r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(stage));
             
         }
 
@@ -2435,14 +2504,16 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
-        private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth)
+        private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
         {
             Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);
-            //now make rect based on this
+            //now make rect based on this          
+
+
 
             if (chosenPoint.X == wallWidth)
             {
-                if (chosenPoint.Y + length < r.RectHeight)
+                if (chosenPoint.Y + length < r.RectHeight || forceLeftRight )
                 {
                     enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
                 } else
@@ -2457,7 +2528,7 @@ namespace random_school_generator
             }
             else if (chosenPoint.Y == wallWidth)
             {
-                if (chosenPoint.X + length < r.RectWidth)
+                if (chosenPoint.X + length < r.RectWidth || forceUpDown)
                 {
                     enclosingRect = new Rectangle(chosenPoint.X, wallWidth, length, width);
                 }
@@ -2471,125 +2542,9 @@ namespace random_school_generator
                 enclosingRect = new Rectangle(chosenPoint.X, r.RectHeight - wallWidth - width, length, width);
             }
 
-            //TODO: if rect is wedged into corner, error happens
-            //need another way to check orientation
-
-            //if ((chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1) && (chosenPoint.Y == wallWidth || chosenPoint.Y == r.RectHeight - wallWidth - 1))
-            //{
-            //    //ummm
-            //    //if on left
-            //    if (chosenPoint.Y + length > r.RectHeight)
-            //    {
-            //        //unsuitable for vertical alignment
-            //        //so act as if on Y end?
-            //        //aaaarghJXBMscjk rewrite this sub 
-            //    }
-            //}
-
-            //else if (chosenPoint.X == wallWidth || chosenPoint.X == r.RectWidth - wallWidth - 1)
-            //{
-            //    enclosingRect.Width = width;
-            //    enclosingRect.Height = length;
-
-            //    if (chosenPoint.X == r.RectWidth - 1 - wallWidth)
-            //    {
-            //        enclosingRect.X = r.RectWidth - width - wallWidth;
-            //    }
-            //    else
-            //    {
-            //        enclosingRect.X = wallWidth;
-            //    }
-            //    enclosingRect.Y = chosenPoint.Y;
-            //}
-            //else
-            //{
-            //    enclosingRect.Width = length;
-            //    enclosingRect.Height = width;
-
-            //    if (chosenPoint.Y == r.RectHeight - 1 - wallWidth)
-            //    {
-            //        enclosingRect.Y = r.RectHeight - width - wallWidth;
-            //    }
-            //    else
-            //    {
-            //        enclosingRect.Y = wallWidth;
-            //    }
-            //    enclosingRect.X = chosenPoint.X;
-            //}
-
             return enclosingRect;
         }
 
-        private List<Point> FindEdgeRectPositions(int length, Room r, int wallWidth)
-        {
-            List<Point> validPositions = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
-            bool validPoint = true;
-            //check left, right, up, dowm
-
-            //left + right
-            for (int y = wallWidth; y < r.RectHeight - length - wallWidth; y++)
-            {
-                validPoint = true;
-                for (int i = y; i < y + length; i++)
-                {
-                    if (clearPoints.Contains(new Point(wallWidth, i)) || !WithinBounds(wallWidth, i, r.RectWidth, r.RectHeight))
-                    {
-                        validPoint = false;
-                        break;
-                    }
-                }
-                if (validPoint)
-                {
-                    validPositions.Add(new Point(wallWidth, y));
-                }
-
-                validPoint = true;
-                for (int i = y; i < y + length; i++)
-                {
-                    if (clearPoints.Contains(new Point(r.RectWidth - 1 - wallWidth, i)) || !WithinBounds(r.RectWidth - 1 - wallWidth, i, r.RectWidth, r.RectHeight))
-                    {
-                        validPoint = false;
-                        break;
-                    }
-                }
-                if (validPoint)
-                {
-                    validPositions.Add(new Point(r.RectWidth - 1 - wallWidth, y));
-                }
-
-            }
-
-            //up + down
-            for (int x = wallWidth; x < r.RectWidth - length - wallWidth; x++)
-            {
-                validPoint = true;
-                for (int i = x; i < x + length; i++)
-                {
-                    if (clearPoints.Contains(new Point(i, wallWidth)) || !WithinBounds(i, wallWidth, r.RectWidth, r.RectHeight))
-                    {
-                        validPoint = false;
-                    }
-                }
-                if (validPoint)
-                {
-                    validPositions.Add(new Point(x, wallWidth));
-                }
-
-                validPoint = true;
-                for (int i = x; i < x + length; i++)
-                {
-                    if (clearPoints.Contains(new Point(i, r.RectHeight - 1 - wallWidth)) || !WithinBounds(i, r.RectHeight - 1 - wallWidth, r.RectWidth, r.RectHeight))
-                    {
-                        validPoint = false;
-                    }
-                }
-                if (validPoint)
-                {
-                    validPositions.Add(new Point(x, r.RectHeight - 1 - wallWidth));
-                }
-            }
-            return validPositions;
-        }
         private List<Point> FindEdgeRectPositions(int length, int width, Room r, int wallWidth)
         {
 
