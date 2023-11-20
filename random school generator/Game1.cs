@@ -2299,7 +2299,7 @@ namespace random_school_generator
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
-            if (r.RectWidth * r.RectHeight <= 1100)
+            if (r.RectWidth * r.RectHeight <= 1700)
             {
                 MakeLinedTables(innerGrid, r, innerGap);
             } else
