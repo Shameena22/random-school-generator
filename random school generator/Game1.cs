@@ -2328,11 +2328,13 @@ namespace random_school_generator
             //so...
             AddHallChairs(r);
         }
-        private void MakeGymFurniture(Room r)
+        private void MakeGymFurniture(Room r, int innerGap = 40)
         {
+            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
             //TODO: add benches
             AddSubjectDesks(r, 75, 15, 10);
             //...and add mats
+            MakeGroupedTables(innerGrid, r, innerGap, true);
         }
 
         private void AddScienceDesks(Room r)
@@ -2562,10 +2564,6 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
-        private void AddGymMats(Room r)
-        {
-
-        }
 
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
         {
@@ -2695,15 +2693,20 @@ namespace random_school_generator
             List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
             p = positions[_random.Next(0, positions.Count)];
 
-            rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
+            if (positions.Count > 0)
+            {
+                rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
 
-            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, new Rectangle(rect.X, rect.Y, rect.Width, rect.Height ));
+                clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, new Rectangle(rect.X, rect.Y, rect.Width, rect.Height));
 
-            //r.ClearPoints.AddRange(clearPoints);
-            //todo: make rect compatible with edges...
-            //UpdateInnerClearPoints(r, wallWidth, clearPoints);
-            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-            return rect;
+                //r.ClearPoints.AddRange(clearPoints);
+                //todo: make rect compatible with edges...
+                //UpdateInnerClearPoints(r, wallWidth, clearPoints);
+                r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+                return rect;
+            }
+
+            return new Rectangle(0, 0, 0, 0);
         }
         private void AddCupboard(Room r)
         {
@@ -2898,7 +2901,7 @@ namespace random_school_generator
             int numOfTables = r.RectWidth * r.RectHeight / 6500; //TODO: tweak, maybe depending on room size??
 
             List<Rectangle> possibleRects = new List<Rectangle>(), enclosingRects = new List<Rectangle>();
-            Rectangle currentRect, tempRect;
+            Rectangle currentRect, tempRect, matRect;
             (Rectangle, List<Rectangle>) tableAndChairs;
             int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = (int)Math.Sqrt(6500);
             //TODO: shift to left, right, up, down depending on room? should just have this as a prooerty at this point
@@ -2959,7 +2962,8 @@ namespace random_school_generator
 
                     if (mat)
                     {
-
+                        matRect = new Rectangle(currentRect.X + 5, currentRect.Y + 5, currentRect.Width - 5, currentRect.Height - 5);
+                        r.Tables.Add(r.MakeRectRelativeToFloor(matRect, innerGap / 2, innerGap / 2));
                     } else
                     {
                         //now just need a function to make the rectangle
