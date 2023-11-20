@@ -1959,7 +1959,7 @@ namespace random_school_generator
             //sets an ID for the room (can't have the room ID be the same as the zone ID)
             if (z.ID == r.ID)
             {
-                //TODO: this will bite you in the ass later, a problem for future me
+                //TODO: a problem for future me <3
                 tempID = 'U';
             }
             else
@@ -2247,6 +2247,7 @@ namespace random_school_generator
                 case "staffroom":
                     break;
                 case "toilets":
+                    MakeToilets(r);
                     break;
                 case "office":
                     break;
@@ -2256,6 +2257,14 @@ namespace random_school_generator
             }
             r.CopyChairAndTableDataToGrid();
 
+        }
+
+        private void MakeToilets(Room r)
+        {
+            /*
+             * TODO: this..
+             * 
+             */
         }
         private void MakeNormalClassroomFurniture(Room r)
         {
@@ -2299,7 +2308,7 @@ namespace random_school_generator
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
-            if (r.RectWidth * r.RectHeight <= 1700)
+            if (r.RectWidth * r.RectHeight <= 27500)
             {
                 MakeLinedTables(innerGrid, r, innerGap);
             } else
