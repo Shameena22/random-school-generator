@@ -123,7 +123,7 @@ namespace random_school_generator
 
             _chairColours = new Dictionary<string, Color>
             {
-                {"hall", Color.Brown },
+                {"hall", Color.SandyBrown },
                 {"gym", Color.PowderBlue },
                 {"office", Color.Silver},
                 {"canteen", Color.RosyBrown},
@@ -200,7 +200,7 @@ namespace random_school_generator
             _subjDeskColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Brown },
-                {"gym", Color.PowderBlue },
+                {"gym", Color.DeepSkyBlue },
                 {"office", Color.Silver},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.DarkGoldenrod },

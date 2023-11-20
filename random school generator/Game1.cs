@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 
 namespace random_school_generator
 {
+    //20/11/23, making gym mats
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
@@ -2239,6 +2240,7 @@ namespace random_school_generator
                     MakeHallFurniture(r);
                     break;
                 case "gym":
+                    MakeGymFurniture(r);
                     break;
                 case "canteen":
                     break;
@@ -2281,7 +2283,7 @@ namespace random_school_generator
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
-            if (r.RectHeight * r.RectWidth <= 19600)
+            if (r.RectHeight * r.RectWidth <= 20000)
             {
                 MakeLinedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
             }
@@ -2318,13 +2320,19 @@ namespace random_school_generator
             //what tables??? definitely outer 
             //and then lined too?
         }
-
         private void MakeHallFurniture(Room r)
         {
             //todo: add a nice big stage + set facingtowards
             //then add normal tables + chairs??? / just leave it
             AddHallStage(r);
-
+            //so...
+            AddHallChairs(r);
+        }
+        private void MakeGymFurniture(Room r)
+        {
+            //TODO: add benches
+            AddSubjectDesks(r, 75, 15, 10);
+            //...and add mats
         }
 
         private void AddScienceDesks(Room r)
@@ -2387,12 +2395,20 @@ namespace random_school_generator
                         {
                             //find stuff here
                             //get valid points and remove ones that don't start at x = 5 or x = r.RectWidth - wallWidth - 1
-                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.X == 5 || i.X == r.RectWidth - wallWidth - 1).ToList();
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => ( i.X == 5 || i.X == r.RectWidth - wallWidth - 1) && i.Y != r.RectHeight - wallWidth - 1 ).ToList();
                             //what to do if in corner???
                             if (validStagePoints.Count > 0)
                             {
                                 valid = true;
                                 stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
+                                if (stage.X == wallWidth)
+                                {
+                                    r.FacingTowards = "left";
+                                }
+                                else
+                                {
+                                    r.FacingTowards = "right";
+                                }
                                 break;
                             }
                         }
@@ -2408,12 +2424,19 @@ namespace random_school_generator
                         if (stageHeight >= (r.RectWidth - 10) * 0.8)
                         {
                             //find stuff here
-                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1).ToList();
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => (i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1) && i.X != r.RectWidth - wallWidth - 1).ToList();
 
                             if (validStagePoints.Count > 0)
                             {
                                 valid = true;
                                 stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
+                                if (stage.Y == wallWidth)
+                                {
+                                    r.FacingTowards = "up";
+                                } else
+                                {
+                                    r.FacingTowards = "down";
+                                }
                                 break;
                             }
                         }
@@ -2422,7 +2445,7 @@ namespace random_school_generator
                 } while (stageHeight >= (Math.Min(r.RectWidth - 10, r.RectHeight - 10) * 0.8) && !valid);
 
                 stageWidthCount++;
-            } while (stageWidth > (Math.Min(r.RectWidth - 11, r.RectHeight - 10) / 10) && !valid);
+            } while (stageWidth > (Math.Min(r.RectWidth - 10, r.RectHeight - 10) / 10) && !valid);
 
             if (!valid)
             {
@@ -2438,7 +2461,50 @@ namespace random_school_generator
             r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(stage));
             
         }
+        private void AddHallChairs(Room r, int wallWidth = 5)
+        {
+            //make a lil grid based on facingTowards and stage
+            //then add separate chairs...but not tables!
+            //then add based on stage position
+            int chairLength = 15, gapBetweenChairs = 10, innerGridWidth, innerGridHeight, extraX, extraY;
+            List<Rectangle> outerRects = new List<Rectangle>();        
 
+            if (r.FacingTowards == "left" || r.FacingTowards == "right")
+            {
+                innerGridWidth = r.RectWidth - 2 * wallWidth - r.EquipmentDesks[0].Width - gapBetweenChairs;
+                innerGridHeight = r.RectHeight - 2 * wallWidth - gapBetweenChairs;
+                extraY = wallWidth + gapBetweenChairs;
+                if (r.FacingTowards == "left")
+                {
+                    extraX = r.EquipmentDesks[0].Width + gapBetweenChairs + wallWidth;
+                   
+                } else
+                {
+                    extraX = gapBetweenChairs + wallWidth;
+                }
+            }
+            else
+            {
+                innerGridWidth = r.RectWidth - 2 * wallWidth - gapBetweenChairs;
+                innerGridHeight = r.RectHeight - 2 * wallWidth - r.EquipmentDesks[0].Height - gapBetweenChairs;
+                extraX = wallWidth + gapBetweenChairs;
+                if (r.FacingTowards == "up")
+                {
+                    extraY = r.EquipmentDesks[0].Height + gapBetweenChairs + wallWidth;
+                } else
+                {
+                    extraY = gapBetweenChairs + wallWidth;
+                }
+            }
+            outerRects = MakeEnclosingRectangles(chairLength + gapBetweenChairs, chairLength + gapBetweenChairs, innerGridHeight, innerGridWidth);
+
+            //now format...
+            foreach (Rectangle rect in outerRects)
+            {
+                r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(rect.X + gapBetweenChairs, rect.Y + gapBetweenChairs, chairLength, chairLength), extraX, extraY));
+            }
+
+        }
         private void AddTeacherDesk(Room r, int wallWidth = 5, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
             //get all possible rects, 50 * 30, 50 stuck to edge
@@ -2496,16 +2562,21 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
+        private void AddGymMats(Room r)
+        {
+
+        }
+
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
         {
             Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);
             //now make rect based on this          
 
-
+            
 
             if (chosenPoint.X == wallWidth)
             {
-                if (chosenPoint.Y + length < r.RectHeight || forceLeftRight )
+                if ((chosenPoint.Y + length < r.RectHeight || forceLeftRight) && !forceUpDown)
                 {
                     enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
                 } else
@@ -2536,7 +2607,6 @@ namespace random_school_generator
 
             return enclosingRect;
         }
-
         private List<Point> FindEdgeRectPositions(int length, int width, Room r, int wallWidth)
         {
 
@@ -2641,13 +2711,13 @@ namespace random_school_generator
             r.Cupboard = r.MakeRectRelativeToFloor(tempCupboard);
 
         }
-        private void AddSubjectDesks(Room r)
+        private void AddSubjectDesks(Room r, int width = 30, int height = 14, int upperLimit = 5)
         {
-            int j = _random.Next(0, 5);
+            int j = _random.Next(0, upperLimit);
             Rectangle tempRect;
             for (int i = 0; i < j; i++)
             {
-                tempRect = AddEdgeRect(r, 30, 14);
+                tempRect = AddEdgeRect(r, width, height);
                 r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(tempRect));
             }
         }
@@ -2815,7 +2885,7 @@ namespace random_school_generator
             }
             return rects;
         }
-        private void MakeGroupedTables(char[,] grid, Room r, int innerGap)
+        private void MakeGroupedTables(char[,] grid, Room r, int innerGap, bool mat = false)
         {
             //have grid and rect dimensions
             //choose a random num of tables to have
@@ -2887,16 +2957,24 @@ namespace random_school_generator
                 {
                     currentRect = possibleRects[_random.Next(0, possibleRects.Count)];
 
-                    //now just need a function to make the rectangle
-                    tableAndChairs = MakeGroupedTable(currentRect, 35, 30, 10, 5, 5);
-
-                    //add it to the room
-                    r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairs.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
-
-                    foreach (Rectangle chair in tableAndChairs.Item2)
+                    if (mat)
                     {
-                        r.Chairs.Add(r.MakeRectRelativeToFloor(chair, innerGap / 2 + extraX, innerGap / 2 + extraY));
+
+                    } else
+                    {
+                        //now just need a function to make the rectangle
+                        tableAndChairs = MakeGroupedTable(currentRect, 35, 30, 10, 5, 5);
+                        //new function for mats -- just returns another rect?
+
+                        //add it to the room
+                        r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairs.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
+
+                        foreach (Rectangle chair in tableAndChairs.Item2)
+                        {
+                            r.Chairs.Add(r.MakeRectRelativeToFloor(chair, innerGap / 2 + extraX, innerGap / 2 + extraY));
+                        }
                     }
+                    
 
                     //add it to the grid
                     AddGroupedTableToGrid(ref grid, new Rectangle(currentRect.X, currentRect.Y, currentRect.Width + 5, currentRect.Height + 5));
