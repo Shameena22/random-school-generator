@@ -2701,10 +2701,11 @@ namespace random_school_generator
             Rectangle rect;
            // Rectangle cupboard;
             List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
-            p = positions[_random.Next(0, positions.Count)];
+            
 
             if (positions.Count > 0)
             {
+                p = positions[_random.Next(0, positions.Count)];
                 rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
 
                 clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, new Rectangle(rect.X, rect.Y, rect.Width, rect.Height));
