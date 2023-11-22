@@ -2263,6 +2263,7 @@ namespace random_school_generator
         {
             /*
              * TODO: this..
+             * fix the sizes (ofsted would not approve of the size of the current toilets)
              * 
              */
         }

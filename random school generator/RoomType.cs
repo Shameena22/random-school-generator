@@ -97,7 +97,7 @@ namespace random_school_generator
             {
                 {"classroom", 125 },
                 {"large", 150 },
-                {"service", 75},
+                {"service", 150},
                 {"staff", 100 }
             };
 
