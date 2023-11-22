@@ -2263,9 +2263,18 @@ namespace random_school_generator
         {
             /*
              * TODO: this..
-             * fix the sizes (ofsted would not approve of the size of the current toilets)
-             * 
+             * adding cubicles...sort of like adding a stage??? do a "stage" first and then that's basically a frame for the cubicles
+             * also need the sinks on the opposite side...but...
+             * can't just make that another "stage" as it could be obstructed
+             * new func that goes along the chosen side and adds sinks where possible? sounds alright
+             * need to encourage certain directions for the stage..
              */
+
+            //AddHallStage(r); naw
+            //a new func that checks left, right, up, down clear
+            //if none clear, uh...cubicles in the middle?
+            //if one clear, add cubicles there with spaces between walls to avoid any other doors
+            //if +1 clear, encourage opposing sides but if not, choose random
         }
         private void MakeNormalClassroomFurniture(Room r)
         {
@@ -2399,7 +2408,7 @@ namespace random_school_generator
                 {
                     //left, right
                     stageWidth = (r.RectWidth - 10) / 5 - 5 * stageWidthCount;
-                    if (stageWidth > (r.RectWidth - 10) / 10)
+                    if (stageWidth > (r.RectWidth - 10) / 10) //also.....do the longest way possible first?
                     {
                         stageHeight = r.RectHeight - 10 - 5 * stageHeightCount;
 
