@@ -357,7 +357,7 @@ namespace random_school_generator
             zoneGraphChances.Add("hall", 1);
             zoneGraphChances.Add("canteen", 1);
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
-            zoneGraphChances.Add("toilets", 0.2f);
+            zoneGraphChances.Add("toilets", 0.4f);
             //and the staffroom won't be too large / too small
             zoneGraphChances["staffroom"] = 0.5f;
             //zone types closer to the front will be allocated larger areas
@@ -497,8 +497,8 @@ namespace random_school_generator
             }
             else if (s == "toilets" || s == "office")
             {
-                //preventing too many toilets from being generated in a floor by restricting their number from 1 to 6
-                return _random.Next(1, 6);
+                //preventing too many toilets from being generated in a floor by restricting their number from 1 to 3
+                return _random.Next(1, 3);
             }
             else
 
