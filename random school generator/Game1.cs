@@ -2650,34 +2650,76 @@ namespace random_school_generator
         private void MakeToiletCubicles(Room r, string position, int wallWidth = 5)
         {
             Rectangle mask = new Rectangle(0, 0, 0, 0);
-            int gap = 5, width, height;
+            int gap = 5, width, height, cublicleWidth = 45;
+            List<Rectangle> cubicles;
+            string doorPosition;
             //start off with the mask
-            switch (position)
-            {
-                case "up":
-                    width = r.RectWidth - 2 * wallWidth - 2 * gap;
-                    height = (r.RectHeight - 2 * wallWidth) / 2;
-                    mask = new Rectangle(wallWidth + gap, wallWidth, width, height);
-                    break;
-                case "down":
-                    width = r.RectWidth - 2 * wallWidth - 2 * gap;
-                    height = (r.RectHeight - 2 * wallWidth) / 2;
-                    mask = new Rectangle(wallWidth + gap, r.RectHeight - wallWidth - height, width, height);
-                    break;
-                case "left":
-                    width = (r.RectWidth - 2 * wallWidth) / 2;
-                    height = r.RectHeight - 2 * wallWidth - 2 * gap;
-                    mask = new Rectangle(wallWidth, wallWidth + gap, width, height);
-                    break;
-                case "right":
-                    width = (r.RectWidth - 2 * wallWidth) / 2;
-                    height = r.RectHeight - 2 * wallWidth - 2 * gap;
-                    mask = new Rectangle(r.RectWidth - wallWidth - width, wallWidth + gap, width, height);
-                    break;
-            }
-            r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(mask));
-        }
 
+            //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(mask)); turned out alright 
+            if (position == "left" || position == "right")
+            {
+                width = (r.RectWidth - 2 * wallWidth) / 2;
+                height = r.RectHeight - 2 * wallWidth - 2 * gap;
+
+                if (position == "left")
+                {
+                    mask = new Rectangle(wallWidth, wallWidth + gap, width, height);
+                    doorPosition = "right";
+                } else
+                {
+                    mask = new Rectangle(r.RectWidth - wallWidth - width, wallWidth + gap, width, height);
+                    doorPosition = "left";
+                }
+                cubicles = MakeEnclosingRectangles(cublicleWidth, width, height, width).Select(i => new Rectangle(i.X + mask.X, i.Y + mask.Y, i.Width, i.Height)).ToList();
+
+            } else
+            {
+                width = r.RectWidth - 2 * wallWidth - 2 * gap;
+                height = (r.RectHeight - 2 * wallWidth) / 2;
+
+                if (position == "up")
+                {
+                    mask = new Rectangle(wallWidth + gap, wallWidth, width, height);
+                    doorPosition = "down";
+                } else
+                {
+                    mask = new Rectangle(wallWidth + gap, r.RectHeight - wallWidth - height, width, height);
+                    doorPosition = "up";
+                }
+                cubicles = MakeEnclosingRectangles(height, cublicleWidth, height, width).Select(i => new Rectangle(i.X + mask.X, i.Y + mask.Y, i.Width, i.Height)).ToList();
+            }
+            //now just gotta make the stuff in the cubicles
+        }
+        
+        private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
+        {
+            int innerWallWidth = 2;
+            //needs walls...got a door pos only
+            //add a door in the middle (has to fit!)
+            //add walls (not on door) ... could just add all + have door on top, easier!
+
+            /*
+             * toilet seat = chair
+             * toilet back = desk
+             * sink = teacher desk
+             * walls = subj desk
+             */
+
+            //toilet shape....
+            //adding walls
+            if (doorPosition == "left" || doorPosition == "right")
+            {
+                //add walls up and down
+                r.EquipmentDesks.Add(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth));
+                r.EquipmentDesks.Add(new Rectangle(mask.Right - innerWallWidth, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth));
+            } else
+            {
+                //add walls left and right
+                r.EquipmentDesks.Add(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height));
+                r.EquipmentDesks.Add(new Rectangle(mask.Right - innerWallWidth, mask.Bottom - innerWallWidth, innerWallWidth, mask.Height));
+            }
+
+        }
         private void MakeToiletSinks(Room r, string position)
         {
 
