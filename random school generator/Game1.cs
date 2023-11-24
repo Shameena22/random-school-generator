@@ -2275,6 +2275,9 @@ namespace random_school_generator
             //if none clear, uh...cubicles in the middle?
             //if one clear, add cubicles there with spaces between walls to avoid any other doors
             //if +1 clear, encourage opposing sides but if not, choose random
+
+            SetUpToiletCubiclesAndSinks(r);
+           
         }
         private void MakeNormalClassroomFurniture(Room r)
         {
@@ -2583,6 +2586,103 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
+
+        private void SetUpToiletCubiclesAndSinks(Room r)
+        {
+            List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
+
+            bool leftFree = true, rightFree = true, upFree = true, downFree = true;
+            foreach (Point p in clearPoints)
+            {
+                //if = 5
+                if (p.X == 5)
+                {
+                    leftFree = false;
+                }
+                else if (p.X == r.RectWidth - 5 - 1)
+                {
+                    rightFree = false;
+                }
+                if (p.Y == 5)
+                {
+                    upFree = false;
+                }
+                else if (p.Y == r.RectHeight - 5 - 1)
+                {
+                    downFree = false;
+                }
+
+            }
+
+            if (upFree && downFree)
+            {
+                MakeToiletCubicles(r, "up");
+                MakeToiletSinks(r, "down");
+            }
+            else if (leftFree && rightFree)
+            {
+                MakeToiletCubicles(r, "left");
+                MakeToiletSinks(r, "right");
+
+            }
+            else if (upFree)
+            {
+                MakeToiletCubicles(r, "up");
+                MakeToiletSinks(r, "down");
+            }
+            else if (downFree)
+            {
+                MakeToiletCubicles(r, "down");
+                MakeToiletSinks(r, "up");
+            }
+            else if (leftFree)
+            {
+                MakeToiletCubicles(r, "left");
+                MakeToiletSinks(r, "right");
+            }
+            else if (rightFree)
+            {
+                MakeToiletCubicles(r, "right");
+                MakeToiletSinks(r, "left");
+            }
+        }
+
+        private void MakeToiletCubicles(Room r, string position, int wallWidth = 5)
+        {
+            Rectangle mask = new Rectangle(0, 0, 0, 0);
+            int gap = 5, width, height;
+            //start off with the mask
+            switch (position)
+            {
+                case "up":
+                    width = r.RectWidth - 2 * wallWidth - 2 * gap;
+                    height = (r.RectHeight - 2 * wallWidth) / 2;
+                    mask = new Rectangle(wallWidth + gap, wallWidth, width, height);
+                    break;
+                case "down":
+                    width = r.RectWidth - 2 * wallWidth - 2 * gap;
+                    height = (r.RectHeight - 2 * wallWidth) / 2;
+                    mask = new Rectangle(wallWidth + gap, r.RectHeight - wallWidth - height, width, height);
+                    break;
+                case "left":
+                    width = (r.RectWidth - 2 * wallWidth) / 2;
+                    height = r.RectHeight - 2 * wallWidth - 2 * gap;
+                    mask = new Rectangle(wallWidth, wallWidth + gap, width, height);
+                    break;
+                case "right":
+                    width = (r.RectWidth - 2 * wallWidth) / 2;
+                    height = r.RectHeight - 2 * wallWidth - 2 * gap;
+                    mask = new Rectangle(r.RectWidth - wallWidth - width, wallWidth + gap, width, height);
+                    break;
+            }
+            r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(mask));
+        }
+
+        private void MakeToiletSinks(Room r, string position)
+        {
+
+        }
+
 
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
         {
