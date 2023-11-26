@@ -95,7 +95,7 @@ namespace random_school_generator
             //setting min side lengths based on room's zone secondary type
             _sideLengths = new Dictionary<string, int>
             {
-                {"classroom", 125 },
+                {"classroom", 135 },
                 {"large", 150 },
                 {"service", 100},
                 {"staff", 100 }

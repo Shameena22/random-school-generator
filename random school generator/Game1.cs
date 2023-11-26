@@ -2316,17 +2316,19 @@ namespace random_school_generator
         }
         private void MakeArtClassroomFurniture(Room r)
         {
-            int innerGap = 40;
-            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+            int innerGap = 30;
+           // char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
-            if (r.RectWidth * r.RectHeight <= 27500)
+            if (r.RectWidth < innerGap + 65 && r.RectHeight < innerGap + 65)
             {
-                MakeLinedTables(innerGrid, r, innerGap);
+                //innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+                MakeLinedTables(new char[r.RectWidth - innerGap, r.RectHeight - innerGap], r, innerGap);
             } else
             {
-                MakeGroupedTables(innerGrid, r, innerGap);
+               // innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+                MakeGroupedTables(new char[r.RectWidth - innerGap - 10, r.RectHeight - innerGap - 10], r, innerGap + 10);
             }
 
         }
@@ -2689,11 +2691,15 @@ namespace random_school_generator
                 cubicles = MakeEnclosingRectangles(height, cublicleWidth, height, width).Select(i => new Rectangle(i.X + mask.X, i.Y + mask.Y, i.Width, i.Height)).ToList();
             }
             //now just gotta make the stuff in the cubicles
+            foreach (Rectangle cubicle in cubicles)
+            {
+                MakeIndividualCubicles(r, cubicle, doorPosition);
+            }
         }
         
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
-            int innerWallWidth = 2;
+            int innerWallWidth = 3;
             //needs walls...got a door pos only
             //add a door in the middle (has to fit!)
             //add walls (not on door) ... could just add all + have door on top, easier!
@@ -2710,13 +2716,13 @@ namespace random_school_generator
             if (doorPosition == "left" || doorPosition == "right")
             {
                 //add walls up and down
-                r.EquipmentDesks.Add(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth));
-                r.EquipmentDesks.Add(new Rectangle(mask.Right - innerWallWidth, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth));
+                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
+                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
             } else
             {
                 //add walls left and right
-                r.EquipmentDesks.Add(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height));
-                r.EquipmentDesks.Add(new Rectangle(mask.Right - innerWallWidth, mask.Bottom - innerWallWidth, innerWallWidth, mask.Height));
+                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
+                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
             }
 
         }
