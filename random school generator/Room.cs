@@ -150,7 +150,7 @@ namespace random_school_generator
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
                 {
-                    if (_grid[x, y] == 'C' || _grid[x, y] == 'T' || _grid[x, y] == 'S')
+                    if ((_grid[x, y] == 'C' || _grid[x, y] == 'T' || _grid[x, y] == 'S') && _roomType != "toilets")
                     {
                         //remove 
                         add = false;
