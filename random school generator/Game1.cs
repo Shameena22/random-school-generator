@@ -2699,7 +2699,7 @@ namespace random_school_generator
         
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
-            int innerWallWidth = 3, doorLength = 4;
+            int innerWallWidth = 3, doorLength = 8;
             //needs walls...got a door pos only
             //add a door in the middle (has to fit!)
             //add walls (not on door) ... could just add all + have door on top, easier!
@@ -2707,9 +2707,9 @@ namespace random_school_generator
             /*
              * toilet seat = chair
              * toilet back = desk
-             * sink = teacher desk
+             * sink = sink
              * walls = subj desk
-             * door = teacher desk idk
+             * door = ..okay new one needed
              */
 
             //toilet shape....
@@ -2725,12 +2725,12 @@ namespace random_school_generator
                 if (doorPosition == "left")
                 {
                    r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
-                   r.TeacherDesk = r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength));
+                   r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
                    // r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
                 } else
                 {
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
-                    r.TeacherDesk = r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength));
+                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
 
                 }
@@ -2744,12 +2744,12 @@ namespace random_school_generator
                 if (doorPosition == "up")
                 {
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
-                    r.TeacherDesk = r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, doorLength, innerWallWidth));
+                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, doorLength, innerWallWidth)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
                 } else
                 {
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
-                    r.TeacherDesk = r.MakeRectRelativeToFloor(new Retangle(mask.X + mask.Width / 2 - 2, mask.Bottom - innerWallWidth, doorLength, innerWallWidth));
+                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Bottom - innerWallWidth, doorLength, innerWallWidth)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
                 }
             }

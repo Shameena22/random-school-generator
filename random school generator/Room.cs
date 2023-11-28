@@ -15,7 +15,7 @@ namespace random_school_generator
         private string _roomType, _facingTowards;
         private bool _grown, _firstGrown;
         private Point _growthFloorPoint;
-        private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs;
+        private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs, _extraFurnitureList1, _extraFurnitureList2;
         private Rectangle _teacherDesk, _teacherChair, _cupboard;
         private Dictionary<Room, Rectangle> _adjacencyDoors;
         private List<List<Rectangle>> _allDrawingRects;
@@ -40,6 +40,8 @@ namespace random_school_generator
             _chairs = new List<Rectangle>();
             _rectWidth = rectWidth;
             _rectHeight = rectHeight;
+            _extraFurnitureList1 = new List<Rectangle>();
+            _extraFurnitureList2 = new List<Rectangle>();
         }
 
         public bool Grown { get => _grown; set => _grown = value; }
@@ -63,6 +65,8 @@ namespace random_school_generator
         public List<Rectangle> Chairs { get => _chairs; set => _chairs = value; }
         public string FacingTowards { get => _facingTowards; set => _facingTowards = value; }
         public bool FirstGrown { get => _firstGrown; set => _firstGrown = value; }
+        public List<Rectangle> ExtraFurnitureList1 { get => _extraFurnitureList1; set => _extraFurnitureList1 = value; }
+        public List<Rectangle> ExtraFurnitureList2 { get => _extraFurnitureList2; set => _extraFurnitureList2 = value; }
 
         public static void SetComponentColours()
         {
@@ -221,6 +225,8 @@ namespace random_school_generator
             DrawFurniture(spriteBatch, scrollX, scrollY, _equipmentDesks, RoomType.SubjDeskColours[_roomType]);
             DrawFurniture(spriteBatch, scrollX, scrollY, _tables, RoomType.DeskColours[_roomType]);
             DrawFurniture(spriteBatch, scrollX, scrollY, _chairs, RoomType.ChairColours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _extraFurnitureList1, RoomType.ExtraFurniture1Colours[_roomType]);
+            DrawFurniture(spriteBatch, scrollX, scrollY, _extraFurnitureList2, RoomType.ExtraFurniture2Colours[_roomType]);
 
             //draw walls
             foreach (Rectangle r in _walls)
