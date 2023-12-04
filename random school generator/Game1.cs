@@ -2699,7 +2699,7 @@ namespace random_school_generator
         
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
-            int innerWallWidth = 3, doorLength = 8;
+            int innerWallWidth = 3, doorLength = 8, toiletBackLength = 12, toiletBackWidth = 8;
             //needs walls...got a door pos only
             //add a door in the middle (has to fit!)
             //add walls (not on door) ... could just add all + have door on top, easier!
@@ -2707,15 +2707,13 @@ namespace random_school_generator
             /*
              * toilet seat = chair
              * toilet back = desk
-             * sink = sink
-             * walls = subj desk
-             * door = ..okay new one needed
+             * sink = extra 2
+             * walls = subj desk (done)
+             * door = extra 1 (done)
              */
 
-            //toilet shape....
-            //adding walls
-            //TODO: add a door!
-            //width 3, length..uhhh..4?? then pos = 21
+            //TODO: add toilet seat
+            //one big rect at edge and then a smaller after it
             if (doorPosition == "left" || doorPosition == "right")
             {
                 //add walls up and down
@@ -2726,12 +2724,16 @@ namespace random_school_generator
                 {
                    r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
-                   // r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
+                    // r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
+                    //TODO: add the toilet
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - toiletBackWidth, mask.Y + mask.Height / 2 - toiletBackLength / 2, toiletBackWidth, toiletBackLength)));
+                   
                 } else
                 {
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
                     r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - toiletBackLength / 2, toiletBackWidth, toiletBackLength)));
 
                 }
 
@@ -2746,11 +2748,13 @@ namespace random_school_generator
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
                     r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, doorLength, innerWallWidth)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - toiletBackLength / 2, mask.Bottom - toiletBackWidth, toiletBackLength, toiletBackWidth)));
                 } else
                 {
                     r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
                     r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Bottom - innerWallWidth, doorLength, innerWallWidth)));
                     //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
+                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, toiletBackLength, toiletBackWidth)));
                 }
             }
 
