@@ -132,7 +132,7 @@ namespace random_school_generator
                 {"office", Color.Silver},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.DarkGoldenrod },
-                {"toilets", Color.HotPink },
+                {"toilets", Color.MediumVioletRed },
                 {"english", Color.Pink },
                 {"maths", Color.Pink},
                 {"science", Color.DodgerBlue },
