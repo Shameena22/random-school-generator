@@ -2769,7 +2769,69 @@ namespace random_school_generator
         }
         private void MakeToiletSinks(Room r, string position)
         {
-
+            //TODO: this
+            //iterate from start to end of wall
+            int sinkLength = 15, sinkWidth = 11, gap = 5;
+            //use r.InnerClearPoints
+            //just get rect positions and uhhh 
+            //select one, remove any that overlap x and y
+            List<Point> sinkPoints = new List<Point>(), clearPoints = new List<Point>();
+            Rectangle sinkRect;
+            switch (position)
+            {
+                case "left":
+                    do
+                    {
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == 5).ToList();
+                        if (sinkPoints.Count > 0)
+                        {
+                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
+                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
+                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength));
+                        }
+                    } while (sinkPoints.Count > 0);
+                    break;
+                case "right":
+                    do
+                    {
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == r.RectWidth - 5 - 1).ToList();
+                        if (sinkPoints.Count > 0)
+                        {
+                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
+                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
+                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength));
+                        }
+                    } while (sinkPoints.Count > 0);
+                    break;
+                case "up":
+                    do
+                    {
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == 5).ToList();
+                        if (sinkPoints.Count > 0)
+                        {
+                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
+                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
+                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth));
+                        }
+                    } while (sinkPoints.Count > 0);
+                    break;
+                case "down":
+                    do
+                    {
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == r.RectHeight - 5 - 1).ToList();
+                        if (sinkPoints.Count > 0)
+                        {
+                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
+                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
+                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth));
+                        }
+                    } while (sinkPoints.Count > 0);
+                    break;
+            }
         }
 
 
@@ -2777,8 +2839,6 @@ namespace random_school_generator
         {
             Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);
             //now make rect based on this          
-
-            
 
             if (chosenPoint.X == wallWidth)
             {
@@ -2897,12 +2957,13 @@ namespace random_school_generator
             //int cupboardLength = 15, cupboardWidth = 7;
             Point p;
             Rectangle rect;
-           // Rectangle cupboard;
+            // Rectangle cupboard;
+            //List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
             List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
-            
 
             if (positions.Count > 0)
-            {
+            {   
+               
                 p = positions[_random.Next(0, positions.Count)];
                 rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
 
@@ -4226,59 +4287,59 @@ namespace random_school_generator
                 if (edgePoints.Contains(tempPoint))
                 {
                     pointsToAdd.Add(tempPoint);
-                    if (pointsToAdd.Count > 1)
-                    {
-                        foundEdge = true;
-                    }
+                    //if (pointsToAdd.Count > 1)
+                    //{
+                    //    foundEdge = true;
+                    //}
                 }
             }
 
             //check right
-            if (!foundEdge)
-            {
+          //  if (!foundEdge)
+           // {
                 for (int y = door.Y; y < door.Y + door.Height; y++)
                 {
                     tempPoint = new Point(door.X + door.Width - 1, y);
                     if (edgePoints.Contains(tempPoint))
                     {
                         pointsToAdd.Add(tempPoint);
-                        if (pointsToAdd.Count > 2)
-                        {
-                            foundEdge = true;
-                        }
+                        //if (pointsToAdd.Count > 2)
+                        //{
+                        //    foundEdge = true;
+                        //}
                     }
                 }
-            }
+           // }
 
             //check up
-            if (!foundEdge)
-            {
+            //if (!foundEdge)
+            //{
                 for (int x = door.X; x < door.X + door.Width; x++)
                 {
                     tempPoint = new Point(x, door.Y);
                     if (edgePoints.Contains(tempPoint))
                     {
                         pointsToAdd.Add(tempPoint);
-                        if (pointsToAdd.Count > 3)
-                        {
-                            foundEdge = true;
-                        }
+                        //if (pointsToAdd.Count > 3)
+                        //{
+                        //    foundEdge = true;
+                        //}
                     }
                 }
-            }
+          //  }
 
             //check down
-            if (!foundEdge)
-            {
+            //if (!foundEdge)
+            //{
                 for (int x = door.X; x < door.X + door.Width; x++)
                 {
                     tempPoint = new Point(x, door.Y + door.Height - 1);
-                    if (edgePoints.Contains(tempPoint))
-                    {
-                        pointsToAdd.Add(tempPoint);
-                    }
+                if (edgePoints.Contains(tempPoint))
+                {
+                    pointsToAdd.Add(tempPoint);
                 }
             }
+            //}
 
             return pointsToAdd;
         }
