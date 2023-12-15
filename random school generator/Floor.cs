@@ -59,7 +59,7 @@ namespace random_school_generator
                 //corridor starting points
                 { 2, Color.Crimson },
                 //stairs
-                { 3, Color.DarkGoldenrod }
+                { 3, Color.MonoGameOrange }
             };
         }
 

@@ -246,7 +246,7 @@ namespace random_school_generator
                 {"office", Color.Silver},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.DarkGoldenrod },
-                {"toilets", Color.OrangeRed},
+                {"toilets", Color.Orange},
                 {"english", Color.SandyBrown },
                 {"maths", Color.SandyBrown},
                 {"science", Color.DimGray },

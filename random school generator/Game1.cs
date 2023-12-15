@@ -2788,7 +2788,7 @@ namespace random_school_generator
                             sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
                             clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
                             r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength));
+                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength)));
                         }
                     } while (sinkPoints.Count > 0);
                     break;
@@ -2801,7 +2801,7 @@ namespace random_school_generator
                             sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
                             clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
                             r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength));
+                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength)));
                         }
                     } while (sinkPoints.Count > 0);
                     break;
@@ -2814,7 +2814,7 @@ namespace random_school_generator
                             sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
                             clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
                             r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth));
+                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
                         }
                     } while (sinkPoints.Count > 0);
                     break;
@@ -2827,7 +2827,7 @@ namespace random_school_generator
                             sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
                             clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
                             r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth));
+                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
                         }
                     } while (sinkPoints.Count > 0);
                     break;
@@ -2842,7 +2842,7 @@ namespace random_school_generator
 
             if (chosenPoint.X == wallWidth)
             {
-                if ((chosenPoint.Y + length < r.RectHeight || forceLeftRight) && !forceUpDown)
+                if (chosenPoint.Y + length < r.RectHeight && !forceUpDown)
                 {
                     enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
                 } else
@@ -4273,7 +4273,7 @@ namespace random_school_generator
         }
         private List<Point> GetClearPointsFromRect(List<Point> edgePoints, Rectangle door)
         {
-            bool foundEdge = false;
+           // bool foundEdge = false;
             List<Point> pointsToAdd = new List<Point>();
             Point tempPoint;
 
