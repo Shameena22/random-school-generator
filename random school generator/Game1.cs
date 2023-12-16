@@ -2243,6 +2243,7 @@ namespace random_school_generator
                     MakeGymFurniture(r);
                     break;
                 case "canteen":
+                    MakeCanteenFurniture(r);
                     break;
                 case "staffroom":
                     break;
@@ -2359,6 +2360,42 @@ namespace random_school_generator
             AddSubjectDesks(r, 75, 15, 10);
             //...and add mats
             MakeGroupedTables(innerGrid, r, innerGap, true);
+        }
+        private void MakeCanteenFurniture(Room r)
+        {
+            int gap = 30, shiftX = 0, shiftY = 0;
+            Rectangle stallSpace;
+            //stalls? rectangles?? idk 
+            //and then tables .. can be a bunch of grouped tables (easier)
+            //hall stage - and then add stalls at edge, "wrap around" tables
+            AddHallStage(r); //stored in EquipDesks
+            stallSpace = r.EquipmentDesks[0];
+            switch (r.FacingTowards) {
+                case "left":
+                    shiftX = stallSpace.Width;
+                    MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
+                    break;
+                case "right":
+                    shiftX = -stallSpace.Width;
+                    MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
+                    break;
+                case "up":
+                    shiftY = stallSpace.Height;
+                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
+                    break;
+                case "down":
+                    shiftY = -stallSpace.Height;
+                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
+                    break;
+            }
+
+            //focus on getting the chairs done first...
+            //MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap - stallSpace.Height], r, gap);
+            r.Tables = r.Tables.Select(i => new Rectangle(i.X + shiftX, i.Y + shiftY, i.Width, i.Height)).ToList();
+            r.Chairs = r.Chairs.Select(i => new Rectangle(i.X + shiftX, i.Y + shiftY, i.Width, i.Height)).ToList();
+
+
+
         }
 
         private void AddScienceDesks(Room r)
