@@ -357,7 +357,7 @@ namespace random_school_generator
             zoneGraphChances.Add("hall", 1);
             zoneGraphChances.Add("canteen", 1);
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
-            zoneGraphChances.Add("toilets", 0.4f);
+            zoneGraphChances.Add("toilets", 0.7f);
             //and the staffroom won't be too large / too small
             zoneGraphChances["staffroom"] = 0.5f;
             //zone types closer to the front will be allocated larger areas
@@ -2262,20 +2262,6 @@ namespace random_school_generator
 
         private void MakeToilets(Room r)
         {
-            /*
-             * TODO: this..
-             * adding cubicles...sort of like adding a stage??? do a "stage" first and then that's basically a frame for the cubicles
-             * also need the sinks on the opposite side...but...
-             * can't just make that another "stage" as it could be obstructed
-             * new func that goes along the chosen side and adds sinks where possible? sounds alright
-             * need to encourage certain directions for the stage..
-             */
-
-            //AddHallStage(r); naw
-            //a new func that checks left, right, up, down clear
-            //if none clear, uh...cubicles in the middle?
-            //if one clear, add cubicles there with spaces between walls to avoid any other doors
-            //if +1 clear, encourage opposing sides but if not, choose random
 
             SetUpToiletCubiclesAndSinks(r);
            
@@ -2363,29 +2349,47 @@ namespace random_school_generator
         }
         private void MakeCanteenFurniture(Room r)
         {
-            int gap = 30, shiftX = 0, shiftY = 0;
+            int gap = 30, shiftX = 0, shiftY = 0, tableWidth = 15, tableGap = 5;
+            int stallWidth = tableWidth + 10;
             Rectangle stallSpace;
             //stalls? rectangles?? idk 
             //and then tables .. can be a bunch of grouped tables (easier)
             //hall stage - and then add stalls at edge, "wrap around" tables
+            //do the wrap around tables first
             AddHallStage(r); //stored in EquipDesks
             stallSpace = r.EquipmentDesks[0];
             switch (r.FacingTowards) {
                 case "left":
                     shiftX = stallSpace.Width;
                     MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Bottom - tableWidth - tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, tableWidth, stallSpace.Height - 2 * tableGap));
+                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.Right - stallWidth, stallSpace.Y + stallWidth, stallWidth, stallSpace.Height - 2 * stallWidth));
                     break;
                 case "right":
                     shiftX = -stallSpace.Width;
                     MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Bottom - tableWidth - tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Bottom - tableWidth - tableGap, stallSpace.Y, tableWidth, stallSpace.Height));
+                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X, stallSpace.Y + stallWidth, stallWidth, stallSpace.Height - 2 * stallWidth));
                     break;
                 case "up":
                     shiftY = stallSpace.Height;
                     MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, tableWidth, stallSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Width - tableWidth, stallSpace.Y, tableWidth, stallSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, stallSpace.Width, tableWidth));
+                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X + stallWidth, stallSpace.Height - stallWidth, stallSpace.Width - 2 * stallWidth, stallWidth));
                     break;
                 case "down":
                     shiftY = -stallSpace.Height;
                     MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, tableWidth, stallSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Width - tableWidth, stallSpace.Y, tableWidth, stallSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Width - tableWidth, stallSpace.Width, tableWidth));
+                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X + stallWidth, stallSpace.Y, stallSpace.Width - 2 * stallWidth, stallWidth));
                     break;
             }
 
@@ -2808,7 +2812,7 @@ namespace random_school_generator
         {
             //TODO: this
             //iterate from start to end of wall
-            int sinkLength = 15, sinkWidth = 11, gap = 5;
+            int sinkLength = 20, sinkWidth = 15, gap = 7;
             //use r.InnerClearPoints
             //just get rect positions and uhhh 
             //select one, remove any that overlap x and y

@@ -40,7 +40,7 @@ namespace random_school_generator
             _menuOptions.Add(new MenuOption("> generate school", Color.Green, Color.MediumSeaGreen));
 
             //creating all input options
-            _inputOptions.Add(new InputOption(validationType: "int", minNum: 75000, maxNum: 200000));
+            _inputOptions.Add(new InputOption(validationType: "int", minNum: 100000, maxNum: 200000));
             _inputOptions.Add(new InputOption(validationType: "int", minNum: 2, maxNum: 10));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
