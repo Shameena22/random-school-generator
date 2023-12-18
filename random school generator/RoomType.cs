@@ -205,7 +205,7 @@ namespace random_school_generator
             {
                 {"hall", Color.Brown },
                 {"gym", Color.DeepSkyBlue },
-                {"office", Color.Silver},
+                {"office", Color.DimGray},
                 {"canteen", Color.MediumOrchid},
                 {"staffroom", Color.Gold },
                 {"toilets", Color.HotPink },

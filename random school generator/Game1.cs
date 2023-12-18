@@ -421,9 +421,9 @@ namespace random_school_generator
                 //adding these zones to the ground floor only
                 if (f.FloorID == 0)
                 {
-                    chosenZones.Add("gym");
-                    chosenZones.Add("hall");
-                    chosenZones.Add("canteen");
+                    //chosenZones.Add("gym");
+                    //chosenZones.Add("hall");
+                    //chosenZones.Add("canteen");
                 }
                 else if (f.FloorID == staffRoomFloor && !chosenZones.Contains("staffroom"))
                 {
