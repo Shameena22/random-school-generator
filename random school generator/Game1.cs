@@ -359,7 +359,7 @@ namespace random_school_generator
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
             zoneGraphChances.Add("toilets", 0.7f);
             //and the staffroom won't be too large / too small
-            zoneGraphChances["staffroom"] = 0.5f;
+            zoneGraphChances["staffroom"] = 1f; //+++++
             //zone types closer to the front will be allocated larger areas
 
             //allocate a floor to have a staff room, ensuring that the building has at least one staffroom area
@@ -2246,6 +2246,7 @@ namespace random_school_generator
                     MakeCanteenFurniture(r);
                     break;
                 case "staffroom":
+                    MakeStaffRoomFurniture(r);
                     break;
                 case "toilets":
                     MakeToilets(r);
@@ -2400,6 +2401,14 @@ namespace random_school_generator
 
 
 
+        }
+        private void MakeStaffRoomFurniture(Room r)
+        {
+            //TODO: desks and cupboards and just a buncha chairs?
+            int gap = 25;
+            AddSubjectDesks(r, 30, 15, 6);
+            AddCupboard(r);
+            MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
         }
 
         private void AddScienceDesks(Room r)
@@ -2629,7 +2638,6 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
-
         private void SetUpToiletCubiclesAndSinks(Room r)
         {
             List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
@@ -2689,7 +2697,6 @@ namespace random_school_generator
                 MakeToiletSinks(r, "left");
             }
         }
-
         private void MakeToiletCubicles(Room r, string position, int wallWidth = 5)
         {
             Rectangle mask = new Rectangle(0, 0, 0, 0);
@@ -2737,10 +2744,9 @@ namespace random_school_generator
                 MakeIndividualCubicles(r, cubicle, doorPosition);
             }
         }
-        
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
-            int innerWallWidth = 3, doorLength = 8, toiletBackLength = 13, toiletBackWidth = 10, toiletSeatLength = 10;
+            int innerWallWidth = 3, doorLength = 8, toiletBackLength = 15, toiletBackWidth = 10, toiletSeatLength = 10;
             Rectangle tempToiletBack = new Rectangle(0, 0, 0, 0);
             //needs walls...got a door pos only
             //add a door in the middle (has to fit!)
