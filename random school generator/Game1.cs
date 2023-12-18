@@ -359,9 +359,9 @@ namespace random_school_generator
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
             zoneGraphChances.Add("toilets", 0.7f);
             //and the staffroom won't be too large / too small
-            zoneGraphChances["staffroom"] = 0.65f;
+            zoneGraphChances["staffroom"] = 0.5f;
+            zoneGraphChances["offices"] = 0.65f;
             //zone types closer to the front will be allocated larger areas
-            zoneGraphChances["offices"] = 1;
 
             //allocate a floor to have a staff room, ensuring that the building has at least one staffroom area
             staffRoomFloor = _random.Next(0, _allFloors.Count);
@@ -421,9 +421,9 @@ namespace random_school_generator
                 //adding these zones to the ground floor only
                 if (f.FloorID == 0)
                 {
-                    //chosenZones.Add("gym");
-                    //chosenZones.Add("hall");
-                    //chosenZones.Add("canteen");
+                    chosenZones.Add("gym");
+                    chosenZones.Add("hall");
+                    chosenZones.Add("canteen");
                 }
                 else if (f.FloorID == staffRoomFloor && !chosenZones.Contains("staffroom"))
                 {
@@ -2416,7 +2416,7 @@ namespace random_school_generator
         {
             //make teach desk but force the desk somewhere
             //make a really long desk
-            AddTeacherDesk(r, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20);
+            AddTeacherDesk(r, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
             AddCupboard(r);
             AddSubjectDesks(r, upperLimit: 6);
         }
