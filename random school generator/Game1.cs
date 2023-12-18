@@ -2195,19 +2195,9 @@ namespace random_school_generator
             }
         }
 
-        /*furniture...
-         * properly implement room max and min (done?)
-         * and fix issues with first floor (done?)
-         * add desks
-         * add add tables
-         * do for normal classrooms first
-         * TODO: make normal chairs + tables
-        */
-
         // - - creating furniture - - TODO: clean up this mess
         private void CreateFurniture(Room r)
         {
-            //TODO: switch to an if statement at some point
             switch (r.Type)
             {
                 case "english":
@@ -2232,7 +2222,7 @@ namespace random_school_generator
                     MakeArtClassroomFurniture(r);
                     break;
                 case "design technology":
-                    MakeArtClassroomFurniture(r); //basically the same
+                    MakeArtClassroomFurniture(r);
                     break;
                 case "music":
                     MakeMusicClassroomFurniture(r);
@@ -2250,7 +2240,7 @@ namespace random_school_generator
                     MakeStaffRoomFurniture(r);
                     break;
                 case "toilets":
-                    MakeToilets(r);
+                    MakeToiletFurniture(r);
                     break;
                 case "office":
                     MakeOfficeFurniture(r);
@@ -2263,27 +2253,17 @@ namespace random_school_generator
 
         }
 
-        private void MakeToilets(Room r)
-        {
-
-            SetUpToiletCubiclesAndSinks(r);
-           
-        }
         private void MakeNormalClassroomFurniture(Room r)
         {
-            //normal classroom things
+            //adds default classroom furniture
             AddTeacherDesk(r);
-            //also add equipment desks (depending on subject)
-            //also add cupboards
-            //so add chairs and tables too... TODO
-            //add them all as units
             AddCupboard(r);
             AddSubjectDesks(r);
             MakeNormalTablesAndChairs(r);
-
         }
         private void MakeScienceClassroomFurniture(Room r)
         {
+            //adds slightly larger desk + furniture
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
@@ -2292,9 +2272,12 @@ namespace random_school_generator
         private void MakeComputerScienceClassroomFurniture(Room r)
         {
             int gap = 30;
+            //create slightly larger desk + additional furniture
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
+
+            //used lined tables (more space efficient) if less room available; otherwise use science room arrangement
             if (r.RectHeight * r.RectWidth <= 20000)
             {
                 MakeLinedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
@@ -2307,106 +2290,95 @@ namespace random_school_generator
         private void MakeArtClassroomFurniture(Room r)
         {
             int innerGap = 30;
-           // char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+
+            //creating larger desk and other furniture
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
+
+            //if room isn't wide enough, use lined tables; only use large grouped tables if there is enough room
             if (r.RectWidth < innerGap + 65 && r.RectHeight < innerGap + 65)
             {
-                //innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
                 MakeLinedTables(new char[r.RectWidth - innerGap, r.RectHeight - innerGap], r, innerGap);
             } else
             {
-               // innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
                 MakeGroupedTables(new char[r.RectWidth - innerGap - 10, r.RectHeight - innerGap - 10], r, innerGap + 10);
             }
-
         }
         private void MakeMusicClassroomFurniture(Room r)
         {
-            //just want the grouped table things??
-            //or lined....
-            
             AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
             AddMusicTables(r);
-            //what tables??? definitely outer 
-            //and then lined too?
         }
         private void MakeHallFurniture(Room r)
         {
-            //todo: add a nice big stage + set facingtowards
-            //then add normal tables + chairs??? / just leave it
             AddHallStage(r);
-            //so...
             AddHallChairs(r);
         }
         private void MakeGymFurniture(Room r, int innerGap = 40)
         {
-            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
-            //TODO: add benches
+            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap]; 
+            //adding benches
             AddSubjectDesks(r, 75, 15, 10);
-            //...and add mats
+            //adding mats
             MakeGroupedTables(innerGrid, r, innerGap, true);
         }
         private void MakeCanteenFurniture(Room r)
         {
             int gap = 30, shiftX = 0, shiftY = 0, tableWidth = 15, tableGap = 5;
-            int stallWidth = tableWidth + 10;
-            Rectangle stallSpace;
-            //stalls? rectangles?? idk 
-            //and then tables .. can be a bunch of grouped tables (easier)
-            //hall stage - and then add stalls at edge, "wrap around" tables
-            //do the wrap around tables first
-            AddHallStage(r); //stored in EquipDesks
-            stallSpace = r.EquipmentDesks[0];
+            int stallWidth = tableWidth + 5;
+            Rectangle kitchenSpace;
+
+            //the "stage" will act as room for the kitchen staff
+            AddHallStage(r);
+            kitchenSpace = r.EquipmentDesks[0];
+
+            //add "wrap around" tables and front stall table depending on how the kitchen area is facing the rest of the room
+            //shiftX andf shiftY used to move canteen tables so they don't overlap with the kitchen area
             switch (r.FacingTowards) {
                 case "left":
-                    shiftX = stallSpace.Width;
-                    MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Bottom - tableWidth - tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, tableWidth, stallSpace.Height - 2 * tableGap));
-                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.Right - stallWidth, stallSpace.Y + stallWidth, stallWidth, stallSpace.Height - 2 * stallWidth));
+                    shiftX = kitchenSpace.Width;
+                    MakeGroupedTables(new char[r.RectWidth - gap - kitchenSpace.Width, r.RectHeight - gap], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Y + tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Y + tableGap, tableWidth, kitchenSpace.Height - 2 * tableGap));
+                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.Right - stallWidth, kitchenSpace.Y + stallWidth, stallWidth, kitchenSpace.Height - 2 * stallWidth));
                     break;
                 case "right":
-                    shiftX = -stallSpace.Width;
-                    MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap], r, gap);
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Y + tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X + tableGap, stallSpace.Bottom - tableWidth - tableGap, stallSpace.Width - 2 * tableGap, tableWidth));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Bottom - tableWidth - tableGap, stallSpace.Y, tableWidth, stallSpace.Height));
-                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X, stallSpace.Y + stallWidth, stallWidth, stallSpace.Height - 2 * stallWidth));
+                    shiftX = -kitchenSpace.Width;
+                    MakeGroupedTables(new char[r.RectWidth - gap - kitchenSpace.Width, r.RectHeight - gap], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Y + tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y + stallWidth, stallWidth, kitchenSpace.Height - 2 * stallWidth));
                     break;
                 case "up":
-                    shiftY = stallSpace.Height;
-                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, tableWidth, stallSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Width - tableWidth, stallSpace.Y, tableWidth, stallSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, stallSpace.Width, tableWidth));
-                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X + stallWidth, stallSpace.Height - stallWidth, stallSpace.Width - 2 * stallWidth, stallWidth));
+                    shiftY = kitchenSpace.Height;
+                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - kitchenSpace.Height], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Width - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, kitchenSpace.Width, tableWidth));
+                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Height - stallWidth, kitchenSpace.Width - 2 * stallWidth, stallWidth));
                     break;
                 case "down":
-                    shiftY = -stallSpace.Height;
-                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - stallSpace.Height], r, gap);
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Y, tableWidth, stallSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.Width - tableWidth, stallSpace.Y, tableWidth, stallSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(stallSpace.X, stallSpace.Width - tableWidth, stallSpace.Width, tableWidth));
-                    r.ExtraFurnitureList2.Add(new Rectangle(stallSpace.X + stallWidth, stallSpace.Y, stallSpace.Width - 2 * stallWidth, stallWidth));
+                    shiftY = -kitchenSpace.Height;
+                    MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - kitchenSpace.Height], r, gap);
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Width - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Width - tableWidth, kitchenSpace.Width, tableWidth));
+                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Y, kitchenSpace.Width - 2 * stallWidth, stallWidth));
                     break;
             }
 
-            //focus on getting the chairs done first...
-            //MakeGroupedTables(new char[r.RectWidth - gap - stallSpace.Width, r.RectHeight - gap - stallSpace.Height], r, gap);
+            //add grouped tables and chairs, shifted away from the kitchen
             r.Tables = r.Tables.Select(i => new Rectangle(i.X + shiftX, i.Y + shiftY, i.Width, i.Height)).ToList();
             r.Chairs = r.Chairs.Select(i => new Rectangle(i.X + shiftX, i.Y + shiftY, i.Width, i.Height)).ToList();
-
-
-
         }
         private void MakeStaffRoomFurniture(Room r)
         {
-            //TODO: desks and cupboards and just a buncha chairs?
+            //normal classroom furniture without a teacher desk
             int gap = 25;
             AddSubjectDesks(r, 30, 15, 6);
             AddCupboard(r);
@@ -2414,8 +2386,7 @@ namespace random_school_generator
         }
         private void MakeOfficeFurniture(Room r)
         {
-            //make teach desk but force the desk somewhere
-            //make a really long desk
+            //adding an especially long desk for office staff
             AddTeacherDesk(r, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
             AddCupboard(r);
             AddSubjectDesks(r, upperLimit: 6);
@@ -2423,7 +2394,10 @@ namespace random_school_generator
 
         private void AddScienceDesks(Room r)
         {
+            //ensures gap of 30 pixels from furniture to each wall of room
             int innerGap = 30;
+
+            //randomly choose what types of tables to create; skewed towards "wrap around" tables
             double choice = _random.NextDouble();
             if (choice <= 0.75)
             {
@@ -2431,6 +2405,7 @@ namespace random_school_generator
             } 
             else
             {
+                //increase the gap because grouped tables are wider
                 char[,] innerGrid = new char[r.RectWidth - innerGap - 10, r.RectHeight - innerGap - 10];
                 MakeGroupedTables(innerGrid, r, innerGap + 10);
             }
@@ -2441,6 +2416,7 @@ namespace random_school_generator
             char[,] innerGrid = new char[r.RectWidth - innerGap - 20, r.RectHeight - innerGap - 20];
             double choice = _random.NextDouble();
 
+            //randomly choose between wrap-around tables and normal lined tables...slightly skewed towards the former
             if (choice < 0.6)
             {
                 AddOuterTables(r, innerGap);
@@ -2451,42 +2427,40 @@ namespace random_school_generator
         }
         private void AddHallStage(Room r, int wallWidth = 5)
         {
-            /*for: length = max, width = room width / 5, try length - 5 in increments
-             * try up to length = 4/5 width
-             * for: length = max, width = room witdh / 5, try length - 5 
-             * up to width = 1/10 room
-             * if not....put it in the middle ig
-             */
-
             int stageHeight = 0, stageWidth = 0, stageHeightCount = 0, stageWidthCount = 0;
             bool valid = false;
             List<Point> validStagePoints = new List<Point>();
             Rectangle stage = new Rectangle(0, 0, 0, 0);
-            //nested loop?
 
+            //finding the best width + height of stage that doesn't block any doors
             do
             {
-                
-
                 stageHeightCount = 0;
                 do
                 {
-                    //left, right
+                    //attempt to make stage on left and right
                     stageWidth = (r.RectWidth - 10) / 5 - 5 * stageWidthCount;
-                    if (stageWidth > (r.RectWidth - 10) / 10) //also.....do the longest way possible first?
+                    //only do so if the current stage width is large enough
+
+                    if (stageWidth > (r.RectWidth - 10) / 7)
                     {
+                        //choose a height that decreases with each iteration
                         stageHeight = r.RectHeight - 10 - 5 * stageHeightCount;
+                        //only continue if the chosen height is large enough
 
                         if (stageHeight >= (r.RectHeight - 10) * 0.8)
                         {
-                            //find stuff here
-                            //get valid points and remove ones that don't start at x = 5 or x = r.RectWidth - wallWidth - 1
+                            //attempt to find valid positions using the selected stage width and height
                             validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => ( i.X == 5 || i.X == r.RectWidth - wallWidth - 1) && i.Y != r.RectHeight - wallWidth - 1 ).ToList();
-                            //what to do if in corner???
+                            
+                            //if there are valid points...
                             if (validStagePoints.Count > 0)
                             {
+                                //add the stage to the room
                                 valid = true;
                                 stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
+                                
+                                //set the direction that the stage is facing towards
                                 if (stage.X == wallWidth)
                                 {
                                     r.FacingTowards = "left";
@@ -2501,8 +2475,11 @@ namespace random_school_generator
                         
                     }
 
-                    //up, down
+                    //attempt to add stage on top and bottom of room
+
+                    //select a stage width, only continue if it is large enough
                     stageWidth = (r.RectHeight - 10) / 5 - 5 * stageWidthCount;
+
                     if (stageWidth > (r.RectHeight - 10) / 10)
                     {
                         stageHeight = r.RectWidth - 10 - 5 * stageHeightCount;
@@ -2648,7 +2625,7 @@ namespace random_school_generator
             r.TeacherChair = r.MakeRectRelativeToFloor(chair);
             SetRoomFacingTowards(r, wallWidth);
         }
-        private void SetUpToiletCubiclesAndSinks(Room r)
+        private void MakeToiletFurniture(Room r)
         {
             List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
 
