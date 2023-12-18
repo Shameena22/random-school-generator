@@ -101,7 +101,7 @@ namespace random_school_generator
             {
                 {"classroom", 135 },
                 {"large", 150 },
-                {"service", 100},
+                {"service", 110},
                 {"staff", 100 }
             };
 
@@ -110,7 +110,7 @@ namespace random_school_generator
             {
                 {"hall", Color.Brown },
                 {"gym", Color.SteelBlue },
-                {"office", Color.Silver},
+                {"office", Color.DarkSlateGray},
                 {"canteen", Color.DarkRed},
                 {"staffroom", Color.RosyBrown },
                 {"toilets", Color.OrangeRed },
@@ -148,7 +148,7 @@ namespace random_school_generator
             {
                 {"hall", Color.Brown },
                 {"gym", Color.PowderBlue },
-                {"office", Color.Silver},
+                {"office", Color.DarkSlateGray},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.DarkGoldenrod },
                 {"toilets", Color.HotPink },
@@ -167,7 +167,7 @@ namespace random_school_generator
             {
                 {"hall", Color.Brown },
                 {"gym", Color.PowderBlue },
-                {"office", Color.Silver},
+                {"office", Color.BlueViolet},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.DarkGoldenrod },
                 {"toilets", Color.HotPink },
@@ -186,7 +186,7 @@ namespace random_school_generator
             {
                 {"hall", Color.Brown },
                 {"gym", Color.PowderBlue },
-                {"office", Color.Silver},
+                {"office", Color.SandyBrown},
                 {"canteen", Color.RosyBrown},
                 {"staffroom", Color.PaleGoldenrod },
                 {"toilets", Color.HotPink },

@@ -359,8 +359,9 @@ namespace random_school_generator
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
             zoneGraphChances.Add("toilets", 0.7f);
             //and the staffroom won't be too large / too small
-            zoneGraphChances["staffroom"] = 0.65f; //+++++
+            zoneGraphChances["staffroom"] = 0.65f;
             //zone types closer to the front will be allocated larger areas
+            zoneGraphChances["offices"] = 1;
 
             //allocate a floor to have a staff room, ensuring that the building has at least one staffroom area
             staffRoomFloor = _random.Next(0, _allFloors.Count);
@@ -460,7 +461,7 @@ namespace random_school_generator
             //generating a list of decimals which all add up to 1
             for (int i = 0; i < chosenZones.Count - 1; i++)
             {
-                temp = _random.Next(0, Math.Min(75, (int)(total * 100))) / 100f;
+                temp = _random.Next(0, Math.Min(50, (int)(total * 100))) / 100f;
                 sizeProportions.Add(temp);
                 total -= temp;
             }
@@ -474,17 +475,17 @@ namespace random_school_generator
             //store both lists' values aligned with each other as entries in a dictionary and return that
             for (int i = 0; i < chosenZones.Count; i++)
             {
-                if (sizeProportions[i] > 0.1 || (chosenZones[i] == "toilets" && sizeProportions[i] > 0))
+                if (sizeProportions[i] > 0.1 || ((chosenZones[i] == "toilets" || chosenZones[i] == "office") && sizeProportions[i] > 0))
                 {
                     zoneSizeProportions.Add(chosenZones[i], sizeProportions[i]);
                 }
                
             }
 
-            if (zoneSizeProportions.Count == 1)
-            {
+            //if (zoneSizeProportions.Count == 1)
+            //{
 
-            }
+            //}
 
             return zoneSizeProportions;
         }
@@ -2252,6 +2253,7 @@ namespace random_school_generator
                     MakeToilets(r);
                     break;
                 case "office":
+                    MakeOfficeFurniture(r);
                     break;
                 default:
                     break;
@@ -2409,6 +2411,14 @@ namespace random_school_generator
             AddSubjectDesks(r, 30, 15, 6);
             AddCupboard(r);
             MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
+        }
+        private void MakeOfficeFurniture(Room r)
+        {
+            //make teach desk but force the desk somewhere
+            //make a really long desk
+            AddTeacherDesk(r, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20);
+            AddCupboard(r);
+            AddSubjectDesks(r, upperLimit: 6);
         }
 
         private void AddScienceDesks(Room r)
