@@ -359,7 +359,7 @@ namespace random_school_generator
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
             zoneGraphChances.Add("toilets", 0.7f);
             //and the staffroom won't be too large / too small
-            zoneGraphChances["staffroom"] = 1f; //+++++
+            zoneGraphChances["staffroom"] = 0.65f; //+++++
             //zone types closer to the front will be allocated larger areas
 
             //allocate a floor to have a staff room, ensuring that the building has at least one staffroom area
