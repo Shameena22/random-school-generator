@@ -2085,7 +2085,7 @@ namespace random_school_generator
                     _currentFloorIndex++;
                     _currentZoneIndex = 0;
                     _currentRoomIndex = 0;
-                     return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
+                      return $"> finished furniture creation: floor {_currentFloorIndex - 1}";
                 }
 
                 //if zones in the floor still need furniture added...

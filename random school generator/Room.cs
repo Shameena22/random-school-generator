@@ -96,67 +96,67 @@ namespace random_school_generator
             }
     
         }
-
         public Rectangle MakeRectPosRelativeToFloor(Rectangle r, int extraX = 0, int extraY = 0)
         {
+            //returns new rectangle with shifted position to make it relative to the whole floor array
             return new Rectangle(r.X + _growthTopLeft.X + _zoneTopLeft.X + extraX, r.Y + _growthTopLeft.Y + _zoneTopLeft.Y + extraY, r.Width, r.Height);
         }
-
         public Point MakePointRelativeToFloor(Point p)
         {
+            //shifts point to make it relative to the floor rather than being relative to a room
             return new Point(p.X + _growthTopLeft.X + _zoneTopLeft.X, p.Y + _growthTopLeft.Y + _zoneTopLeft.Y);
         }
-
+        public Point MakePointRelativeToRoom(Point p)
+        {
+            return new Point(p.X - _zoneTopLeft.X, p.Y - _zoneTopLeft.Y);
+        }
         public Rectangle MakeRectRelativeToRoom(Rectangle r)
         {
+            //returns rectangle with shifted position to make it relative to the room's top-left corner
             return new Rectangle(r.X - _growthTopLeft.X - _zoneTopLeft.X, r.Y - _growthTopLeft.Y - _zoneTopLeft.Y, r.Width, r.Height);
         }
 
         public void CopyChairAndTableDataToGrid()
         {
-            //teacher deskbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-            //teacher chair
-            //chairs
-            //tables
-
-            //check cupboard + add
-            //check subj desks + add
-
+            //mark teacher chair and desk on room grid
             AddRectToGrid(MakeRectRelativeToRoom(_teacherChair), 'C', true, addRect: false);
             AddRectToGrid(MakeRectRelativeToRoom(_teacherDesk), 'T', true, addRect: false);
 
+            //mark each student chair on the room grid
             foreach (Rectangle r in _chairs)
             {
                 AddRectToGrid(MakeRectRelativeToRoom(r), 'C', true, addRect: false);
             }
 
+            //mark each table on the room grid
             foreach (Rectangle r in _tables)
             {
                 AddRectToGrid(MakeRectRelativeToRoom(r), 'C', true, addRect: false);
             }
 
-            //int j;
-            //new sub for checking
+            //mark cupboard onto room grid
             AddCupboardOrSubjDesk(MakeRectRelativeToRoom(_cupboard), true);
 
-            //just gotta fix this...
+            //mark all subject desks onto room grid
             for (int i = 0; i < _equipmentDesks.Count; i++)
             {
                 i = AddCupboardOrSubjDesk(MakeRectRelativeToRoom(_equipmentDesks[i]), false, i);
             }
 
         }
-
         private int AddCupboardOrSubjDesk(Rectangle r, bool cupboard, int i = 0)
         {
             bool add = true;
+
+            //checks the grid where the cupboard / subject desk is located
+            //if any space is already marked with another piece of furniture, remove the cupboard / subject desk
+            //if not, add the furniture to the room grid
             for (int x = r.X; x < r.X + r.Width; x++)
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
                 {
                     if ((_grid[x, y] == 'C' || _grid[x, y] == 'T' || _grid[x, y] == 'S') && _roomType != "toilets")
                     {
-                        //remove 
                         add = false;
 
                         if (cupboard)
@@ -165,15 +165,13 @@ namespace random_school_generator
                         }
                         else
                         {
-                            //this isn't working...
-                            
                             _equipmentDesks.Remove(MakeRectPosRelativeToFloor(r));
                             i--;
                         }
-
                         break;
                     }
                 }
+
                 if (!add)
                 {
                     break;
@@ -184,13 +182,9 @@ namespace random_school_generator
             {
                 AddRectToGrid(r, 'S', true, addRect: false);
             }
+
             return i;
         }
-        public Point MakePointRelativeToRoom(Point p)
-        {
-            return new Point(p.X - _zoneTopLeft.X, p.Y - _zoneTopLeft.Y);
-        }
-
 
         public void DrawRoom(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
@@ -235,13 +229,14 @@ namespace random_school_generator
             }
 
         }
-
         private void DrawFurniture(SpriteBatch spriteBatch, int scrollX, int scrollY, Rectangle furniture, Color colour)
         {
+            //draws a piece of furniture
             spriteBatch.Draw(_pixel, new Rectangle(furniture.X - scrollX, furniture.Y - scrollY, furniture.Width, furniture.Height), colour);
         }
         private void DrawFurniture(SpriteBatch spriteBatch, int scrollX, int scrollY, List<Rectangle> furniture, Color colour)
         {
+            //draws each piece of furniture in a given list
             foreach (Rectangle r in furniture)
             {
                 spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), colour);

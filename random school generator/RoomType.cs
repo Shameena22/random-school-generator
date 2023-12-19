@@ -38,22 +38,6 @@ namespace random_school_generator
         public static Dictionary<string, Color> ExtraFurniture1Colours { get => _extraFurniture1Colours; set => _extraFurniture1Colours = value; }
         public static Dictionary<string, Color> ExtraFurniture2Colours { get => _extraFurniture2Colours; set => _extraFurniture2Colours = value; }
 
-        //dictionary of dictionary?
-        //or....
-
-
-
-
-        //public RoomType(string type)
-        //{
-        //    _type = type;
-        //    _random = new Random();
-        //}
-
-        //public static void LoadData()
-        //{
-
-        //}
         public static void LoadData()
         {
             //setting colours of base for each type of room
