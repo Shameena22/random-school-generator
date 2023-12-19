@@ -60,7 +60,7 @@ namespace random_school_generator
 
             //TODO: check if code below fits here
             _allSubjectOptions = new List<string> { "english", "maths", "science", "religious education", "languages", "computer science", "art", "design technology", "music", "random" };
-            _gameStates = new List<string> { "menu", "settings", "create floors", "create graphs", "create stairs", "grow rectangular zones", "create corridors", "create rooms", "create furniture" };
+            _gameStates = new List<string> { "menu", "settings", "create floors", "create graphs", "create stairs", "grow rectangular zones", "create corridors", "create rooms", "create furniture", "view generated school" };
             _gameStateIndex = 0;
             _currentZoneIndex = 0;
             _titleScreen = new TitleScreen();
@@ -174,6 +174,10 @@ namespace random_school_generator
                 case "create furniture":
                     UpdateScroll();
                     currentMessage = UpdateFurnitureCreation();
+                    break;
+                case "view generated school":
+                    UpdateScroll();
+                    currentMessage = ViewGeneratedSchool();
                     break;
             }
 
@@ -1985,58 +1989,56 @@ namespace random_school_generator
         }
         private void SplitRoom(Zone z, int roomIndex)
         {
-            //check room + if 75 more than the given type
-            //create two rooms
-            //delete the first room
-            //and split them
-            //add them to the end
+            //recursively split rooms that are too large in half until they are an acceptable size
 
             Room originalRoom = z.Rooms[roomIndex], room1, room2;
-            //make 2 rooms from room if large
-            //then delete the room from the index
-            //add the two rooms on and run them with their index
-            //remember to SetRoomRect at the end too
 
+            //check if the room is too large for its type
             if (z.ZoneType.SecondaryType != "large" && (originalRoom.RectWidth > RoomType.SideLengths[z.ZoneType.SecondaryType] * 2.15 || originalRoom.RectHeight > RoomType.SideLengths[z.ZoneType.SecondaryType] * 2.15))
             {
-                //split....
+                //if width > height, split at width
                 if (originalRoom.RectWidth > originalRoom.RectHeight)
                 {
-                    //TODO: issue with allocating IDs to new rooms...
-                    //get the highest ID in the zone + add 1??
+                    //create the first half room
                     room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, (int)Math.Floor(originalRoom.RectWidth / 2f) + 1, originalRoom.RectHeight);
                     room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
 
+                    //create the second half room
                     room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, (int)Math.Ceiling(originalRoom.RectWidth / 2f) - 1, originalRoom.RectHeight);
                     room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X + room1.RectWidth, room1.GrowthTopLeft.Y);
 
+                    //adjust room2's width so room1 and room2 are adjacent
                     if (room2.GrowthTopLeft.X + room2.RectWidth < originalRoom.GrowthTopLeft.X + originalRoom.RectWidth)
                     {
                         room2.RectWidth += 1;
                     }
 
-                } else
+                } else //if width < height, split at height
                 {
+                    //create the first half room
                     room1 = new Room(z.Rooms.Count + 1, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, (int)Math.Floor( originalRoom.RectHeight / 2f) + 1);
                     room1.GrowthTopLeft = originalRoom.GrowthTopLeft;
 
+                    //create the second half room
                     room2 = new Room(z.Rooms.Count + 2, z.ZoneType.Type, z.GrowthTopLeft, originalRoom.RectWidth, (int)Math.Floor(originalRoom.RectHeight / 2f) - 1);
                     room2.GrowthTopLeft = new Point(room1.GrowthTopLeft.X, room1.GrowthTopLeft.Y + room1.RectHeight);
 
+                    //adjust room2's height if required to make the rooms adjacent
                     if (room2.GrowthTopLeft.Y + room2.RectHeight < originalRoom.GrowthTopLeft.Y + originalRoom.RectHeight)
                     {
                         room2.RectHeight += 1;
                     }
                 }
 
-                //remove the 1st room
+                //remove the original room from the zone
                 z.Rooms.RemoveAt(roomIndex);
 
-                //add the 1st room and recurse
+                //add the 1st room to the zone and recurse to split it further
                 z.Rooms.Add(room1);
                 SetRoomRect(z.Rooms[z.Rooms.Count - 1], z, true, true);
                 SplitRoom(z, z.Rooms.Count - 1);
 
+                //add the 2nd room to the zone and recurse to split it further
                 z.Rooms.Add(room2);
                 SetRoomRect(z.Rooms[z.Rooms.Count - 1], z, true, true);
                 SplitRoom(z, z.Rooms.Count - 1);
@@ -2059,15 +2061,7 @@ namespace random_school_generator
             {
                 Floor currentFloor = _allFloors[_currentFloorIndex];
 
-                //if all the zones in a floor have just had furniture and doors added, create the walls for every room
-                //if (_currentZoneIndex == currentFloor.Zones.Count && !currentFloor.MadeWalls)
-                //{
-                //    AddWallsToFloor(currentFloor);
-                //    _previousUpdateTime = DateTime.Now;
-                //    return $"> added walls: floor {_currentFloorIndex}";
-                //}
-
-                //quickly add all floors and walls??
+                //first make walls and doors for the entire floor
                 if (_currentZoneIndex == 0 && !currentFloor.MadeWalls)
                 {
                     foreach (Zone z in currentFloor.Zones)
@@ -2091,35 +2085,20 @@ namespace random_school_generator
                 //if zones in the floor still need furniture added...
                 else if (_currentZoneIndex < currentFloor.Zones.Count)
                 {
-
-                    //if room index = 0 and no doors..
-                    //else...
-
                     Zone currentZone = currentFloor.Zones[_currentZoneIndex];
-
-                    //if (_currentRoomIndex == 0 && !currentZone.FinishedDoors)
-                    //{
-                    //    AddDoors(currentFloor, currentZone);
-                    //    currentZone.FinishedDoors = true;
-                    //    return $"> created doors: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
-                    //}
 
                     //if all rooms in a zone have furniture, add the doors and move onto the next zone
                     if (_currentRoomIndex == currentZone.Rooms.Count)
                     {
-                        //AddDoors(currentFloor, currentZone);
                         _currentZoneIndex++;
                         _currentRoomIndex = 0;
                         return $"> finished creating furniture: floor {_currentFloorIndex}, zone {_currentZoneIndex - 1}";
                     } 
 
-                    //if some rooms still need furniture (and enough time has passed between last update), create furniture <--- TODO
+                    //if some rooms still need furniture (and enough time has passed between last update), create furniture
                     else if (DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange)) {
                         Room currentRoom = currentZone.Rooms[_currentRoomIndex];
-
-                        //do stuff here
                         CreateFurniture(currentRoom);
-
                         _previousUpdateTime = DateTime.Now;
                         _currentRoomIndex++;
 
@@ -2132,6 +2111,9 @@ namespace random_school_generator
             }
             else
             {
+                //move onto next game state when done
+                _gameStateIndex++;
+                _currentFloorIndex = -1;
                 return "> finished creating furniture";
             }
         }
@@ -2195,7 +2177,7 @@ namespace random_school_generator
             }
         }
 
-        // - - creating furniture - - TODO: clean up this mess
+        // - - creating furniture - - 
         private void CreateFurniture(Room r)
         {
             switch (r.Type)
@@ -4522,6 +4504,37 @@ namespace random_school_generator
             }
         }
 
+        // - view generated school - TODO
+        /*
+         * 
+         */
+
+        private string ViewGeneratedSchool()
+        {
+            if (_currentFloorIndex == -1)
+            {
+                _currentFloorIndex = 0;
+                return "> finished school generation";
+            }
+
+            if (buttonPress(Keys.Up) && _currentFloorIndex != _allFloors.Count - 1)
+            {
+                _currentFloorIndex++;
+            }
+            else if (buttonPress(Keys.Down) && _currentFloorIndex != 0)
+            {
+                _currentFloorIndex--;
+            }
+            
+
+            return $"> viewing floor {_currentFloorIndex}";
+        }
+
+        private bool buttonPress(Keys k)
+        {
+            return _previousKeyboardState.IsKeyUp(k) && _currentKeyboardState.IsKeyDown(k);
+        }
+
         // - update message queue -
         private void UpdateMessageQueue(string s)
         {
@@ -4534,7 +4547,7 @@ namespace random_school_generator
                 }
 
                 //if the message is new, add it to the queue
-                if (!_displayMessages.Contains(s))
+                if (_displayMessages.Count == 0 || _displayMessages.ElementAt(_displayMessages.Count - 1) != s)
                 {
                     _displayMessages.Enqueue(s);
                 }
@@ -4591,7 +4604,7 @@ namespace random_school_generator
             {
                 _settingsScreen.DrawSettingsScreen(_spriteBatch, GraphicsDevice);
             }
-            else if (_gameState == "create floors" || _gameState == "create stairs" || _gameState == "create corridors" || _gameState == "grow rectangular zones" || _gameState == "create rooms" || _gameState == "create furniture")
+            else 
             {
                 DrawFloorUpdates();
             }
