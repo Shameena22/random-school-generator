@@ -2044,7 +2044,7 @@ namespace random_school_generator
 
         }
 
-        // - create room furniture 
+        // - create room details -
         private string UpdateFurnitureCreation()
         {
             if (_currentFloorIndex == -1)
@@ -2253,6 +2253,7 @@ namespace random_school_generator
 
         }
 
+        // - - - making specific types of room - - -
         private void MakeNormalClassroomFurniture(Room r)
         {
             //adds default classroom furniture
@@ -2392,6 +2393,7 @@ namespace random_school_generator
             AddSubjectDesks(r, upperLimit: 6);
         }
 
+        // - - - making specific pieces of furniture - - -
         private void AddScienceDesks(Room r)
         {
             //ensures gap of 30 pixels from furniture to each wall of room
@@ -2482,16 +2484,20 @@ namespace random_school_generator
 
                     if (stageWidth > (r.RectHeight - 10) / 10)
                     {
+                        //select a stage height that decreases with each iteration, only continue if it is large enough
                         stageHeight = r.RectWidth - 10 - 5 * stageHeightCount;
 
                         if (stageHeight >= (r.RectWidth - 10) * 0.8)
                         {
-                            //find stuff here
+                            //try to find valid positions for the stage
                             validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => (i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1) && i.X != r.RectWidth - wallWidth - 1).ToList();
 
+                            //if there are possible positions...
                             if (validStagePoints.Count > 0)
                             {
                                 valid = true;
+
+                                //create the stage and set the room's direction
                                 stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
                                 if (stage.Y == wallWidth)
                                 {
@@ -2505,11 +2511,13 @@ namespace random_school_generator
                         }
                         stageHeightCount++;
                     }
+                    //stop if the stage's height becomes too small
                 } while (stageHeight >= (Math.Min(r.RectWidth - 10, r.RectHeight - 10) * 0.8) && !valid);
-
                 stageWidthCount++;
+                //stop if the stage's width becomes too small
             } while (stageWidth > (Math.Min(r.RectWidth - 10, r.RectHeight - 10) / 10) && !valid);
 
+            //if no stage position has been found, add one that allows for a gap between all walls
             if (!valid)
             {
                 if (r.RectWidth > r.RectHeight)
@@ -2521,22 +2529,26 @@ namespace random_school_generator
                 }
             }
 
-            r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(stage));
-            
+            //add the stage to the room
+            r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(stage)); 
         }
         private void AddHallChairs(Room r, int wallWidth = 5)
         {
-            //make a lil grid based on facingTowards and stage
-            //then add separate chairs...but not tables!
-            //then add based on stage position
+            //can change chair dimensions here
             int chairLength = 15, gapBetweenChairs = 10, innerGridWidth, innerGridHeight, extraX, extraY;
-            List<Rectangle> outerRects = new List<Rectangle>();        
+            List<Rectangle> outerRects;        
 
+            //choose how to shift the chairs so they don't overlap woth the stage - depends where the stage is
             if (r.FacingTowards == "left" || r.FacingTowards == "right")
             {
+                //the inner grid is the space in the room free for chairs
                 innerGridWidth = r.RectWidth - 2 * wallWidth - r.EquipmentDesks[0].Width - gapBetweenChairs;
                 innerGridHeight = r.RectHeight - 2 * wallWidth - gapBetweenChairs;
+
+                //extraY used to shift chairs down, prevent overlap with walls
                 extraY = wallWidth + gapBetweenChairs;
+
+                //extraX is used to shift chairs left / right; set to prevent overlap with stage
                 if (r.FacingTowards == "left")
                 {
                     extraX = r.EquipmentDesks[0].Width + gapBetweenChairs + wallWidth;
@@ -2548,9 +2560,14 @@ namespace random_school_generator
             }
             else
             {
+                //set innerGrid dimensions
                 innerGridWidth = r.RectWidth - 2 * wallWidth - gapBetweenChairs;
                 innerGridHeight = r.RectHeight - 2 * wallWidth - r.EquipmentDesks[0].Height - gapBetweenChairs;
+
+                //extraX prevents chair overlap with walls
                 extraX = wallWidth + gapBetweenChairs;
+
+                //set extraY to shift chairs up / down and prevent overlap with stage
                 if (r.FacingTowards == "up")
                 {
                     extraY = r.EquipmentDesks[0].Height + gapBetweenChairs + wallWidth;
@@ -2559,80 +2576,73 @@ namespace random_school_generator
                     extraY = gapBetweenChairs + wallWidth;
                 }
             }
+
+            //make a list of smaller rectangkes for each individual chair to fit in
             outerRects = MakeEnclosingRectangles(chairLength + gapBetweenChairs, chairLength + gapBetweenChairs, innerGridHeight, innerGridWidth);
 
-            //now format...
+            //iterate through these rectangles, adding a chair in the middle of each one
             foreach (Rectangle rect in outerRects)
             {
-                r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(rect.X + gapBetweenChairs, rect.Y + gapBetweenChairs, chairLength, chairLength), extraX, extraY));
+                r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(rect.X + gapBetweenChairs, rect.Y + gapBetweenChairs, chairLength, chairLength), extraX, extraY));
             }
-
         }
         private void AddTeacherDesk(Room r, int wallWidth = 5, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
-            //get all possible rects, 50 * 30, 50 stuck to edge
-            //choose random one
-            //add desk based on rect dimensions
-            //TODO: add clear points based on this
-           // List<Point> points = FindEdgeRectPositions(35, r);
-
-          //  Point chosenPoint = points[_random.Next(0, points.Count)];
-            Rectangle enclosingRect = new Rectangle(0, 0, 0, 0), desk, chair;
-            //width = 25, -5 because wallWidth = 5
-            //int length = 35, width = 20, deskOffset = 15, deskGap = 5, deskLength = 25, deskWidth = 8, chairOffset = 5, chairLength = 10;
-
-            //enclosingRect = GetEdgeRectFromPoint(r, chosenPoint, length, width);
+            //enclosingRect contains space for the desk and the chair together
+            Rectangle enclosingRect, desk, chair;
+            //find a suitable position on the edge for the enclosing rectangle
             enclosingRect = AddEdgeRect(r, length, width);
 
-            //now make desk based on this...
-            //TODO: check this
-            //r.ClearPoints.AddRange(GetClearPointsFromRect(r.Edgepoints, enclosingRect));
-
-            if (enclosingRect.Width == width) //if left or right
+            //if the position is on the left or right...
+            if (enclosingRect.Width == width)
             {
-                if (enclosingRect.X == wallWidth) //left
+                //if the rectangle is on the left of the room, make the chair to the left of the desk
+                if (enclosingRect.X == wallWidth)
                 {
                     desk = new Rectangle(deskOffset, enclosingRect.Y + deskGap, deskWidth, deskLength);
                     chair = new Rectangle(wallWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+                    r.FacingTowards = "left";
                 }
-                else //up - TODO: fix
-                {
-                    //desk = new Rectangle(enclosingRect.X, enclosingRect.Y + deskGap, deskWidth, deskLength);
-                    //chair = new Rectangle(enclosingRect.X + deskWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
-
+                //if the rectangle is on the right, make the chair on the right of the desk
+                else
+                {                
                     chair = new Rectangle(enclosingRect.X + enclosingRect.Width - chairLength, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
                     desk = new Rectangle(chair.X - deskWidth, enclosingRect.Y + deskGap, deskWidth, deskLength);
+                    r.FacingTowards = "right";
                 }
             }
+            //if the rectangle's position is at the top or bottom of the room...
             else
             {
+                //if the rectangle is at the top, add the chair above the desk
                 if (enclosingRect.Y == wallWidth)
                 {
                     desk = new Rectangle(enclosingRect.X + deskGap, deskOffset, deskLength, deskWidth);
                     chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, chairOffset, chairLength, chairLength);
+                    r.FacingTowards = "up";
                 }
-                else //down: TODO: fix
+                //if the rectangle is at the bottom, add the chair below the desk
+                else
                 {
-                    //desk = new Rectangle(enclosingRect.X + deskGap, enclosingRect.Y, deskLength, deskWidth);
-                    //chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, enclosingRect.Y + deskWidth, chairLength, chairLength);
-
                     chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, enclosingRect.Y + enclosingRect.Height - chairLength, chairLength, chairLength);
                     desk = new Rectangle(enclosingRect.X + deskGap, chair.Y - deskWidth, deskLength, deskWidth);
+                    r.FacingTowards = "down";
                 }
             }
 
-            r.TeacherDesk = r.MakeRectRelativeToFloor(desk);
-            r.TeacherChair = r.MakeRectRelativeToFloor(chair);
-            SetRoomFacingTowards(r, wallWidth);
+            //add the chair and desk to the room, with appropriately shifted positions
+            r.TeacherDesk = r.MakeRectPosRelativeToFloor(desk);
+            r.TeacherChair = r.MakeRectPosRelativeToFloor(chair);
         }
         private void MakeToiletFurniture(Room r)
         {
+            //clearPoints: positions in the room to avoid, e.g. in front of door, for this purpose we make them relative to the room instead of the floor
             List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
-
             bool leftFree = true, rightFree = true, upFree = true, downFree = true;
+
+            //check for what sides of the room have doors; cubicles are set to avoid them
             foreach (Point p in clearPoints)
             {
-                //if = 5
                 if (p.X == 5)
                 {
                     leftFree = false;
@@ -2652,6 +2662,7 @@ namespace random_school_generator
 
             }
 
+            //make cubicles and sinks, preferably opposite each other, cubicles should be made on a side without doors
             if (upFree && downFree)
             {
                 MakeToiletCubicles(r, "up");
@@ -2683,6 +2694,19 @@ namespace random_school_generator
                 MakeToiletCubicles(r, "right");
                 MakeToiletSinks(r, "left");
             }
+            else
+            {
+                //if each side has a door - very unlikely - add cubicles and sinks anyway
+                if (r.RectWidth > r.RectHeight)
+                {
+                    MakeToiletCubicles(r, "down");
+                    MakeToiletSinks(r, "up");
+                } else
+                {
+                    MakeToiletCubicles(r, "right");
+                    MakeToiletSinks(r, "left");
+                }
+            }
         }
         private void MakeToiletCubicles(Room r, string position, int wallWidth = 5)
         {
@@ -2690,14 +2714,15 @@ namespace random_school_generator
             int gap = 5, width, height, cublicleWidth = 45;
             List<Rectangle> cubicles;
             string doorPosition;
-            //start off with the mask
-
-            //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(mask)); turned out alright 
+            
             if (position == "left" || position == "right")
             {
+                //set the cubicle's width and height
                 width = (r.RectWidth - 2 * wallWidth) / 2;
                 height = r.RectHeight - 2 * wallWidth - 2 * gap;
 
+                //create the outer rectangle (mask) enclosing all cubicles based on position parameter
+                //and set position of door to be on the opposite side
                 if (position == "left")
                 {
                     mask = new Rectangle(wallWidth, wallWidth + gap, width, height);
@@ -2707,13 +2732,17 @@ namespace random_school_generator
                     mask = new Rectangle(r.RectWidth - wallWidth - width, wallWidth + gap, width, height);
                     doorPosition = "left";
                 }
+
+                //make individual cubicle masks within the larger mask
                 cubicles = MakeEnclosingRectangles(cublicleWidth, width, height, width).Select(i => new Rectangle(i.X + mask.X, i.Y + mask.Y, i.Width, i.Height)).ToList();
 
             } else
             {
+                //set the cubicle's width and height
                 width = r.RectWidth - 2 * wallWidth - 2 * gap;
                 height = (r.RectHeight - 2 * wallWidth) / 2;
 
+                //create the mask enclosing all cubicles based on position parameter and set position of door to be on the opposite side
                 if (position == "up")
                 {
                     mask = new Rectangle(wallWidth + gap, wallWidth, width, height);
@@ -2723,9 +2752,12 @@ namespace random_school_generator
                     mask = new Rectangle(wallWidth + gap, r.RectHeight - wallWidth - height, width, height);
                     doorPosition = "up";
                 }
+
+                //make individual cubicle masks within the larger mask
                 cubicles = MakeEnclosingRectangles(height, cublicleWidth, height, width).Select(i => new Rectangle(i.X + mask.X, i.Y + mask.Y, i.Width, i.Height)).ToList();
             }
-            //now just gotta make the stuff in the cubicles
+
+            //iterate through each cubicle mask to add detail inside them
             foreach (Rectangle cubicle in cubicles)
             {
                 MakeIndividualCubicles(r, cubicle, doorPosition);
@@ -2734,172 +2766,430 @@ namespace random_school_generator
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
             int innerWallWidth = 3, doorLength = 8, toiletBackLength = 15, toiletBackWidth = 10, toiletSeatLength = 10;
-            Rectangle tempToiletBack = new Rectangle(0, 0, 0, 0);
-            //needs walls...got a door pos only
-            //add a door in the middle (has to fit!)
-            //add walls (not on door) ... could just add all + have door on top, easier!
-
-            /*
-             * toilet seat = chair
-             * toilet back = desk
-             * sink = extra 2
-             * walls = subj desk (done)
-             * door = extra 1 (done)
-             */
-
-            //TODO: add toilet seat
-            //one big rect at edge and then a smaller after it
+            Rectangle tempToiletBack;
+            
+            //if door is on the left / right
             if (doorPosition == "left" || doorPosition == "right")
             {
-                //add walls up and down
-                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
-                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
+                //add walls at top + bottom of cubicle
+                r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
+                r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
 
                 if (doorPosition == "left")
                 {
-                   r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
-                   r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
-                    // r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
-                    //TODO: add the toilet
+                    //add wall and door on left
+                    r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
+                    r.ExtraFurnitureList1.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
+
+                    //add both parts of toilet on right
                     tempToiletBack = new Rectangle(mask.Right - toiletBackWidth, mask.Y + mask.Height / 2 - toiletBackLength / 2, toiletBackWidth, toiletBackLength);
-                    r.Tables.Add(r.MakeRectRelativeToFloor(tempToiletBack));
-                    r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(tempToiletBack.X - toiletSeatLength, mask.Y + mask.Height / 2 - toiletSeatLength / 2, toiletSeatLength, toiletSeatLength)));
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(tempToiletBack));
+                    r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempToiletBack.X - toiletSeatLength, mask.Y + mask.Height / 2 - toiletSeatLength / 2, toiletSeatLength, toiletSeatLength)));
                     
                 } else
                 {
-                    r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
-                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
-                    //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
+                    //add wall and door on right
+                    r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
+                    r.ExtraFurnitureList1.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y + mask.Height / 2 - 2, innerWallWidth, doorLength)));
+                    
+                    //add both parts of toilet on left
                     tempToiletBack = new Rectangle(mask.X, mask.Y + mask.Height / 2 - toiletBackLength / 2, toiletBackWidth, toiletBackLength);
-                    r.Tables.Add(r.MakeRectRelativeToFloor(tempToiletBack));
-                    r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(tempToiletBack.Right, mask.Y + mask.Height / 2 - toiletSeatLength / 2, toiletSeatLength, toiletSeatLength)));
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(tempToiletBack));
+                    r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempToiletBack.Right, mask.Y + mask.Height / 2 - toiletSeatLength / 2, toiletSeatLength, toiletSeatLength)));
                 }
 
-            } else
+            } else //if cubicles are facing up / down
             {
                 //add walls left and right
-                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
-                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
+                r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Y, innerWallWidth, mask.Height)));
+                r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.Right - innerWallWidth, mask.Y, innerWallWidth, mask.Height)));
 
                 if (doorPosition == "up")
                 {
-                    r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
-                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, doorLength, innerWallWidth)));
-                    //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
+                    //add wall and door on top
+                    r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
+                    r.ExtraFurnitureList1.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Y, doorLength, innerWallWidth)));
+                    
+                    //add toilet on the bottom
                     tempToiletBack = new Rectangle(mask.X + mask.Width / 2 - toiletBackLength / 2, mask.Bottom - toiletBackWidth, toiletBackLength, toiletBackWidth);
-                    r.Tables.Add(r.MakeRectRelativeToFloor(tempToiletBack));
-                    r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - toiletSeatLength / 2, tempToiletBack.Y - toiletSeatLength, toiletSeatLength, toiletSeatLength)));
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(tempToiletBack));
+                    r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - toiletSeatLength / 2, tempToiletBack.Y - toiletSeatLength, toiletSeatLength, toiletSeatLength)));
                 } else
                 {
-                    r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
-                    r.ExtraFurnitureList1.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Bottom - innerWallWidth, doorLength, innerWallWidth)));
-                    //r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X, mask.Y, mask.Width, innerWallWidth)));
+                    //add wall and door on bottom
+                    r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X, mask.Bottom - innerWallWidth, mask.Width, innerWallWidth)));
+                    r.ExtraFurnitureList1.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - 2, mask.Bottom - innerWallWidth, doorLength, innerWallWidth)));
+                   
+                    //add toilet at top
                     tempToiletBack = new Rectangle(mask.X + mask.Width / 2 - toiletBackLength / 2, mask.Y, toiletBackLength, toiletBackWidth);
-                    r.Tables.Add(r.MakeRectRelativeToFloor(tempToiletBack));
-                    r.Chairs.Add(r.MakeRectRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - toiletSeatLength / 2, tempToiletBack.Bottom, toiletSeatLength, toiletSeatLength)));
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(tempToiletBack));
+                    r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(mask.X + mask.Width / 2 - toiletSeatLength / 2, tempToiletBack.Bottom, toiletSeatLength, toiletSeatLength)));
                 }
             }
 
         }
         private void MakeToiletSinks(Room r, string position)
         {
-            //TODO: this
-            //iterate from start to end of wall
-            int sinkLength = 20, sinkWidth = 15, gap = 7;
-            //use r.InnerClearPoints
-            //just get rect positions and uhhh 
-            //select one, remove any that overlap x and y
+            int sinkLength = 17, sinkWidth = 13, gap = 7;
             List<Point> sinkPoints = new List<Point>(), clearPoints = new List<Point>();
             Rectangle sinkRect;
-            switch (position)
+
+            do
+            {
+                //find possible positions of next sink on specified part of room
+                switch (position)
+                {
+                    case "left":
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == 5).ToList();
+                        break;
+                    case "right":
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == r.RectWidth - 5 - 1).ToList();
+                        break;
+                    case "up":
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == 5).ToList();
+                        break;
+                    case "down":
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == r.RectHeight - 5 - 1).ToList();
+                        break;
+                }
+                
+                //if there is space for the next sink...
+                if (sinkPoints.Count > 0)
+                {
+                    //create the sink's rectangle
+                    sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, (position == "left" || position == "right"), (position == "up" || position == "down"));
+
+                    //add new points to avoid so future sinks won't overlap with this one
+                    clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
+                    r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+
+                    //add sink to room, with adjusted position and dimensions
+                    if (position == "left" || position == "right")
+                    {
+                        r.ExtraFurnitureList2.Add(r.MakeRectPosRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength)));
+                    } else
+                    {
+                        r.ExtraFurnitureList2.Add(r.MakeRectPosRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
+                    }                   
+                }
+            } while (sinkPoints.Count > 0);
+        }
+        private void AddCupboard(Room r)
+        {
+            //adds a cupboard with fixed dimensions to a room
+            Rectangle tempCupboard = AddEdgeRect(r, 28, 14);
+            r.Cupboard = r.MakeRectPosRelativeToFloor(tempCupboard);
+        }
+        private void AddSubjectDesks(Room r, int width = 30, int height = 14, int upperLimit = 5)
+        {
+            Rectangle tempRect;
+
+            //choose a random number of desks to have
+            int j = _random.Next(0, upperLimit);
+
+            //add this number of desks to walls of room
+            for (int i = 0; i < j; i++)
+            {
+                tempRect = AddEdgeRect(r, width, height);
+                r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(tempRect));
+            }
+        }
+        private void MakeNormalTablesAndChairs(Room r)
+        {
+            //adds chairs and tables in typical arrangement
+
+            //using an inner grid within room guarantees space between walls and tables
+            int innerGap = 40;
+            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
+
+            //used to choose what type of table to create
+            int tableTypeChoice = _random.Next(0, 2);
+
+            //if the room is too big, add grouped tables which are less space-efficient (added to prevent rooms with a ridiculous number of chairs)
+            if (r.RectWidth * r.RectHeight >= 40000)
+            {
+                MakeGroupedTables(innerGrid, r, innerGap);
+            }
+            //otherwise create tables based on randomly selected choice
+            else if (tableTypeChoice == 0)
+            {
+                MakeLinedTables(innerGrid, r, innerGap, 3); //tables have spaces between them
+            }
+            else
+            {
+                MakeLinedTables(innerGrid, r, innerGap, 0); //no gaps between tables
+            };
+        }
+        private void MakeLinedTables(char[,] grid, Room r, int innerGap, int gapBetweenTables = 0)
+        {
+            //creates tables + chairs in a lined arrangement
+
+            int outerWidth = 25, outerLength = 30;
+            List<Rectangle> outerRects;
+            List<(Rectangle, Rectangle)> tablesAndChairs = new List<(Rectangle, Rectangle)>();
+            int extraX = 0, extraY = 0;
+
+            if (r.FacingTowards == "left" || r.FacingTowards == "right")
+            {
+                //create rectangles that will each contain a chair + table space
+                outerRects = MakeEnclosingRectangles(outerWidth, outerLength, grid.GetUpperBound(1), grid.GetUpperBound(0));
+
+                //extraX is set to shift the x-pos of tables + chairs, preventing overlap with other furniture
+                if (r.FacingTowards == "left")
+                {
+                    extraX = 10;
+                }
+                else
+                {
+                    extraX = -3;
+                }
+            }
+            else
+            {
+                //create rectangles that will each contain a chair + table space
+                outerRects = MakeEnclosingRectangles(outerLength, outerWidth, grid.GetUpperBound(1), grid.GetUpperBound(0));
+
+                //extraY is set to shift the y-pos of tables + chairs, preventing overlap with other furniture
+                if (r.FacingTowards == "up")
+                {
+                    extraY = 10;
+                }
+                else
+                {
+                    extraY = -3;
+                }
+            }
+
+            //create a table and chair for each of the outer rectangles
+            foreach (Rectangle outerRect in outerRects)
+            {
+                tablesAndChairs.Add(MakeTablesAndChairsFromRect(outerRect, r.FacingTowards, 15, 10, gapBetweenTables));
+            }
+
+            //add all tables + chairs to room, shifting position to prevent overlap with walls / other furniture
+            foreach ((Rectangle, Rectangle) tableAndChairPair in tablesAndChairs)
+            {
+                r.Tables.Add(r.MakeRectPosRelativeToFloor(tableAndChairPair.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
+                r.Chairs.Add(r.MakeRectPosRelativeToFloor(tableAndChairPair.Item2, innerGap / 2 + extraX, innerGap / 2 + extraY));
+            }
+        }
+        private void MakeGroupedTables(char[,] grid, Room r, int innerGap, bool mat = false)
+        {
+            //choose a number of tables to have
+            int numOfTables = r.RectWidth * r.RectHeight / 6500;
+
+            List<Rectangle> possibleRects = new List<Rectangle>(), enclosingRects;
+            Rectangle currentRect, tempRect, matRect;
+            (Rectangle, List<Rectangle>) tableAndChairs;
+            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = (int)Math.Sqrt(6500);
+
+            //break the large grid space into smaller rectangles
+            enclosingRects = MakeEnclosingRectangles(encRectSide, encRectSide, grid.GetUpperBound(1), grid.GetUpperBound(0));
+
+            //set values to shift x and y pos of tables by (prevents overlap)
+            switch (r.FacingTowards)
             {
                 case "left":
-                    do
-                    {
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == 5).ToList();
-                        if (sinkPoints.Count > 0)
-                        {
-                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
-                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
-                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength)));
-                        }
-                    } while (sinkPoints.Count > 0);
+                    extraX = 5;
                     break;
                 case "right":
-                    do
-                    {
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == r.RectWidth - 5 - 1).ToList();
-                        if (sinkPoints.Count > 0)
-                        {
-                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, true);
-                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
-                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkWidth, sinkLength)));
-                        }
-                    } while (sinkPoints.Count > 0);
+                    extraX = -5;
                     break;
                 case "up":
-                    do
-                    {
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == 5).ToList();
-                        if (sinkPoints.Count > 0)
-                        {
-                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
-                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
-                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
-                        }
-                    } while (sinkPoints.Count > 0);
+                    extraY = 5;
                     break;
                 case "down":
-                    do
-                    {
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == r.RectHeight - 5 - 1).ToList();
-                        if (sinkPoints.Count > 0)
-                        {
-                            sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, false, true);
-                            clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
-                            r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
-                            r.ExtraFurnitureList2.Add(r.MakeRectRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
-                        }
-                    } while (sinkPoints.Count > 0);
+                    extraY = -5;
                     break;
+            }
+
+            do
+            {
+                possibleRects.Clear();
+
+                //iterate through each of the smaller rectangles
+                foreach (Rectangle encRect in enclosingRects)
+                {
+                    //try to fit a table space into the rectangle; add if possible
+                    tempRect = GetGroupedTableRectFromRegion(grid, length, width, new Rectangle(encRect.X + 5, encRect.Y, encRect.Width, encRect.Height));
+                    if (tempRect.Height > 0)
+                    {
+                        possibleRects.Add(tempRect);
+                    }
+                    //try to fit the same table space, rotated 90 degrees; add if possible
+                    tempRect = GetGroupedTableRectFromRegion(grid, width, length, new Rectangle(encRect.X, encRect.Y + 5, encRect.Width, encRect.Height));
+                    if (tempRect.Height > 0)
+                    {
+                        possibleRects.Add(tempRect);
+                    }
+                }
+
+                //if tables can be placed in the region...
+                if (possibleRects.Count > 0)
+                {
+                    //choose a random table from the list
+                    currentRect = possibleRects[_random.Next(0, possibleRects.Count)];
+
+                    //if creating gym mats, just need to add a simple rectangle to the room
+                    if (mat)
+                    {
+                        matRect = new Rectangle(currentRect.X + 5, currentRect.Y + 5, currentRect.Width - 5, currentRect.Height - 5);
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(matRect, innerGap / 2, innerGap / 2));
+                    }
+                    //if making grouped tables...
+                    else
+                    {
+                        //make the separate table and chair rectangles from the outer rectangle
+                        tableAndChairs = MakeGroupedTable(currentRect, 35, 30, 10, 5, 5);
+
+                        //add the table to the room
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(tableAndChairs.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
+
+                        //add each chair to the room
+                        foreach (Rectangle chair in tableAndChairs.Item2)
+                        {
+                            r.Chairs.Add(r.MakeRectPosRelativeToFloor(chair, innerGap / 2 + extraX, innerGap / 2 + extraY));
+                        }
+                    }
+
+                    //add the table to the grid, so no overlapping tables will be created
+                    AddGroupedTableToGrid(ref grid, new Rectangle(currentRect.X, currentRect.Y, currentRect.Width + 5, currentRect.Height + 5));
+                    i++;
+                }
+                //continue until no more space for tables / reached chosen number of tables
+            } while (possibleRects.Count > 0 && i < numOfTables);
+        }
+        private void AddOuterTables(Room r, int addedGap)
+        {
+            //adds chairs and tables in a U arrangement; also adds extra line in middle if there is enough space
+
+            List<(List<Rectangle>, string)> outerRects = new List<(List<Rectangle>, string)>();
+            int totalWidth = 25, chairLength = 10, tableLength = 15;
+            List<(Rectangle, Rectangle)> tableAndChairPairs = new List<(Rectangle, Rectangle)>();
+            List<Rectangle> tempRectList = new List<Rectangle>();
+            Rectangle tempRect = new Rectangle(0, 0, 0, 0), extraLeftRect = new Rectangle(0, 0, 0, 0), extraRightRect = new Rectangle(0, 0, 0, 0);
+
+            if (r.FacingTowards != "left")
+            {
+                //create a list of rectangles along left wall of room
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(addedGap, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
+
+                //if the final rectangle doesn't fully reach to bottom, add an extra one to compensate for the space
+                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(addedGap + chairLength, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
+                }
+
+                outerRects.Add((tempRectList, "right"));
+            }
+            if (r.FacingTowards != "right")
+            {
+                //create a list of rectangles along right wall of room
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
+
+                //if the final rectangle doesn't fully reach to bottom, add an extra one to compensate for the space
+                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.X, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
+                }
+
+                outerRects.Add((tempRectList, "left"));
+            }
+            if (r.FacingTowards != "up")
+            {
+                //create a list of rectangles along top wall of room
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, addedGap, i.Width, i.Height)).ToList();
+
+                //if the final rectangle doesn't fully reach to the right of the room, add an extra one to compensate for the space
+                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right, addedGap + chairLength, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
+                }
+
+                outerRects.Add((tempRectList, "down"));
+            }
+            if (r.FacingTowards != "down")
+            {
+                //create a list of rectangles along bottom wall of room
+                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, r.RectHeight - addedGap - totalWidth, i.Width, i.Height)).ToList();
+
+                //if the final rectangle doesn't fully reach to the right of the room, add an extra one to compensate for the space
+                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                {
+                    tempRect = tempRectList[tempRectList.Count - 1];
+                    r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right, tempRect.Y, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
+                }
+
+                outerRects.Add((tempRectList, "up"));
+            }
+
+            //add tables in the middle of the U if it fits
+            AddMiddleTables(r, addedGap, outerRects, totalWidth, tableLength, ref tempRectList, ref tempRect);
+
+            //iterate through each of the outer rectangles; make a table and chair in each of them
+            foreach ((List<Rectangle>, string) line in outerRects)
+            {
+                foreach (Rectangle outerRect in line.Item1)
+                {
+                    tableAndChairPairs.Add(MakeTablesAndChairsFromRect(outerRect, line.Item2, 15, 10));
+                }
+            }
+
+            //add each table and chair to the room
+            foreach ((Rectangle, Rectangle) pair in tableAndChairPairs)
+            {
+                r.Tables.Add(r.MakeRectPosRelativeToFloor(pair.Item1));
+                r.Chairs.Add(r.MakeRectPosRelativeToFloor(pair.Item2));
             }
         }
 
-
+        // - - - other functions for creating furniture - - -
         private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
         {
-            Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);
-            //now make rect based on this          
+            //returns a valid rectangle adjacent to an edge based on a given point
+            //longest edge will be adjacent to the wall (so furniture doesn't look like it's in a weird position)
 
+            Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);         
+
+            //if the point is on the left wall...
             if (chosenPoint.X == wallWidth)
             {
                 if (chosenPoint.Y + length < r.RectHeight && !forceUpDown)
                 {
+                    //make a rectangle facing left/right if it fits and hasn't been specified against
                     enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
                 } else
                 {
+                    //make a rectangle facing up/down otherwise - will only happen if the point is one of the corners of the room
                     enclosingRect = new Rectangle(wallWidth, r.RectHeight - width - wallWidth, length, width);
                 }
             }
+
+            //if the point is on the right wall, make an appropriate rectangle facing left/right
             else if (chosenPoint.X == r.RectWidth - wallWidth - 1)
             {
-                //shouldn't ever be on bottom right corner so fine here
                 enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, chosenPoint.Y, width, length);
             }
+
+            //if the point is on the top wall...
             else if (chosenPoint.Y == wallWidth)
             {
-                if (chosenPoint.X + length < r.RectWidth || forceUpDown)
+                if (chosenPoint.X + length < r.RectWidth)
                 {
+                    //add a rectangle facing up/down unless it doesn't fit or specified against
                     enclosingRect = new Rectangle(chosenPoint.X, wallWidth, length, width);
                 }
                 else
                 {
+                    //otherwise add a rectangle facing left/right
                     enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, wallWidth, width, length);
                 }
             }
+
+            //if the point is on the bottom, add appropriate rectangle facing up/down
             else if (chosenPoint.Y == r.RectHeight - wallWidth - 1)
             {
                 enclosingRect = new Rectangle(chosenPoint.X, r.RectHeight - wallWidth - width, length, width);
@@ -2909,13 +3199,18 @@ namespace random_school_generator
         }
         private List<Point> FindEdgeRectPositions(int length, int width, Room r, int wallWidth)
         {
+            //returns a list of suitable positions against a wall for a rectangle
 
             List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
             bool validPoint = true;
+
+            //checking against top/bottom walls
             for (int x = wallWidth; x <= r.RectWidth - length - wallWidth; x++)
             {
+                //check if the rectangle can be adjacent to the top wall
+                //without blocking doors / going out of bounds
                 validPoint = true;
-                for(int i = x; i < x + length; i++)
+                for (int i = x; i < x + length; i++)
                 {
                     for (int j = wallWidth; j < width + wallWidth; j++)
                     {
@@ -2925,11 +3220,13 @@ namespace random_school_generator
                         }
                     }
                 }
+                //add rectangle if valid
                 if (validPoint)
                 {
                     validPoints.Add(new Point(x, wallWidth));
                 }
 
+                //check if the rectangle can be adjacent to the bottom wall
                 validPoint = true;
                 for(int i = x; i < x + length; i++)
                 {
@@ -2941,14 +3238,17 @@ namespace random_school_generator
                         }
                     }
                 }
+                //add rectangle if valid
                 if (validPoint)
                 {
                     validPoints.Add(new Point(x, r.RectHeight - wallWidth - 1));
                 }
             }
 
+            //now check along left / right walls for possible spaces
             for (int y = wallWidth; y <= r.RectHeight - wallWidth - length; y++)
             {
+                //check along left wall
                 validPoint = true;
                 for (int i = wallWidth; i < wallWidth + width; i++)
                 {
@@ -2960,13 +3260,14 @@ namespace random_school_generator
                         }
                     }
                 }
+                //add point if valid
                 if (validPoint)
                 {
-                    //TODO: finish
                     validPoints.Add(new Point(wallWidth, y));
                 }
-                validPoint = true;
 
+                //check along right wall
+                validPoint = true;
                 for (int i = r.RectWidth - width - wallWidth; i < r.RectWidth - wallWidth; i++)
                 {
                     for (int j = y; j < y + length; j++)
@@ -2977,6 +3278,7 @@ namespace random_school_generator
                         }
                     }
                 }
+                //add point to list if valid
                 if (validPoint)
                 {
                     validPoints.Add(new Point(r.RectWidth - wallWidth - 1, y));
@@ -2987,171 +3289,36 @@ namespace random_school_generator
         }
         private Rectangle AddEdgeRect(Room r, int length, int width, int wallWidth = 5)
         {
+            //adds a given rectangle on one of the edges of a room
+
             List<Point> clearPoints = new List<Point>();
-            //int cupboardLength = 15, cupboardWidth = 7;
             Point p;
             Rectangle rect;
-            // Rectangle cupboard;
-            //List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
+
+            //find possible positions for the rectangle to go
             List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
 
+            //if there is space for the rectangle...
             if (positions.Count > 0)
-            {   
-               
+            {    
+                //choose a random position from the list and get the valid rectangle from that point
                 p = positions[_random.Next(0, positions.Count)];
                 rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
 
+                //add points to avoid based on new rectangle, add to room data
                 clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, new Rectangle(rect.X, rect.Y, rect.Width, rect.Height));
-
-                //r.ClearPoints.AddRange(clearPoints);
-                //todo: make rect compatible with edges...
-                //UpdateInnerClearPoints(r, wallWidth, clearPoints);
                 r.InnerClearPoints.AddRange(clearPoints.Select(i => r.MakePointRelativeToFloor(i)));
+
                 return rect;
             }
 
+            //returns nothing if no space for rectangle
             return new Rectangle(0, 0, 0, 0);
         }
-        private void AddCupboard(Room r)
-        {
-            Rectangle tempCupboard = AddEdgeRect(r, 28, 14);
-            r.Cupboard = r.MakeRectRelativeToFloor(tempCupboard);
-
-        }
-        private void AddSubjectDesks(Room r, int width = 30, int height = 14, int upperLimit = 5)
-        {
-            int j = _random.Next(0, upperLimit);
-            Rectangle tempRect;
-            for (int i = 0; i < j; i++)
-            {
-                tempRect = AddEdgeRect(r, width, height);
-                r.EquipmentDesks.Add(r.MakeRectRelativeToFloor(tempRect));
-            }
-        }
-        private void MakeNormalTablesAndChairs(Room r)
-        {
-            //break down room into smaller section (done)
-            //choose a type of table (done-ish)
-            //make table based on choice...start with lined separate
-            //TODO: wallWidth should be a class property at this point
-            int innerGap = 40;
-            char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap];
-            int tableTypeChoice = _random.Next(0, 2);
-            // - - - - - - - 
-
-            //switch (tableTypeChoice)
-            //{
-            //    case 0:
-            //        MakeLinedTables(innerGrid, r, innerGap, 3);
-            //        break;
-            //    case 1:
-            //        MakeLinedTables(innerGrid, r, innerGap, 0);
-            //        break;
-            //    case 2:
-            //        MakeGroupedTables(innerGrid, r, innerGap);
-            //        break;
-            //}
-
-            if (r.RectWidth * r.RectHeight >= 40000)
-            {
-                MakeGroupedTables(innerGrid, r, innerGap);
-            } else if (tableTypeChoice == 0)
-            {
-                MakeLinedTables(innerGrid, r, innerGap, 3);
-            } else
-            {
-                MakeLinedTables(innerGrid, r, innerGap, 0);
-            };
-
-        }
-        private void SetRoomFacingTowards(Room r, int wallWidth)
-        {
-            if (r.TeacherDesk.Width < r.TeacherDesk.Height)
-            {
-                if (r.TeacherChair.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X == wallWidth)
-                {
-                    r.FacingTowards = "left";
-                }
-                else
-                {
-                    r.FacingTowards = "right";
-                }
-            }
-            else
-            {
-                if (r.TeacherChair.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y == wallWidth)
-                {
-                    r.FacingTowards = "up";
-                }
-                else
-                {
-                    r.FacingTowards = "down";
-                }
-            }
-        }
-        private void MakeLinedTables(char[,] grid, Room r, int innerGap, int gapBetweenTables = 0)
-        {
-            //make enclosing rectangles..a new sub??
-            //string facingTowards = "";
-            //choose width and length - TODO: change
-            int outerWidth = 25, outerLength = 30;
-            List<Rectangle> outerRects = new List<Rectangle>();
-            List<(Rectangle, Rectangle)> tablesAndChairs = new List<(Rectangle, Rectangle)>();
-            int extraX = 0, extraY = 0;
-
-            //choose orientation, based on r's door??? or what
-            if (r.FacingTowards == "left" || r.FacingTowards == "right")
-            {
-                //left
-                outerRects = MakeEnclosingRectangles(outerWidth, outerLength, grid.GetUpperBound(1), grid.GetUpperBound(0));
-                if (r.FacingTowards == "left")
-                {
-                    //facingTowards = "left";
-                    extraX = 10;
-                } else
-                {
-                   // facingTowards = "right";
-                    extraX = -3;
-                }
-
-            }
-            else
-            {
-                outerRects = MakeEnclosingRectangles(outerLength, outerWidth, grid.GetUpperBound(1), grid.GetUpperBound(0));
-                if (r.FacingTowards == "up")
-                {
-                    //facingTowards = "up";
-                    extraY = 10;
-                } else
-                {
-                   // facingTowards = "down";
-                    extraY = -3;
-                }
-            }
-            
-
-            //to make the tables and chairs...its own sub with length and width and pos?
-
-            foreach (Rectangle outerRect in outerRects)
-            {
-                tablesAndChairs.Add(MakeTablesAndChairsFromRect(outerRect, r.FacingTowards, 15, 10, gapBetweenTables));
-            }
-
-            //now just add these to the room?
-            foreach ((Rectangle, Rectangle) tableAndChairPair in tablesAndChairs)
-            {
-                r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
-                r.Chairs.Add(r.MakeRectRelativeToFloor(tableAndChairPair.Item2, innerGap / 2 + extraX, innerGap / 2 + extraY));
-            }
-            
-        }
         private (Rectangle, Rectangle) MakeTablesAndChairsFromRect(Rectangle rect, string facingTowards, int tableWidth, int chairLength, int tableGap = 0)
-        {
-            //table squished up to one rect.. need a table gap between rect
-            //then chair for each rect table .... 
-            //if chair.X = 5 or chair.Y = 5
-
-            //how to return??? as a tuple rect?
+        {      
+            //returns separate table and chair rectangles when given an overall space for both to be in
+            //needs to be positioned according to where the chair should be facing
             Rectangle table, chair;
             
             switch (facingTowards)
@@ -3177,11 +3344,12 @@ namespace random_school_generator
                     chair = new Rectangle(0, 0, 0, 0);
                     break;
             }
-            return (table, chair);
-            
+            return (table, chair);     
         }
         private List<Rectangle> MakeEnclosingRectangles(int rectLength, int rectWidth, double gridLength, double gridWidth)
         {
+            //breaks a large grid space into a list of smaller rectangles
+
             List<Rectangle> rects = new List<Rectangle>();
             for (int width = 0; width < Math.Floor(gridWidth / rectWidth); width++)
             {
@@ -3192,111 +3360,9 @@ namespace random_school_generator
             }
             return rects;
         }
-        private void MakeGroupedTables(char[,] grid, Room r, int innerGap, bool mat = false)
-        {
-            //have grid and rect dimensions
-            //choose a random num of tables to have
-            //while loop:
-            // - get possible points for horizontal
-            // - get possible points for vertical
-            // - choose a random and add (to grid as well)...or use room grid??? 
-            //loop until no places left or num of tables reached
-
-            int numOfTables = r.RectWidth * r.RectHeight / 6500; //TODO: tweak, maybe depending on room size??
-
-            List<Rectangle> possibleRects = new List<Rectangle>(), enclosingRects = new List<Rectangle>();
-            Rectangle currentRect, tempRect, matRect;
-            (Rectangle, List<Rectangle>) tableAndChairs;
-            int length = 65, width = 55, i = 0, extraX = 0, extraY = 0, encRectSide = (int)Math.Sqrt(6500);
-            //TODO: shift to left, right, up, down depending on room? should just have this as a prooerty at this point
-
-            //split it into squares
-            //how to get the square length???
-            //want num of sq to be >= num of desks
-            //so...
-            //big area - num of desks
-            //sqrt
-
-            enclosingRects = MakeEnclosingRectangles(encRectSide, encRectSide, grid.GetUpperBound(1), grid.GetUpperBound(0));
-
-            //tweak these values
-            switch (r.FacingTowards)
-            {
-                case "left":
-                    extraX = 5;
-                    break;
-                case "right":
-                    extraX = -5;
-                    break;
-                case "up":
-                    extraY = 5;
-                    break;
-                case "down":
-                    extraY = -5;
-                    break;
-            }
-
-            do
-            {
-                possibleRects.Clear();
-
-                //foreach rect r in encrects
-                //run sub
-
-                foreach (Rectangle encRect in enclosingRects)
-                {
-                    tempRect = GetGroupedTableRectFromBlock(grid, length, width, new Rectangle(encRect.X + 5, encRect.Y, encRect.Width, encRect.Height));
-                    if (tempRect.Height > 0)
-                    {
-                        possibleRects.Add(tempRect);
-                    }
-                    tempRect = GetGroupedTableRectFromBlock(grid, width, length, new Rectangle(encRect.X, encRect.Y + 5, encRect.Width, encRect.Height));
-                    if (tempRect.Height > 0)
-                    {
-                        possibleRects.Add(tempRect);
-                    }
-                }
-
-                //possibleRects.AddRange(GetPossibleRectsInGrid(grid, length, width));
-                //possibleRects.AddRange(GetPossibleRectsInGrid(grid, width, length));
-
-                if (possibleRects.Count > 0)
-                {
-                    currentRect = possibleRects[_random.Next(0, possibleRects.Count)];
-
-                    if (mat)
-                    {
-                        matRect = new Rectangle(currentRect.X + 5, currentRect.Y + 5, currentRect.Width - 5, currentRect.Height - 5);
-                        r.Tables.Add(r.MakeRectRelativeToFloor(matRect, innerGap / 2, innerGap / 2));
-                    } else
-                    {
-                        //now just need a function to make the rectangle
-                        tableAndChairs = MakeGroupedTable(currentRect, 35, 30, 10, 5, 5);
-                        //new function for mats -- just returns another rect?
-
-                        //add it to the room
-                        r.Tables.Add(r.MakeRectRelativeToFloor(tableAndChairs.Item1, innerGap / 2 + extraX, innerGap / 2 + extraY));
-
-                        foreach (Rectangle chair in tableAndChairs.Item2)
-                        {
-                            r.Chairs.Add(r.MakeRectRelativeToFloor(chair, innerGap / 2 + extraX, innerGap / 2 + extraY));
-                        }
-                    }
-                    
-
-                    //add it to the grid
-                    AddGroupedTableToGrid(ref grid, new Rectangle(currentRect.X, currentRect.Y, currentRect.Width + 5, currentRect.Height + 5));
-                    i++;
-
-                }
-
-
-            } while (possibleRects.Count > 0 && i < numOfTables);
-
-
-        }
         private void AddGroupedTableToGrid(ref char[,] grid, Rectangle r)
         {
+            //change character in positions occupied by a rectangle to mark its occupation
             for (int x = r.X; x < r.X + r.Width; x++)
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
@@ -3306,19 +3372,17 @@ namespace random_school_generator
                 }
             }
         }
-        private Rectangle GetGroupedTableRectFromBlock(char[,] grid, int length, int width, Rectangle block)
+        private Rectangle GetGroupedTableRectFromRegion(char[,] grid, int length, int width, Rectangle block)
         {
-            bool valid = false;
-            List<Rectangle> rects = new List<Rectangle>();
-            //grid marked with X if occupied
+            bool valid;
+
+            //iterate through positions in the region given
             for (int x = block.X; x < block.X + block.Width; x++)
             {
                 for (int y = block.Y; y < block.Y + block.Height; y++)
                 {
-
-                    //now within points
+                    //for each position, see if a rectangle would fit without overlap w/ other parts of room
                     valid = true;
-
                     for (int rectX = 0; rectX < width; rectX++)
                     {
                         for (int rectY = 0; rectY < length; rectY++)
@@ -3335,166 +3399,102 @@ namespace random_school_generator
                         }
                     }
 
+                    //return this position if a table can be added there
                     if (valid)
                     {
                         return new Rectangle(x, y, width, length);
-                        //speed up the process a bit...
-
                     }
                 }
             }
+
+            //returns no table if no space available
             return new Rectangle(0, 0, 0, 0);
         }
         private (Rectangle, List<Rectangle>) MakeGroupedTable(Rectangle r, int tableLength, int tableWidth, int chairLength, int chairGap, int outerGap)
         {
+            //returns separate table + list of chairs arranged in a group based on rectangle given
             Rectangle table;
             List<Rectangle> chairs = new List<Rectangle>();
 
             if (r.Height > r.Width)
             {
-                //two chairs along the length, one on the width
-                //make the table first??
-
+                //create table
                 table = new Rectangle(r.X + outerGap + chairLength, r.Y + outerGap + chairLength, tableLength, tableWidth);
-                //two on either side
+                //one chair on left, one on right
                 chairs.Add(new Rectangle(r.X + outerGap, r.Y + 3 * chairGap + chairLength, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + table.Width, r.Y + 3 * chairGap + chairLength, chairLength, chairLength));
-                //two at top
+                //two chairs at top
                 chairs.Add(new Rectangle(table.X + chairGap, r.Y + outerGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + chairLength + 2 * chairGap, r.Y + outerGap, chairLength, chairLength));
-                //two at bottom
+                //two chairs at bottom
                 chairs.Add(new Rectangle(table.X + chairGap, table.Y + table.Height, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + chairLength + 2 * chairGap, table.Y + table.Height, chairLength, chairLength));
 
             } else
             {
+                //create table
                 table = new Rectangle(r.X + outerGap + chairLength, r.Y + outerGap + chairLength, tableWidth, tableLength);
-
-                //top and bottom
+                //chair at top, chair at bottom
                 chairs.Add(new Rectangle(table.X + chairGap * 2, r.Y + outerGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + chairGap * 2, table.Y + table.Height, chairLength, chairLength));
-                //two on left
+                //two chairs on the left
                 chairs.Add(new Rectangle(r.X + outerGap, table.Y + chairGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(r.X + outerGap, table.Y + 2 * chairGap + chairLength, chairLength, chairLength));
-                //two on right
+                //two chairs on the right
                 chairs.Add(new Rectangle(table.X + table.Width, table.Y + chairGap, chairLength, chairLength));
                 chairs.Add(new Rectangle(table.X + table.Width, table.Y + 2 * chairGap + chairLength, chairLength, chairLength));
             }
 
             return (table, chairs);
-
         }
-        private void AddOuterTables(Room r, int addedGap)
+        private void AddMiddleTables(Room r, int addedGap, List<(List<Rectangle>, string)> outerRects, int totalWidth, int tableLength, ref List<Rectangle> tempRectList, ref Rectangle tempRect)
         {
-            List<(List<Rectangle>, string)> outerRects = new List<(List<Rectangle>, string)>();
-            int totalWidth = 25, chairLength = 10, tableLength = 15;
-            List<(Rectangle, Rectangle)> tableAndChairPairs = new List<(Rectangle, Rectangle)>();
-            List<Rectangle> tempRectList;
-            Rectangle tempRect, extraLeftRect = new Rectangle(0, 0, 0, 0), extraRightRect = new Rectangle(0, 0, 0, 0);
+            //add extra tables in middle of U-shape if possible
 
-            if (r.FacingTowards != "left")
-            {
-                //outerRects.Add((new Rectangle(addedGap, addedGap, totalWidth, r.RectHeight - 2 * addedGap), "right"));
-                
-                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(addedGap, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
-
-                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
-                {
-                    tempRect = tempRectList[tempRectList.Count - 1];
-                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(addedGap + chairLength, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
-                }
-
-                outerRects.Add((tempRectList, "right"));
-            }
-            if (r.FacingTowards != "right")
-            {
-                // outerRects.Add((new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap, totalWidth, r.RectHeight - 2 * addedGap), "left"));
-                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
-                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
-                {
-                    tempRect = tempRectList[tempRectList.Count - 1];
-                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.X, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
-                }
-                outerRects.Add((tempRectList, "left"));
-            }
-            if (r.FacingTowards != "up")
-            {
-                // outerRects.Add((new Rectangle(addedGap, addedGap, r.RectWidth - 2 * addedGap, totalWidth), "down"));
-               
-                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, addedGap, i.Width, i.Height)).ToList();
-
-                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
-                {
-                    tempRect = tempRectList[tempRectList.Count - 1];
-                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right, addedGap + chairLength, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
-                }
-                outerRects.Add((tempRectList, "down"));
-            }
-            if (r.FacingTowards != "down")
-            {
-                // outerRects.Add((new Rectangle(addedGap, r.RectHeight - addedGap - totalWidth, r.RectWidth - 2 * addedGap, totalWidth), "up"));
-                tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap -  2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, r.RectHeight - addedGap - totalWidth, i.Width, i.Height)).ToList();
-                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
-                {
-                    tempRect = tempRectList[tempRectList.Count - 1];
-                    r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right, tempRect.Y, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
-                }
-                outerRects.Add((tempRectList, "up"));
-            }
-
-
-            //and check if a middle one fits?
-            
             if (r.FacingTowards == "left" || r.FacingTowards == "right")
             {
+                //check if there is enough length + width for tables and chairs in the middle
                 if (r.RectHeight / 2 - addedGap - 2 * totalWidth >= 15 && r.RectWidth - 2 * (addedGap + totalWidth) >= 30)
                 {
+                    //create rectangles in the middle
                     tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * totalWidth);
+
+                    //if the rectangles don't reach to the right of the room, add other tables to compensate
+                    //this ensures that the line is connected to the U-shape
                     if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - 2 * addedGap - 2 * totalWidth)
                     {
                         tempRect = tempRectList[tempRectList.Count - 1];
-                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2 - tableLength, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
-                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2 - tableLength, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right + addedGap + totalWidth, r.RectHeight / 2, r.RectWidth - 2 * addedGap - 2 * totalWidth - tempRect.Right, tableLength)));
                     }
+
+                    //add rectangles to dictionary
                     outerRects.Add((tempRectList.Select(i => new Rectangle(i.X + addedGap + totalWidth, r.RectHeight / 2 - totalWidth, i.Width, i.Height)).ToList(), "down"));
                     outerRects.Add((tempRectList.Select(i => new Rectangle(i.X + addedGap + totalWidth, r.RectHeight / 2, i.Width, i.Height)).ToList(), "up"));
-
                 }
             }
             else
             {
-                if (r.RectWidth / 2 - addedGap - 2 * totalWidth >= 15 && r.RectHeight - 2 * (addedGap + totalWidth) >= 30) //TODO: tweak
-                {
-                    //add one before and after split
-                    //need to add tables and chairs....
-
+                //check if there is enough length + width for tables and chairs in the middle
+                if (r.RectWidth / 2 - addedGap - 2 * totalWidth >= 15 && r.RectHeight - 2 * (addedGap + totalWidth) >= 30) 
+                {  
+                    //create rectangles in the middle
                     tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * totalWidth, totalWidth);
+
+                    //if the rectangles don't reach to the bottom of the room, add other tables to compensate
+                    //this ensures that the line is connected to the U-shape
                     if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - 2 * addedGap - 2 * totalWidth)
                     {
                         tempRect = tempRectList[tempRectList.Count - 1];
-                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(r.RectWidth / 2 - tableLength, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
-                        r.Tables.Add(r.MakeRectRelativeToFloor(new Rectangle(r.RectWidth / 2, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(r.RectWidth / 2 - tableLength, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
+                        r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(r.RectWidth / 2, tempRect.Bottom + addedGap + totalWidth, tableLength, r.RectHeight - 2 * addedGap - 2 * totalWidth - tempRect.Bottom)));
                     }
+
+                    //add rectangles to dictionary
                     outerRects.Add((tempRectList.Select(i => new Rectangle(r.RectWidth / 2 - totalWidth, i.Y + addedGap + totalWidth, i.Width, i.Height)).ToList(), "right"));
                     outerRects.Add((tempRectList.Select(i => new Rectangle(r.RectWidth / 2, i.Y + addedGap + totalWidth, i.Width, i.Height)).ToList(), "left"));
                 }
             }
-
-            //now to add the tables and chairs...
-            foreach ((List<Rectangle>, string) line in outerRects)
-            {
-                foreach (Rectangle outerRect in line.Item1)
-                {
-                    tableAndChairPairs.Add(MakeTablesAndChairsFromRect(outerRect, line.Item2, 15, 10));
-                }
-            }
-
-            foreach ((Rectangle, Rectangle) pair in tableAndChairPairs)
-            {
-                r.Tables.Add(r.MakeRectRelativeToFloor(pair.Item1));
-                r.Chairs.Add(r.MakeRectRelativeToFloor(pair.Item2));
-            }
-            
         }
 
         // - - creating doors - -

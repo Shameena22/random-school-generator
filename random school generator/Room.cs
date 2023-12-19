@@ -97,7 +97,7 @@ namespace random_school_generator
     
         }
 
-        public Rectangle MakeRectRelativeToFloor(Rectangle r, int extraX = 0, int extraY = 0)
+        public Rectangle MakeRectPosRelativeToFloor(Rectangle r, int extraX = 0, int extraY = 0)
         {
             return new Rectangle(r.X + _growthTopLeft.X + _zoneTopLeft.X + extraX, r.Y + _growthTopLeft.Y + _zoneTopLeft.Y + extraY, r.Width, r.Height);
         }
@@ -167,7 +167,7 @@ namespace random_school_generator
                         {
                             //this isn't working...
                             
-                            _equipmentDesks.Remove(MakeRectRelativeToFloor(r));
+                            _equipmentDesks.Remove(MakeRectPosRelativeToFloor(r));
                             i--;
                         }
 
