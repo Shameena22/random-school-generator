@@ -53,7 +53,7 @@ namespace random_school_generator
             {
                 for (int j = r.Y; j < r.Y + r.Height; j++)
                 {
-                    if (overwrite || _grid[i, j] == emptySymbol)
+                    if ((overwrite || _grid[i, j] == emptySymbol) && i >= 0 && j >= 0)
                     {
                         _grid[i, j] = symbol;
                     }     

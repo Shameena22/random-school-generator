@@ -41,12 +41,9 @@ namespace random_school_generator
         private int _currentFloorIndex, _currentZoneIndex, _currentRoomIndex;
         private Queue<string> _displayMessages;
         private int _timeBetweenDisplayChange;
-        
 
         //building
         private List<Floor> _allFloors;
-
-        //TODO: create constants..
 
         public Game1()
         {
@@ -189,7 +186,8 @@ namespace random_school_generator
             base.Update(gameTime);
         }
 
-        // - update menu -
+
+        // - menu -
         private void UpdateMenu()
         {
             //fetches option selected by user at title screen
@@ -206,7 +204,8 @@ namespace random_school_generator
             }
         }
 
-        // - update settings -
+
+        // - settings -
         private void UpdateSettings()
         {
             //returns true once the user has exited the settings screen
@@ -217,14 +216,7 @@ namespace random_school_generator
                 _floorIrregularity = SetComplexity();
                 SetGrowthSpeed();
                 //switch to next game state
-                if (_watchGeneration == "yes")
-                {
-                    _gameStateIndex++;
-                }
-                else
-                {
-                    //TODO: go straight to "view school" mode
-                }
+                _gameStateIndex++;
             }
         }
         private int SetComplexity()
@@ -245,7 +237,7 @@ namespace random_school_generator
         {
             //sets drawing speed of zone / room growth depending on floor size
 
-            if (_floorSize < 150000)
+            if (_floorSize < 120000)
             {
                 _growthSpeed = 7;
             } else
@@ -254,7 +246,8 @@ namespace random_school_generator
             }
         }
 
-        // - update floor generation -
+
+        // - floor generation -
         private string UpdateFloorCreation()
         {
             //if no floors have been created yet, create them + set update time
@@ -313,7 +306,8 @@ namespace random_school_generator
             }
         }
 
-        // - update floor graph generation -
+
+        // - floor graph generation -
         private string UpdateFloorGraphs()
         {
             //create graphs for each floor
@@ -519,7 +513,8 @@ namespace random_school_generator
             }
         }
 
-        // - update stair generation -
+
+        // - stair generation -
         private string UpdateStairCreation()
         {
             int stairWidth, stairLength;
@@ -847,7 +842,8 @@ namespace random_school_generator
             _allFloors[0].AddEntrance(chosenRect);
         }
 
-        // - update zone growth -
+
+        // - zone growth -
         private string UpdateZoneGrowth()
         {
             //if a floor's zone growth has been completed (or if this is the first call of the subroutine), move onto the next floor
@@ -1415,7 +1411,7 @@ namespace random_school_generator
         }
 
 
-        // - update corridor generation -
+        // - corridor generation -
         private string UpdateCorridorCreation()
         {
             //update floor to be displayed + altered if enough time has passed
@@ -1640,7 +1636,8 @@ namespace random_school_generator
             return (start, end);
         }
 
-        // - update room growth - 
+
+        // - room growth - 
         private string UpdateRoomGrowth()
         {
             if (_currentFloorIndex == -1)
@@ -2046,7 +2043,8 @@ namespace random_school_generator
 
         }
 
-        // - create room details -
+
+        // - room details -
         private string UpdateFurnitureCreation()
         {
             if (_currentFloorIndex == -1)
@@ -2177,7 +2175,7 @@ namespace random_school_generator
             }
         }
 
-        // - - creating furniture - - 
+        // - - furniture - - 
         private void CreateFurniture(Room r)
         {
             switch (r.Type)
@@ -2235,7 +2233,7 @@ namespace random_school_generator
 
         }
 
-        // - - - making specific types of room - - -
+        // - - - specific types of room - - -
         private void MakeNormalClassroomFurniture(Room r)
         {
             //adds default classroom furniture
@@ -2375,7 +2373,7 @@ namespace random_school_generator
             AddSubjectDesks(r, upperLimit: 6);
         }
 
-        // - - - making specific pieces of furniture - - -
+        // - - - specific pieces of furniture - - -
         private void AddScienceDesks(Room r)
         {
             //ensures gap of 30 pixels from furniture to each wall of room
@@ -2812,7 +2810,7 @@ namespace random_school_generator
         }
         private void MakeToiletSinks(Room r, string position)
         {
-            int sinkLength = 17, sinkWidth = 13, gap = 7;
+            int sinkLength = 17, sinkWidth = 13, gap = 7, maxSinks = 10;
             List<Point> sinkPoints = new List<Point>(), clearPoints = new List<Point>();
             Rectangle sinkRect;
 
@@ -2854,7 +2852,7 @@ namespace random_school_generator
                         r.ExtraFurnitureList2.Add(r.MakeRectPosRelativeToFloor(new Rectangle(sinkRect.X, sinkRect.Y, sinkLength, sinkWidth)));
                     }                   
                 }
-            } while (sinkPoints.Count > 0);
+            } while (sinkPoints.Count > 0 && r.ExtraFurnitureList2.Count <= maxSinks);
         }
         private void AddCupboard(Room r)
         {
@@ -3479,7 +3477,7 @@ namespace random_school_generator
             }
         }
 
-        // - - creating doors - -
+        // - - doors - -
         private void AddDoors(Floor f, Zone z)
         {
             List<List<Room>> roomConnections = new List<List<Room>>();
@@ -4247,7 +4245,7 @@ namespace random_school_generator
             }
         }
 
-        // - - creating walls - -
+        // - - walls - -
         private void AddWallsToFloor(Floor currentFloor)
         {
             int wallWidth = 5;
@@ -4504,11 +4502,8 @@ namespace random_school_generator
             }
         }
 
-        // - view generated school - TODO
-        /*
-         * 
-         */
 
+        // - view generated school
         private string ViewGeneratedSchool()
         {
             if (_currentFloorIndex == -1)
@@ -4517,22 +4512,17 @@ namespace random_school_generator
                 return "> finished school generation";
             }
 
-            if (CheckButtonPress(Keys.Up) && _currentKeyboardState.IsKeyUp(Keys.LeftShift) && _currentFloorIndex != _allFloors.Count - 1)
+            if (CheckButtonPress(Keys.Up) && _currentFloorIndex != _allFloors.Count - 1)
             {
                 _currentFloorIndex++;
             }
-            else if (CheckButtonPress(Keys.Down) && _currentKeyboardState.IsKeyUp(Keys.LeftShift) && _currentFloorIndex != 0)
+            else if (CheckButtonPress(Keys.Down) && _currentFloorIndex != 0)
             {
                 _currentFloorIndex--;
             }
             
 
             return $"> viewing floor {_currentFloorIndex}";
-        }
-
-        private bool CheckButtonPress(Keys k)
-        {
-            return _previousKeyboardState.IsKeyUp(k) && _currentKeyboardState.IsKeyDown(k);
         }
 
         // - update message queue -
@@ -4574,6 +4564,10 @@ namespace random_school_generator
             {
                 _scrollX += 10;
             }
+        }
+        private bool CheckButtonPress(Keys k)
+        {
+            return _previousKeyboardState.IsKeyUp(k) && _currentKeyboardState.IsKeyDown(k);
         }
 
         // - reset data -

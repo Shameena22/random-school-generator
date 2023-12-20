@@ -36,7 +36,6 @@ namespace random_school_generator
             _menuOptions.Add(new MenuOption("> subject focus 2", Color.DeepSkyBlue, Color.White));
             _menuOptions.Add(new MenuOption("> subject focus 3", Color.DeepSkyBlue, Color.White));
             _menuOptions.Add(new MenuOption("> floor irregularity", Color.DeepSkyBlue, Color.White));
-            _menuOptions.Add(new MenuOption("> watch school generation", Color.DeepSkyBlue, Color.White));
             _menuOptions.Add(new MenuOption("> generate school", Color.Green, Color.MediumSeaGreen));
 
             //creating all input options
@@ -46,7 +45,6 @@ namespace random_school_generator
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
             _inputOptions.Add(new InputOption("dropdown", _allSubjectOptions));
             _inputOptions.Add(new InputOption("dropdown", new List<string> { "high", "medium", "low", "random"}));
-            _inputOptions.Add(new InputOption("dropdown", new List<string> { "yes", "no"}));
 
             _subjectInputOptions.Add(_inputOptions[2]);
             _subjectInputOptions.Add(_inputOptions[3]);
@@ -211,7 +209,6 @@ namespace random_school_generator
             subjectTwo = _inputOptions[3].ReturnInput(subjectOne);
             subjectThree = _inputOptions[4].ReturnInput(subjectOne, subjectTwo);
             floorIrregularity = _inputOptions[5].ReturnInput();
-            watchGeneration = _inputOptions[6].ReturnInput();
         }
     }
 }
