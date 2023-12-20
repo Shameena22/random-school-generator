@@ -11,7 +11,6 @@ using System.Security.Cryptography;
 
 namespace random_school_generator
 {
-    //20/11/23, making gym mats
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
@@ -42,6 +41,7 @@ namespace random_school_generator
         private int _currentFloorIndex, _currentZoneIndex, _currentRoomIndex;
         private Queue<string> _displayMessages;
         private int _timeBetweenDisplayChange;
+        
 
         //building
         private List<Floor> _allFloors;
@@ -4517,11 +4517,11 @@ namespace random_school_generator
                 return "> finished school generation";
             }
 
-            if (buttonPress(Keys.Up) && _currentFloorIndex != _allFloors.Count - 1)
+            if (CheckButtonPress(Keys.Up) && _currentKeyboardState.IsKeyUp(Keys.LeftShift) && _currentFloorIndex != _allFloors.Count - 1)
             {
                 _currentFloorIndex++;
             }
-            else if (buttonPress(Keys.Down) && _currentFloorIndex != 0)
+            else if (CheckButtonPress(Keys.Down) && _currentKeyboardState.IsKeyUp(Keys.LeftShift) && _currentFloorIndex != 0)
             {
                 _currentFloorIndex--;
             }
@@ -4530,7 +4530,7 @@ namespace random_school_generator
             return $"> viewing floor {_currentFloorIndex}";
         }
 
-        private bool buttonPress(Keys k)
+        private bool CheckButtonPress(Keys k)
         {
             return _previousKeyboardState.IsKeyUp(k) && _currentKeyboardState.IsKeyDown(k);
         }

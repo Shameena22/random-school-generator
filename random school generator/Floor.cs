@@ -376,7 +376,8 @@ namespace random_school_generator
             //draw base rectangle first
             foreach (Rectangle r in _drawingList[0])
             {
-                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[0]);
+                spriteBatch.Draw(_pixel, new Rectangle(r.X - scrollX, r.Y - scrollY, r.Width, r.Height), _componentColours[0] );   
+                
             }
 
             //then draw zone rectangles over the base
