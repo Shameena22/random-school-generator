@@ -2328,7 +2328,6 @@ namespace random_school_generator
                     r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.Right - stallWidth, kitchenSpace.Y + stallWidth, stallWidth, kitchenSpace.Height - 2 * stallWidth));
                     break;
                 case "right":
-                    shiftX = -kitchenSpace.Width;
                     MakeGroupedTables(new char[r.RectWidth - gap - kitchenSpace.Width, r.RectHeight - gap], r, gap);
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Y + tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
@@ -2339,16 +2338,15 @@ namespace random_school_generator
                     shiftY = kitchenSpace.Height;
                     MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - kitchenSpace.Height], r, gap);
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Width - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Right - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, kitchenSpace.Width, tableWidth));
                     r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Height - stallWidth, kitchenSpace.Width - 2 * stallWidth, stallWidth));
                     break;
                 case "down":
-                    shiftY = -kitchenSpace.Height;
                     MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - kitchenSpace.Height], r, gap);
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Width - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
-                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Width - tableWidth, kitchenSpace.Width, tableWidth));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Right - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Bottom - tableWidth, kitchenSpace.Width, tableWidth));
                     r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Y, kitchenSpace.Width - 2 * stallWidth, stallWidth));
                     break;
             }
