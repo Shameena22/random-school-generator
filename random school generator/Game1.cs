@@ -31,7 +31,7 @@ namespace random_school_generator
         private SettingsScreen _settingsScreen;
 
         //data
-        private int _floorSize, _numOfFloors, _floorIrregularity, _screenWidth, _screenHeight;
+        private int _floorSize, _numOfFloors, _floorIrregularity, _screenWidth, _screenHeight, _wallWidth;
         private string _subjectOne, _subjectTwo, _subjectThree, _irregularityText, _watchGeneration;
         private List<string> _allSubjectOptions;
         private DateTime _previousUpdateTime;
@@ -68,9 +68,10 @@ namespace random_school_generator
             _screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             _screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _random = new Random();
-            _timeBetweenDisplayChange = 500;
+            _timeBetweenDisplayChange = 50;
             _scrollX = -_screenWidth / 4;
             _scrollY = -_screenHeight / 8;
+            _wallWidth = 5;
         }
 
         protected override void Initialize()
@@ -213,24 +214,28 @@ namespace random_school_generator
             {
                 //get results of all inputs from settings screen
                 _settingsScreen.ReturnValues(ref _floorSize, ref _numOfFloors, ref _subjectOne, ref _subjectTwo, ref _subjectThree, ref _irregularityText, ref _watchGeneration);
-                _floorIrregularity = SetComplexity();
+                SetFloorIrregularity();
                 SetGrowthSpeed();
                 //switch to next game state
                 _gameStateIndex++;
             }
         }
-        private int SetComplexity()
+        private void SetFloorIrregularity()
         {
             switch (_irregularityText)
             {
                 case "high":
-                    return 20;
+                    _floorIrregularity = 20;
+                    break;
                 case "medium":
-                    return 10;
+                    _floorIrregularity = 10;
+                    break;
                 case "low":
-                    return 5;
+                    _floorIrregularity = 5;
+                    break;
                 default:
-                    return 0;
+                    _floorIrregularity = 0;
+                    break;
             }
         }
         private void SetGrowthSpeed()
@@ -325,6 +330,8 @@ namespace random_school_generator
         }
         private void CreateFloorGraphs()
         {
+            //creates a dictionary of some subjects with their allocated area for each floor
+
             List<string> randomAvailableZones, chosenZones, availableZoneTypes = new List<string> { "english", "maths", "science", "religious education", "languages", "computer science", "art", "design technology", "music", "staffroom", "office" };
             List<float> topThreeChances;
             int numOfZones, count = 0, i = 0, tempIdealSize, tempNumOfRooms, staffRoomFloor, zoneLimit;
@@ -452,6 +459,8 @@ namespace random_school_generator
         }
         private Dictionary<string, float> CreateZoneSizeProportions(List<string> chosenZones, Dictionary<string, float> zoneChances)
         {
+            //assign proportions of area to each zone in a given list
+
             Dictionary<string, float> zoneSizeProportions = new Dictionary<string, float>();
             List<float> sizeProportions = new List<float>();
             float total = 1, temp;
@@ -479,11 +488,6 @@ namespace random_school_generator
                 }
                
             }
-
-            //if (zoneSizeProportions.Count == 1)
-            //{
-
-            //}
 
             return zoneSizeProportions;
         }
@@ -517,6 +521,8 @@ namespace random_school_generator
         // - stair generation -
         private string UpdateStairCreation()
         {
+            //adds stairs to floors, giving time to display each floor to the screen
+
             int stairWidth, stairLength;
             List<Rectangle> possibleStairRectangles = new List<Rectangle>(), sharedStairEdgeRectangles;
             Rectangle chosenRect;
@@ -550,11 +556,11 @@ namespace random_school_generator
                     //add every possible stair rectangle for this point to the list possibleStairPoints
                     if (horizontalEdge)
                     {
-                        AddPossibleRectangles(ref possibleStairRectangles, "horizontal", stairLength, stairWidth, p, f);
+                        FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "horizontal", stairLength, stairWidth, p, f);
                     }
                     if (verticalEdge)
                     {
-                        AddPossibleRectangles(ref possibleStairRectangles, "vertical", stairLength, stairWidth, p, f);
+                        FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "vertical", stairLength, stairWidth, p, f);
                     }
 
                 }
@@ -575,7 +581,7 @@ namespace random_school_generator
                 else
                 {
                     //as a last resort, just choose a position that ensures the stairs don't go outside the floor
-                    chosenRect = GetLastResortRectangles(f, stairWidth, stairLength);
+                    chosenRect = GetLastResortStairs(f, stairWidth, stairLength);
                 }
                 
                 //add the rectangle to the floor and the floor below
@@ -614,8 +620,10 @@ namespace random_school_generator
                 return $"> created stairs: floor {_currentFloorIndex}";
             }          
         }
-        private Rectangle GetLastResortRectangles(Floor f, int stairWidth, int stairLength)
+        private Rectangle GetLastResortStairs(Floor f, int stairWidth, int stairLength)
         {
+            //returns the first valid position of a stair block found on a floor, even if it isn’t adjacent to an edge
+
             bool validPoint;
 
             //iterate through each point in the grid
@@ -659,6 +667,8 @@ namespace random_school_generator
         }
         private void CheckEdgeAlignments(Point p, int length, int width, Floor f, ref bool horizontalEdge, ref bool verticalEdge)
         {
+            //given a point on the edge, find if it is a horizontal edge or vertical edge (or both)
+
             //check if the edge is horizontal and update horizontalEdge accordingly
             if (p.X + width <= f.GetGrid.GetUpperBound(0) && p.Y + length <= f.GetGrid.GetUpperBound(0))
             {
@@ -685,9 +695,11 @@ namespace random_school_generator
             }
             else verticalEdge = false;
         }
-        private void AddPossibleRectangles(ref List<Rectangle> stairRects, string alignment, int stairLength, int stairWidth, Point p, Floor f)
+        private void FindPossibleStairOrEntranceRectangles(ref List<Rectangle> rects, string alignment, int stairLength, int stairWidth, Point p, Floor f)
         {
-            //two possible rectngles for each type of edge:
+            //gets valid rectangles adjacent to an edge of the floor and within the floor
+
+            //two possible rectangles for each type of edge:
             // - if horizontal: rectangle can either be above or below the edge
             // - if vertical: rectangle can either be to the left or right of the edge
             //validAlignment1 and 2 represent each of these two possibilities
@@ -722,11 +734,11 @@ namespace random_school_generator
                     //if any of these rectangles fit, add them to the list
                     if (validAlignment1)
                     {
-                        stairRects.Add(new Rectangle(p.X, p.Y, stairWidth, stairLength));
+                        rects.Add(new Rectangle(p.X, p.Y, stairWidth, stairLength));
                     }
                     if (validAlignment2)
                     {
-                        stairRects.Add(new Rectangle(p.X, p.Y - stairLength + 1, stairWidth, stairLength));
+                        rects.Add(new Rectangle(p.X, p.Y - stairLength + 1, stairWidth, stairLength));
                     }
                     break;
                 case "vertical":                   
@@ -756,19 +768,22 @@ namespace random_school_generator
                     //add these rectangles to the list if they would fit
                     if (validAlignment1)
                     {
-                        stairRects.Add(new Rectangle(p.X, p.Y, stairLength, stairWidth));
+                        rects.Add(new Rectangle(p.X, p.Y, stairLength, stairWidth));
                     }
                     if (validAlignment2)
                     {
-                        stairRects.Add(new Rectangle(p.X - stairLength + 1, p.Y, stairLength, stairWidth));
+                        rects.Add(new Rectangle(p.X - stairLength + 1, p.Y, stairLength, stairWidth));
                     }
                     break;
             }
         }
         private List<Rectangle> FindSharedStairPoints(List<Rectangle> stairRects)
         {
+            //given a list of stair rectangles, return a subset of this list containing rectangles adjacent to an edge in the stair below
+
             List<Rectangle> sharedRectangles = new List<Rectangle>();
             bool sharedPoint;
+
             //store the edgepoints of the floor below the current one
             List<Point> lowerFloorEdges = _allFloors[_currentFloorIndex - 1].Edgepoints;
 
@@ -812,6 +827,8 @@ namespace random_school_generator
         }
         private void CreateEntrance(int entranceLength, int entranceWidth)
         {
+            //adds an entrance to the ground floor
+
             List<Rectangle> possibleEntrancePoints = new List<Rectangle>();
             bool horizontal, vertical;
             Rectangle chosenRect;
@@ -828,11 +845,11 @@ namespace random_school_generator
                 //add the corresponding rectangles based on the alignment of the point's edgs
                 if (horizontal)
                 {
-                    AddPossibleRectangles(ref possibleEntrancePoints, "horizontal", entranceLength, entranceWidth, p, _allFloors[0]);
+                    FindPossibleStairOrEntranceRectangles(ref possibleEntrancePoints, "horizontal", entranceLength, entranceWidth, p, _allFloors[0]);
                 }
                 if (vertical)
                 {
-                    AddPossibleRectangles(ref possibleEntrancePoints, "vertical", entranceLength, entranceWidth, p, _allFloors[0]);
+                    FindPossibleStairOrEntranceRectangles(ref possibleEntrancePoints, "vertical", entranceLength, entranceWidth, p, _allFloors[0]);
                 }
             }
 
@@ -846,6 +863,8 @@ namespace random_school_generator
         // - zone growth -
         private string UpdateZoneGrowth()
         {
+            //calls the appropriate function to update each zone in three stages, leaving time for the user to watch the growth
+
             //if a floor's zone growth has been completed (or if this is the first call of the subroutine), move onto the next floor
             if (_currentFloorIndex == -1 || (_allFloors[_currentFloorIndex].FinishedFirstZoneGrowth && _allFloors[_currentFloorIndex].FinishedSecondZoneGrowth && _allFloors[_currentFloorIndex].FinishedThirdZoneGrowth))
             {
@@ -966,6 +985,8 @@ namespace random_school_generator
         }
         private bool GrowZone(Zone z, Floor f)
         {
+            //grows a given zone in the available directions; deletes zone if not enough area; marks when zone growth is finished
+
             //if the zone's growth point hasn't been chosen, choose it
             if (z.WeightedGrid is null)
             {
@@ -988,7 +1009,6 @@ namespace random_school_generator
                 if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !z.FirstGrown)
                 {
                     f.Zones.Remove(z);
-                   // _currentZoneIndex--;
                     f.RemoveFromGrid((char)('0' | z.ID));
                 }
 
@@ -998,7 +1018,6 @@ namespace random_school_generator
                     if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
                     {
                         f.Zones.Remove(z);
-                        ///_currentZoneIndex--;
                         f.RemoveFromGrid((char)('0' | z.ID));
                     } else
                     {
@@ -1015,7 +1034,7 @@ namespace random_school_generator
         {
             for (int i = 0; i < step; i++)
             {
-
+                //general method for growing an area in all directions; used for zones and rooms
                 //grow in each direction if possible
                 //update the location of the zone / room's top-left corner and grid dimensions if grown in a certain direction
 
@@ -1052,6 +1071,8 @@ namespace random_school_generator
         }
         private void SetZoneGrowthPoint(Zone z, Floor f)
         {
+            //selects a point in the floor for a zone to begin growth from
+
             //make the weighted grid
             z.WeightedGrid = MakeZoneWeightedGrid(z, f);
 
@@ -1066,6 +1087,8 @@ namespace random_school_generator
         }
         private int[,] MakeZoneWeightedGrid(Zone z, Floor f)
         {
+            //creates a weighted grid of the floor for a zone to find best positions for growth point
+
             int[,] weightedGrid = new int[f.GetGrid.GetLength(0), f.GetGrid.GetLength(1)];
             int adjacencyRule, distance = (int)Math.Sqrt(z.IdealSize);
 
@@ -1282,6 +1305,7 @@ namespace random_school_generator
         }
         private Point ChooseGrowthPoint(int[,] weightedGrid)
         {
+            //using a zone's weighted grid, choose a position on the floor to be a zone's growth point
             Dictionary<int, List<Point>> pointsByWeight = new Dictionary<int, List<Point>>();
             int highestNum = -10000000;
 
@@ -1382,11 +1406,11 @@ namespace random_school_generator
                     //if the entrance and stairs are in the grid...might have been overwritten by C; add them in again
                     if (f.FloorID == 0)
                     {
-                        UpdateStairsOrCorridorsToZone(f.Entrance, z, 'E');
+                        UpdateStairsAndCorridorsToZone(f.Entrance, z, 'E');
                     }
                     foreach (Rectangle r in f.StairPoints)
                     {
-                        UpdateStairsOrCorridorsToZone(r, z, 'S');
+                        UpdateStairsAndCorridorsToZone(r, z, 'S');
                     }
 
                     //update all edgepoints of the zone
@@ -1395,7 +1419,7 @@ namespace random_school_generator
                 }
             }
         }
-        private void UpdateStairsOrCorridorsToZone(Rectangle r, Zone z, char c)
+        private void UpdateStairsAndCorridorsToZone(Rectangle r, Zone z, char c)
         {
             //transfers information from the floor grid into its relative position on the given zone grid
             for (int x = r.X; x < r.X + r.Width; x++)
@@ -1414,6 +1438,8 @@ namespace random_school_generator
         // - corridor generation -
         private string UpdateCorridorCreation()
         {
+            //calls appropriate function to create corridors on all floors, leaving enough time for the user to see each corridor
+
             //update floor to be displayed + altered if enough time has passed
             if (_currentFloorIndex == _allFloors.Count || DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange))
             {
@@ -1451,6 +1477,8 @@ namespace random_school_generator
         }
         private void CreateCorridors(Floor f)
         {
+            //creates + adds corridor to floor
+
             List<Point> allStartingPoints = new List<Point>(), corridorPoints = new List<Point>();
             Point stairPoint1, closestPoint;
             (Point, Point) tempPoints;
@@ -1640,6 +1668,8 @@ namespace random_school_generator
         // - room growth - 
         private string UpdateRoomGrowth()
         {
+            //calls appropriate function to grow each room, limiting speed so the user can watch the growth
+
             if (_currentFloorIndex == -1)
             {
                 //set inital values required if this is the first call of this function
@@ -1818,32 +1848,7 @@ namespace random_school_generator
                         SetRoomRect(r, z);
                         return true;
                     }
-                    ////delete the zone if the shape is too narrow
-                    //if (((!left && !right && z.RectWidth < 75) || (!up && !down && z.RectHeight < 75)) && !z.FirstGrown)
-                    //{
-                    //    f.Zones.Remove(z);
-                    //    // _currentZoneIndex--;
-                    //    f.RemoveFromGrid((char)('0' | z.ID));
-                    //}
-
-                    ////if no more growth available (or required area reached on first growth), finish
-                    //else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
-                    //{
-                    //    if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
-                    //    {
-                    //        f.Zones.Remove(z);
-                    //        ///_currentZoneIndex--;
-                    //        f.RemoveFromGrid((char)('0' | z.ID));
-                    //    }
-                    //    else
-                    //    {
-                    //        SetZoneRect(z, f);
-                    //        return true;
-                    //    }
-                    //}
                 }
-                
-
             }
             return false;
         
@@ -1871,10 +1876,10 @@ namespace random_school_generator
         }
         private int[,] MakeRoomWeightedGrid(Room r, Zone z, Rectangle entrance) 
         {
-            //75000
-            //floorSize / 15
-            int minArea = (int)Math.Pow(RoomType.SideLengths[z.ZoneType.SecondaryType], 2) ; //TODO: tweak
-            //floorSize / 250 and 40 (could be 50 but i think thats too small
+            //returns a weighted grid of a room's zone to help choose the room's growth position
+
+            int minArea = (int)Math.Pow(RoomType.SideLengths[z.ZoneType.SecondaryType], 2) ;
+            //floorSize / 250 and 40 (could be 50 but i think thats too small)
             int maxArea = _floorSize / 4;
 
             //max of those two...absolute min is the min area
@@ -1945,14 +1950,15 @@ namespace random_school_generator
         }
         private bool CheckValidRoomGrowth(int x, int y, int step, int length, char direction, char[,] grid, char zoneID)
         {
-            //STEP OVER THIS
+            //checks if room growth in the specified direction + step is valid
+            //STEP OVER THIs
             return CheckValidGrowth(x, y, step, length, direction, grid, (grid, x, y) => !(grid[x, y] == zoneID));
         }
         private void SetRoomRect(Room r, Zone z, bool overwrite = false, bool addRect = false)
         {
             char tempID;
 
-            //updates the zone's grid with new dimensions
+            //updates the room's grid with new dimensions
             r.ResetGrid(r.RectWidth, r.RectHeight, 'R');
 
             //set all edgepoints of the zone
@@ -2047,6 +2053,8 @@ namespace random_school_generator
         // - room details -
         private string UpdateFurnitureCreation()
         {
+            //calls appropriate function to add details to a room, leaving time for the user to watch
+
             if (_currentFloorIndex == -1)
             {
                 //at the first call of this function, set up the rooms appropriately
@@ -2117,6 +2125,8 @@ namespace random_school_generator
         }
         private void InitialiseFurnitureCreation()
         {
+            //add each room to floor grids; clean up overwritten corridors; add corridor data to zones
+
             //set indexes
             _currentFloorIndex = 0;
             _currentZoneIndex = 0;
@@ -2145,6 +2155,8 @@ namespace random_school_generator
         }
         private void RemoveCorridorsFromRoom(Floor f, Room r, char zoneID)
         {
+            //removes parts of a corridor that have been overwritten by a room from the floor
+          
             //iterate across whole room
             for (int x = 0; x < r.RectWidth; x++)
             {
@@ -2244,17 +2256,17 @@ namespace random_school_generator
         }
         private void MakeScienceClassroomFurniture(Room r)
         {
-            //adds slightly larger desk + furniture
-            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            //adds slightly larger desk + furniture for science rooms
+            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
             AddScienceDesks(r);
         }
         private void MakeComputerScienceClassroomFurniture(Room r)
         {
+            //create slightly larger desk + additional furniture for CS rooms
             int gap = 30;
-            //create slightly larger desk + additional furniture
-            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
 
@@ -2273,7 +2285,7 @@ namespace random_school_generator
             int innerGap = 30;
 
             //creating larger desk and other furniture
-            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
 
@@ -2288,7 +2300,7 @@ namespace random_school_generator
         }
         private void MakeMusicClassroomFurniture(Room r)
         {
-            AddTeacherDesk(r, 5, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
             AddSubjectDesks(r);
             AddMusicTables(r);
@@ -2366,7 +2378,7 @@ namespace random_school_generator
         private void MakeOfficeFurniture(Room r)
         {
             //adding an especially long desk for office staff
-            AddTeacherDesk(r, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
+            AddTeacherDesk(r, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
             AddCupboard(r);
             AddSubjectDesks(r, upperLimit: 6);
         }
@@ -2405,7 +2417,7 @@ namespace random_school_generator
                 MakeLinedTables(innerGrid, r, innerGap + 20);
             }
         }
-        private void AddHallStage(Room r, int wallWidth = 5)
+        private void AddHallStage(Room r)
         {
             int stageHeight = 0, stageWidth = 0, stageHeightCount = 0, stageWidthCount = 0;
             bool valid = false;
@@ -2431,17 +2443,17 @@ namespace random_school_generator
                         if (stageHeight >= (r.RectHeight - 10) * 0.8)
                         {
                             //attempt to find valid positions using the selected stage width and height
-                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => ( i.X == 5 || i.X == r.RectWidth - wallWidth - 1) && i.Y != r.RectHeight - wallWidth - 1 ).ToList();
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r).Where(i => ( i.X == 5 || i.X == r.RectWidth - _wallWidth - 1) && i.Y != r.RectHeight - _wallWidth - 1 ).ToList();
                             
                             //if there are valid points...
                             if (validStagePoints.Count > 0)
                             {
                                 //add the stage to the room
                                 valid = true;
-                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, true, false);
+                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, true, false);
                                 
                                 //set the direction that the stage is facing towards
-                                if (stage.X == wallWidth)
+                                if (stage.X == _wallWidth)
                                 {
                                     r.FacingTowards = "left";
                                 }
@@ -2468,7 +2480,7 @@ namespace random_school_generator
                         if (stageHeight >= (r.RectWidth - 10) * 0.8)
                         {
                             //try to find valid positions for the stage
-                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r, wallWidth).Where(i => (i.Y == wallWidth || i.Y == r.RectHeight - wallWidth - 1) && i.X != r.RectWidth - wallWidth - 1).ToList();
+                            validStagePoints = FindEdgeRectPositions(stageHeight, stageWidth, r).Where(i => (i.Y == _wallWidth || i.Y == r.RectHeight - _wallWidth - 1) && i.X != r.RectWidth - _wallWidth - 1).ToList();
 
                             //if there are possible positions...
                             if (validStagePoints.Count > 0)
@@ -2476,8 +2488,8 @@ namespace random_school_generator
                                 valid = true;
 
                                 //create the stage and set the room's direction
-                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, wallWidth, false, true);
-                                if (stage.Y == wallWidth)
+                                stage = GetEdgeRectFromPoint(r, validStagePoints[_random.Next(0, validStagePoints.Count)], stageHeight, stageWidth, false, true);
+                                if (stage.Y == _wallWidth)
                                 {
                                     r.FacingTowards = "up";
                                 } else
@@ -2500,17 +2512,17 @@ namespace random_school_generator
             {
                 if (r.RectWidth > r.RectHeight)
                 {
-                    stage = new Rectangle(15, 15, r.RectWidth - 2 * wallWidth - 20, (r.RectHeight - 10) / 5);
+                    stage = new Rectangle(15, 15, r.RectWidth - 2 * _wallWidth - 20, (r.RectHeight - 10) / 5);
                 } else
                 {
-                    stage = new Rectangle(15, 15, r.RectHeight - 2 * wallWidth - 20, (r.RectWidth - 10) / 5);
+                    stage = new Rectangle(15, 15, r.RectHeight - 2 * _wallWidth - 20, (r.RectWidth - 10) / 5);
                 }
             }
 
             //add the stage to the room
             r.EquipmentDesks.Add(r.MakeRectPosRelativeToFloor(stage)); 
         }
-        private void AddHallChairs(Room r, int wallWidth = 5)
+        private void AddHallChairs(Room r)
         {
             //can change chair dimensions here
             int chairLength = 15, gapBetweenChairs = 10, innerGridWidth, innerGridHeight, extraX, extraY;
@@ -2520,38 +2532,38 @@ namespace random_school_generator
             if (r.FacingTowards == "left" || r.FacingTowards == "right")
             {
                 //the inner grid is the space in the room free for chairs
-                innerGridWidth = r.RectWidth - 2 * wallWidth - r.EquipmentDesks[0].Width - gapBetweenChairs;
-                innerGridHeight = r.RectHeight - 2 * wallWidth - gapBetweenChairs;
+                innerGridWidth = r.RectWidth - 2 * _wallWidth - r.EquipmentDesks[0].Width - gapBetweenChairs;
+                innerGridHeight = r.RectHeight - 2 * _wallWidth - gapBetweenChairs;
 
                 //extraY used to shift chairs down, prevent overlap with walls
-                extraY = wallWidth + gapBetweenChairs;
+                extraY = _wallWidth + gapBetweenChairs;
 
                 //extraX is used to shift chairs left / right; set to prevent overlap with stage
                 if (r.FacingTowards == "left")
                 {
-                    extraX = r.EquipmentDesks[0].Width + gapBetweenChairs + wallWidth;
+                    extraX = r.EquipmentDesks[0].Width + gapBetweenChairs + _wallWidth;
                    
                 } else
                 {
-                    extraX = gapBetweenChairs + wallWidth;
+                    extraX = gapBetweenChairs + _wallWidth;
                 }
             }
             else
             {
                 //set innerGrid dimensions
-                innerGridWidth = r.RectWidth - 2 * wallWidth - gapBetweenChairs;
-                innerGridHeight = r.RectHeight - 2 * wallWidth - r.EquipmentDesks[0].Height - gapBetweenChairs;
+                innerGridWidth = r.RectWidth - 2 * _wallWidth - gapBetweenChairs;
+                innerGridHeight = r.RectHeight - 2 * _wallWidth - r.EquipmentDesks[0].Height - gapBetweenChairs;
 
                 //extraX prevents chair overlap with walls
-                extraX = wallWidth + gapBetweenChairs;
+                extraX = _wallWidth + gapBetweenChairs;
 
                 //set extraY to shift chairs up / down and prevent overlap with stage
                 if (r.FacingTowards == "up")
                 {
-                    extraY = r.EquipmentDesks[0].Height + gapBetweenChairs + wallWidth;
+                    extraY = r.EquipmentDesks[0].Height + gapBetweenChairs + _wallWidth;
                 } else
                 {
-                    extraY = gapBetweenChairs + wallWidth;
+                    extraY = gapBetweenChairs + _wallWidth;
                 }
             }
 
@@ -2564,7 +2576,7 @@ namespace random_school_generator
                 r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(rect.X + gapBetweenChairs, rect.Y + gapBetweenChairs, chairLength, chairLength), extraX, extraY));
             }
         }
-        private void AddTeacherDesk(Room r, int wallWidth = 5, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
+        private void AddTeacherDesk(Room r, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
             //enclosingRect contains space for the desk and the chair together
             Rectangle enclosingRect, desk, chair;
@@ -2575,10 +2587,10 @@ namespace random_school_generator
             if (enclosingRect.Width == width)
             {
                 //if the rectangle is on the left of the room, make the chair to the left of the desk
-                if (enclosingRect.X == wallWidth)
+                if (enclosingRect.X == _wallWidth)
                 {
                     desk = new Rectangle(deskOffset, enclosingRect.Y + deskGap, deskWidth, deskLength);
-                    chair = new Rectangle(wallWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
+                    chair = new Rectangle(_wallWidth, (deskLength / 2 - chairLength / 2) + enclosingRect.Y + deskGap, chairLength, chairLength);
                     r.FacingTowards = "left";
                 }
                 //if the rectangle is on the right, make the chair on the right of the desk
@@ -2593,7 +2605,7 @@ namespace random_school_generator
             else
             {
                 //if the rectangle is at the top, add the chair above the desk
-                if (enclosingRect.Y == wallWidth)
+                if (enclosingRect.Y == _wallWidth)
                 {
                     desk = new Rectangle(enclosingRect.X + deskGap, deskOffset, deskLength, deskWidth);
                     chair = new Rectangle(deskLength / 2 - chairLength / 2 + enclosingRect.X + deskGap, chairOffset, chairLength, chairLength);
@@ -2686,7 +2698,7 @@ namespace random_school_generator
                 }
             }
         }
-        private void MakeToiletCubicles(Room r, string position, int wallWidth = 5)
+        private void MakeToiletCubicles(Room r, string position)
         {
             Rectangle mask = new Rectangle(0, 0, 0, 0);
             int gap = 5, width, height, cublicleWidth = 45;
@@ -2696,18 +2708,18 @@ namespace random_school_generator
             if (position == "left" || position == "right")
             {
                 //set the cubicle's width and height
-                width = (r.RectWidth - 2 * wallWidth) / 2;
-                height = r.RectHeight - 2 * wallWidth - 2 * gap;
+                width = (r.RectWidth - 2 * _wallWidth) / 2;
+                height = r.RectHeight - 2 * _wallWidth - 2 * gap;
 
                 //create the outer rectangle (mask) enclosing all cubicles based on position parameter
                 //and set position of door to be on the opposite side
                 if (position == "left")
                 {
-                    mask = new Rectangle(wallWidth, wallWidth + gap, width, height);
+                    mask = new Rectangle(_wallWidth, _wallWidth + gap, width, height);
                     doorPosition = "right";
                 } else
                 {
-                    mask = new Rectangle(r.RectWidth - wallWidth - width, wallWidth + gap, width, height);
+                    mask = new Rectangle(r.RectWidth - _wallWidth - width, _wallWidth + gap, width, height);
                     doorPosition = "left";
                 }
 
@@ -2717,17 +2729,17 @@ namespace random_school_generator
             } else
             {
                 //set the cubicle's width and height
-                width = r.RectWidth - 2 * wallWidth - 2 * gap;
-                height = (r.RectHeight - 2 * wallWidth) / 2;
+                width = r.RectWidth - 2 * _wallWidth - 2 * gap;
+                height = (r.RectHeight - 2 * _wallWidth) / 2;
 
                 //create the mask enclosing all cubicles based on position parameter and set position of door to be on the opposite side
                 if (position == "up")
                 {
-                    mask = new Rectangle(wallWidth + gap, wallWidth, width, height);
+                    mask = new Rectangle(_wallWidth + gap, _wallWidth, width, height);
                     doorPosition = "down";
                 } else
                 {
-                    mask = new Rectangle(wallWidth + gap, r.RectHeight - wallWidth - height, width, height);
+                    mask = new Rectangle(_wallWidth + gap, r.RectHeight - _wallWidth - height, width, height);
                     doorPosition = "up";
                 }
 
@@ -2818,16 +2830,16 @@ namespace random_school_generator
                 switch (position)
                 {
                     case "left":
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == 5).ToList();
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r).Where(i => i.X == 5).ToList();
                         break;
                     case "right":
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.X == r.RectWidth - 5 - 1).ToList();
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r).Where(i => i.X == r.RectWidth - 5 - 1).ToList();
                         break;
                     case "up":
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == 5).ToList();
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r).Where(i => i.Y == 5).ToList();
                         break;
                     case "down":
-                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r, 5).Where(i => i.Y == r.RectHeight - 5 - 1).ToList();
+                        sinkPoints = FindEdgeRectPositions(sinkLength + gap, sinkWidth, r).Where(i => i.Y == r.RectHeight - 5 - 1).ToList();
                         break;
                 }
                 
@@ -2835,7 +2847,7 @@ namespace random_school_generator
                 if (sinkPoints.Count > 0)
                 {
                     //create the sink's rectangle
-                    sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, 5, (position == "left" || position == "right"), (position == "up" || position == "down"));
+                    sinkRect = GetEdgeRectFromPoint(r, sinkPoints[0], sinkLength + gap, sinkWidth, (position == "left" || position == "right"), (position == "up" || position == "down"));
 
                     //add new points to avoid so future sinks won't overlap with this one
                     clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, sinkRect);
@@ -3125,7 +3137,7 @@ namespace random_school_generator
         }
 
         // - - - other functions for creating furniture - - -
-        private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, int wallWidth, bool forceLeftRight = false, bool forceUpDown = false)
+        private Rectangle GetEdgeRectFromPoint(Room r, Point chosenPoint, int length, int width, bool forceLeftRight = false, bool forceUpDown = false)
         {
             //returns a valid rectangle adjacent to an edge based on a given point
             //longest edge will be adjacent to the wall (so furniture doesn't look like it's in a weird position)
@@ -3133,49 +3145,49 @@ namespace random_school_generator
             Rectangle enclosingRect = new Rectangle(0, 0, 0, 0);         
 
             //if the point is on the left wall...
-            if (chosenPoint.X == wallWidth)
+            if (chosenPoint.X == _wallWidth)
             {
                 if (chosenPoint.Y + length < r.RectHeight && !forceUpDown)
                 {
                     //make a rectangle facing left/right if it fits and hasn't been specified against
-                    enclosingRect = new Rectangle(wallWidth, chosenPoint.Y, width, length);
+                    enclosingRect = new Rectangle(_wallWidth, chosenPoint.Y, width, length);
                 } else
                 {
                     //make a rectangle facing up/down otherwise - will only happen if the point is one of the corners of the room
-                    enclosingRect = new Rectangle(wallWidth, r.RectHeight - width - wallWidth, length, width);
+                    enclosingRect = new Rectangle(_wallWidth, r.RectHeight - width - _wallWidth, length, width);
                 }
             }
 
             //if the point is on the right wall, make an appropriate rectangle facing left/right
-            else if (chosenPoint.X == r.RectWidth - wallWidth - 1)
+            else if (chosenPoint.X == r.RectWidth - _wallWidth - 1)
             {
-                enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, chosenPoint.Y, width, length);
+                enclosingRect = new Rectangle(r.RectWidth - width - _wallWidth, chosenPoint.Y, width, length);
             }
 
             //if the point is on the top wall...
-            else if (chosenPoint.Y == wallWidth)
+            else if (chosenPoint.Y == _wallWidth)
             {
                 if (chosenPoint.X + length < r.RectWidth)
                 {
                     //add a rectangle facing up/down unless it doesn't fit or specified against
-                    enclosingRect = new Rectangle(chosenPoint.X, wallWidth, length, width);
+                    enclosingRect = new Rectangle(chosenPoint.X, _wallWidth, length, width);
                 }
                 else
                 {
                     //otherwise add a rectangle facing left/right
-                    enclosingRect = new Rectangle(r.RectWidth - width - wallWidth, wallWidth, width, length);
+                    enclosingRect = new Rectangle(r.RectWidth - width - _wallWidth, _wallWidth, width, length);
                 }
             }
 
             //if the point is on the bottom, add appropriate rectangle facing up/down
-            else if (chosenPoint.Y == r.RectHeight - wallWidth - 1)
+            else if (chosenPoint.Y == r.RectHeight - _wallWidth - 1)
             {
-                enclosingRect = new Rectangle(chosenPoint.X, r.RectHeight - wallWidth - width, length, width);
+                enclosingRect = new Rectangle(chosenPoint.X, r.RectHeight - _wallWidth - width, length, width);
             }
 
             return enclosingRect;
         }
-        private List<Point> FindEdgeRectPositions(int length, int width, Room r, int wallWidth)
+        private List<Point> FindEdgeRectPositions(int length, int width, Room r)
         {
             //returns a list of suitable positions against a wall for a rectangle
 
@@ -3183,14 +3195,14 @@ namespace random_school_generator
             bool validPoint = true;
 
             //checking against top/bottom walls
-            for (int x = wallWidth; x <= r.RectWidth - length - wallWidth; x++)
+            for (int x = _wallWidth; x <= r.RectWidth - length - _wallWidth; x++)
             {
                 //check if the rectangle can be adjacent to the top wall
                 //without blocking doors / going out of bounds
                 validPoint = true;
                 for (int i = x; i < x + length; i++)
                 {
-                    for (int j = wallWidth; j < width + wallWidth; j++)
+                    for (int j = _wallWidth; j < width + _wallWidth; j++)
                     {
                         if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
                         {
@@ -3201,14 +3213,14 @@ namespace random_school_generator
                 //add rectangle if valid
                 if (validPoint)
                 {
-                    validPoints.Add(new Point(x, wallWidth));
+                    validPoints.Add(new Point(x, _wallWidth));
                 }
 
                 //check if the rectangle can be adjacent to the bottom wall
                 validPoint = true;
                 for(int i = x; i < x + length; i++)
                 {
-                    for (int j = r.RectHeight - wallWidth - width; j < r.RectHeight - wallWidth; j++)
+                    for (int j = r.RectHeight - _wallWidth - width; j < r.RectHeight - _wallWidth; j++)
                     {
                         if (!WithinBounds(i, j, r.RectWidth, r.RectHeight) || clearPoints.Contains(new Point(i, j)))
                         {
@@ -3219,16 +3231,16 @@ namespace random_school_generator
                 //add rectangle if valid
                 if (validPoint)
                 {
-                    validPoints.Add(new Point(x, r.RectHeight - wallWidth - 1));
+                    validPoints.Add(new Point(x, r.RectHeight - _wallWidth - 1));
                 }
             }
 
             //now check along left / right walls for possible spaces
-            for (int y = wallWidth; y <= r.RectHeight - wallWidth - length; y++)
+            for (int y = _wallWidth; y <= r.RectHeight - _wallWidth - length; y++)
             {
                 //check along left wall
                 validPoint = true;
-                for (int i = wallWidth; i < wallWidth + width; i++)
+                for (int i = _wallWidth; i < _wallWidth + width; i++)
                 {
                     for (int j = y; j < y + length; j++)
                     {
@@ -3241,12 +3253,12 @@ namespace random_school_generator
                 //add point if valid
                 if (validPoint)
                 {
-                    validPoints.Add(new Point(wallWidth, y));
+                    validPoints.Add(new Point(_wallWidth, y));
                 }
 
                 //check along right wall
                 validPoint = true;
-                for (int i = r.RectWidth - width - wallWidth; i < r.RectWidth - wallWidth; i++)
+                for (int i = r.RectWidth - width - _wallWidth; i < r.RectWidth - _wallWidth; i++)
                 {
                     for (int j = y; j < y + length; j++)
                     {
@@ -3259,13 +3271,13 @@ namespace random_school_generator
                 //add point to list if valid
                 if (validPoint)
                 {
-                    validPoints.Add(new Point(r.RectWidth - wallWidth - 1, y));
+                    validPoints.Add(new Point(r.RectWidth - _wallWidth - 1, y));
                 }
             }
 
             return validPoints;
         }
-        private Rectangle AddEdgeRect(Room r, int length, int width, int wallWidth = 5)
+        private Rectangle AddEdgeRect(Room r, int length, int width)
         {
             //adds a given rectangle on one of the edges of a room
 
@@ -3274,14 +3286,14 @@ namespace random_school_generator
             Rectangle rect;
 
             //find possible positions for the rectangle to go
-            List<Point> positions = FindEdgeRectPositions(length, width, r, wallWidth);
+            List<Point> positions = FindEdgeRectPositions(length, width, r);
 
             //if there is space for the rectangle...
             if (positions.Count > 0)
             {    
                 //choose a random position from the list and get the valid rectangle from that point
                 p = positions[_random.Next(0, positions.Count)];
-                rect = GetEdgeRectFromPoint(r, p, length, width, wallWidth);
+                rect = GetEdgeRectFromPoint(r, p, length, width);
 
                 //add points to avoid based on new rectangle, add to room data
                 clearPoints = GetClearPointsFromRect(r.InnerEdgePoints, new Rectangle(rect.X, rect.Y, rect.Width, rect.Height));
@@ -4246,8 +4258,6 @@ namespace random_school_generator
         // - - walls - -
         private void AddWallsToFloor(Floor currentFloor)
         {
-            int wallWidth = 5;
-
             foreach (Zone z in currentFloor.Zones)
             {
                 //remove excess connections between room before wall creation
@@ -4259,9 +4269,9 @@ namespace random_school_generator
                 //then add walls for each room in the zone
                 foreach (Room r in z.Rooms)
                 {
-                    AddWalls(r, wallWidth, z.GrowthTopLeft);
-                    UpdateInnerEdgePoints(r, wallWidth);
-                    UpdateInnerClearPoints(r, wallWidth, r.ClearPoints, true);
+                    AddWalls(r, _wallWidth, z.GrowthTopLeft);
+                    UpdateInnerEdgePoints(r);
+                    UpdateInnerClearPoints(r, r.ClearPoints, true);
                 }
             }
             currentFloor.MadeWalls = true;
@@ -4453,22 +4463,22 @@ namespace random_school_generator
             }
             return positionPairs;
         }
-        private void UpdateInnerEdgePoints(Room r, int wallWidth)
+        private void UpdateInnerEdgePoints(Room r)
         {
             r.InnerEdgePoints = new List<Point>();
 
             for (int i = 0; i < r.RectWidth; i++)
             {
-                r.InnerEdgePoints.Add(new Point(i, wallWidth));
-                r.InnerEdgePoints.Add(new Point(i, r.RectHeight - 1 - wallWidth));
+                r.InnerEdgePoints.Add(new Point(i, _wallWidth));
+                r.InnerEdgePoints.Add(new Point(i, r.RectHeight - 1 - _wallWidth));
             }
             for (int i = 0; i < r.RectHeight; i++)
             {
-                r.InnerEdgePoints.Add(new Point(wallWidth, i));
-                r.InnerEdgePoints.Add(new Point(r.RectWidth - 1 - wallWidth, i));
+                r.InnerEdgePoints.Add(new Point(_wallWidth, i));
+                r.InnerEdgePoints.Add(new Point(r.RectWidth - 1 - _wallWidth, i));
             }
         }
-        private void UpdateInnerClearPoints(Room r, int wallWidth, List<Point> clearPoints, bool reset = false)
+        private void UpdateInnerClearPoints(Room r, List<Point> clearPoints, bool reset = false)
         {
             if (reset)
             {
@@ -4479,19 +4489,19 @@ namespace random_school_generator
             {
                 if (p.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X == 0)
                 {
-                    r.InnerClearPoints.Add(new Point(p.X + wallWidth, p.Y));
+                    r.InnerClearPoints.Add(new Point(p.X + _wallWidth, p.Y));
                 }
                 else if (p.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X == r.RectWidth - 1)
                 {
-                    r.InnerClearPoints.Add(new Point(p.X - wallWidth, p.Y));
+                    r.InnerClearPoints.Add(new Point(p.X - _wallWidth, p.Y));
                 }
                 else if (p.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y == 0)
                 {
-                    r.InnerClearPoints.Add(new Point(p.X, p.Y + wallWidth));
+                    r.InnerClearPoints.Add(new Point(p.X, p.Y + _wallWidth));
                 }
                 else if (p.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y == r.RectHeight - 1)
                 {
-                    r.InnerClearPoints.Add(new Point(p.X, p.Y - wallWidth));
+                    r.InnerClearPoints.Add(new Point(p.X, p.Y - _wallWidth));
                 }
                 else
                 {
