@@ -2249,26 +2249,26 @@ namespace random_school_generator
         private void MakeNormalClassroomFurniture(Room r)
         {
             //adds default classroom furniture
-            AddTeacherDesk(r);
+            AddTeacherChairAndDesk(r);
             AddCupboard(r);
-            AddSubjectDesks(r);
+            AddEquipmentDesks(r);
             MakeNormalTablesAndChairs(r);
         }
         private void MakeScienceClassroomFurniture(Room r)
         {
             //adds slightly larger desk + furniture for science rooms
-            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherChairAndDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
-            AddSubjectDesks(r);
+            AddEquipmentDesks(r);
             AddScienceDesks(r);
         }
         private void MakeComputerScienceClassroomFurniture(Room r)
         {
             //create slightly larger desk + additional furniture for CS rooms
             int gap = 30;
-            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherChairAndDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
-            AddSubjectDesks(r);
+            AddEquipmentDesks(r);
 
             //used lined tables (more space efficient) if less room available; otherwise use science room arrangement
             if (r.RectHeight * r.RectWidth <= 20000)
@@ -2277,7 +2277,7 @@ namespace random_school_generator
             }
             else
             {
-                AddOuterTables(r, gap);
+                AddUShapedTables(r, gap);
             }
         }
         private void MakeArtClassroomFurniture(Room r)
@@ -2285,9 +2285,9 @@ namespace random_school_generator
             int innerGap = 30;
 
             //creating larger desk and other furniture
-            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherChairAndDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
-            AddSubjectDesks(r);
+            AddEquipmentDesks(r);
 
             //if room isn't wide enough, use lined tables; only use large grouped tables if there is enough room
             if (r.RectWidth < innerGap + 65 && r.RectHeight < innerGap + 65)
@@ -2300,10 +2300,10 @@ namespace random_school_generator
         }
         private void MakeMusicClassroomFurniture(Room r)
         {
-            AddTeacherDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
+            AddTeacherChairAndDesk(r, 40, 25, 15, 5, 30, 13, 5, 12);
             AddCupboard(r);
-            AddSubjectDesks(r);
-            AddMusicTables(r);
+            AddEquipmentDesks(r);
+            AddMusicDesks(r);
         }
         private void MakeHallFurniture(Room r)
         {
@@ -2314,7 +2314,7 @@ namespace random_school_generator
         {
             char[,] innerGrid = new char[r.RectWidth - innerGap, r.RectHeight - innerGap]; 
             //adding benches
-            AddSubjectDesks(r, 75, 15, 10);
+            AddEquipmentDesks(r, 75, 15, 10);
             //adding mats
             MakeGroupedTables(innerGrid, r, innerGap, true);
         }
@@ -2371,16 +2371,16 @@ namespace random_school_generator
         {
             //normal classroom furniture without a teacher desk
             int gap = 25;
-            AddSubjectDesks(r, 30, 15, 6);
+            AddEquipmentDesks(r, 30, 15, 6);
             AddCupboard(r);
             MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap], r, gap);
         }
         private void MakeOfficeFurniture(Room r)
         {
             //adding an especially long desk for office staff
-            AddTeacherDesk(r, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
+            AddTeacherChairAndDesk(r, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75), 20, 15, 5, (int)(Math.Min(r.RectWidth, r.RectHeight) * 0.75));
             AddCupboard(r);
-            AddSubjectDesks(r, upperLimit: 6);
+            AddEquipmentDesks(r, upperLimit: 6);
         }
 
         // - - - specific pieces of furniture - - -
@@ -2389,11 +2389,11 @@ namespace random_school_generator
             //ensures gap of 30 pixels from furniture to each wall of room
             int innerGap = 30;
 
-            //randomly choose what types of tables to create; skewed towards "wrap around" tables
+            //randomly choose what types of tables to create; skewed towards U-shape tables
             double choice = _random.NextDouble();
             if (choice <= 0.75)
             {
-                AddOuterTables(r, innerGap);
+                AddUShapedTables(r, innerGap);
             } 
             else
             {
@@ -2402,16 +2402,16 @@ namespace random_school_generator
                 MakeGroupedTables(innerGrid, r, innerGap + 10);
             }
         }
-        private void AddMusicTables(Room r)
+        private void AddMusicDesks(Room r)
         {
             int innerGap = 30;
             char[,] innerGrid = new char[r.RectWidth - innerGap - 20, r.RectHeight - innerGap - 20];
             double choice = _random.NextDouble();
 
-            //randomly choose between wrap-around tables and normal lined tables...slightly skewed towards the former
+            //randomly choose between U-shaped tables and normal lined tables...slightly skewed towards the former
             if (choice < 0.6)
             {
-                AddOuterTables(r, innerGap);
+                AddUShapedTables(r, innerGap);
             } else
             {
                 MakeLinedTables(innerGrid, r, innerGap + 20);
@@ -2576,7 +2576,7 @@ namespace random_school_generator
                 r.Chairs.Add(r.MakeRectPosRelativeToFloor(new Rectangle(rect.X + gapBetweenChairs, rect.Y + gapBetweenChairs, chairLength, chairLength), extraX, extraY));
             }
         }
-        private void AddTeacherDesk(Room r, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
+        private void AddTeacherChairAndDesk(Room r, int length = 35, int width = 20, int deskOffset = 15, int deskGap = 5, int deskLength = 25, int deskWidth = 8, int chairOffset = 5, int chairLength = 10)
         {
             //enclosingRect contains space for the desk and the chair together
             Rectangle enclosingRect, desk, chair;
@@ -2700,6 +2700,8 @@ namespace random_school_generator
         }
         private void MakeToiletCubicles(Room r, string position)
         {
+            //create an area for each individual cubicle, then calls functions to add detail to each cubicle
+
             Rectangle mask = new Rectangle(0, 0, 0, 0);
             int gap = 5, width, height, cublicleWidth = 45;
             List<Rectangle> cubicles;
@@ -2755,6 +2757,8 @@ namespace random_school_generator
         }
         private void MakeIndividualCubicles(Room r, Rectangle mask, string doorPosition)
         {
+            //add walls, door, toilet back and seat to a cubicle
+
             int innerWallWidth = 3, doorLength = 8, toiletBackLength = 15, toiletBackWidth = 10, toiletSeatLength = 10;
             Rectangle tempToiletBack;
             
@@ -2820,6 +2824,8 @@ namespace random_school_generator
         }
         private void MakeToiletSinks(Room r, string position)
         {
+            //add sinks on a given side of the room without blocking doors
+
             int sinkLength = 17, sinkWidth = 13, gap = 7, maxSinks = 10;
             List<Point> sinkPoints = new List<Point>(), clearPoints = new List<Point>();
             Rectangle sinkRect;
@@ -2870,8 +2876,10 @@ namespace random_school_generator
             Rectangle tempCupboard = AddEdgeRect(r, 28, 14);
             r.Cupboard = r.MakeRectPosRelativeToFloor(tempCupboard);
         }
-        private void AddSubjectDesks(Room r, int width = 30, int height = 14, int upperLimit = 5)
+        private void AddEquipmentDesks(Room r, int width = 30, int height = 14, int upperLimit = 5)
         {
+            //add a random number (within a given limit) of tables to the edges of a room
+
             Rectangle tempRect;
 
             //choose a random number of desks to have
@@ -2886,7 +2894,7 @@ namespace random_school_generator
         }
         private void MakeNormalTablesAndChairs(Room r)
         {
-            //adds chairs and tables in typical arrangement
+            //adds chairs and tables in typical arrangement to a room
 
             //using an inner grid within room guarantees space between walls and tables
             int innerGap = 40;
@@ -2965,6 +2973,8 @@ namespace random_school_generator
         }
         private void MakeGroupedTables(char[,] grid, Room r, int innerGap, bool mat = false)
         {
+            //adds tables and chairs in a grouped arrangement to a room (6 chairs around a table)
+
             //choose a number of tables to have
             int numOfTables = r.RectWidth * r.RectHeight / 6500;
 
@@ -3049,7 +3059,7 @@ namespace random_school_generator
                 //continue until no more space for tables / reached chosen number of tables
             } while (possibleRects.Count > 0 && i < numOfTables);
         }
-        private void AddOuterTables(Room r, int addedGap)
+        private void AddUShapedTables(Room r, int addedGap)
         {
             //adds chairs and tables in a U arrangement; also adds extra line in middle if there is enough space
 
@@ -3065,7 +3075,7 @@ namespace random_school_generator
                 tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(addedGap, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
 
                 //if the final rectangle doesn't fully reach to bottom, add an extra one to compensate for the space
-                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                if (tempRectList.Count > 0 && tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
                 {
                     tempRect = tempRectList[tempRectList.Count - 1];
                     r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(addedGap + chairLength, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
@@ -3079,7 +3089,7 @@ namespace random_school_generator
                 tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, r.RectHeight - 2 * addedGap - 2 * chairLength, totalWidth).Select(i => new Rectangle(r.RectWidth - addedGap - totalWidth, addedGap + i.Y + chairLength, i.Width, i.Height)).ToList();
 
                 //if the final rectangle doesn't fully reach to bottom, add an extra one to compensate for the space
-                if (tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
+                if (tempRectList.Count > 0 && tempRectList[tempRectList.Count - 1].Bottom < r.RectHeight - addedGap - chairLength)
                 {
                     tempRect = tempRectList[tempRectList.Count - 1];
                     r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.X, tempRect.Bottom, tableLength, r.RectHeight - addedGap - chairLength - tempRect.Bottom)));
@@ -3093,7 +3103,7 @@ namespace random_school_generator
                 tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, addedGap, i.Width, i.Height)).ToList();
 
                 //if the final rectangle doesn't fully reach to the right of the room, add an extra one to compensate for the space
-                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                if (tempRectList.Count > 0 && tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
                 {
                     tempRect = tempRectList[tempRectList.Count - 1];
                     r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right, addedGap + chairLength, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
@@ -3107,7 +3117,7 @@ namespace random_school_generator
                 tempRectList = MakeEnclosingRectangles(totalWidth, totalWidth, totalWidth, r.RectWidth - 2 * addedGap - 2 * chairLength).Select(i => new Rectangle(addedGap + i.X + chairLength, r.RectHeight - addedGap - totalWidth, i.Width, i.Height)).ToList();
 
                 //if the final rectangle doesn't fully reach to the right of the room, add an extra one to compensate for the space
-                if (tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
+                if (tempRectList.Count > 0 && tempRectList[tempRectList.Count - 1].Right < r.RectWidth - addedGap - chairLength)
                 {
                     tempRect = tempRectList[tempRectList.Count - 1];
                     r.Tables.Add(r.MakeRectPosRelativeToFloor(new Rectangle(tempRect.Right, tempRect.Y, r.RectWidth - addedGap - tempRect.Right - chairLength, tableLength)));
@@ -3352,7 +3362,7 @@ namespace random_school_generator
         }
         private void AddGroupedTableToGrid(ref char[,] grid, Rectangle r)
         {
-            //change character in positions occupied by a rectangle to mark its occupation
+            //change character in positions occupied by a rectangle to mark its occupation in an array of characters
             for (int x = r.X; x < r.X + r.Width; x++)
             {
                 for (int y = r.Y; y < r.Y + r.Height; y++)
@@ -3364,6 +3374,8 @@ namespace random_school_generator
         }
         private Rectangle GetGroupedTableRectFromRegion(char[,] grid, int length, int width, Rectangle block)
         {
+            //given a region, returns a rectangle that can enclose a grouped table + chair arrangement without overlapping with other furniture
+
             bool valid;
 
             //iterate through positions in the region given
@@ -3439,7 +3451,7 @@ namespace random_school_generator
         }
         private void AddMiddleTables(Room r, int addedGap, List<(List<Rectangle>, string)> outerRects, int totalWidth, int tableLength, ref List<Rectangle> tempRectList, ref Rectangle tempRect)
         {
-            //add extra tables in middle of U-shape if possible
+            //add extra tables in middle of U-shape if enough space
 
             if (r.FacingTowards == "left" || r.FacingTowards == "right")
             {
@@ -3490,6 +3502,8 @@ namespace random_school_generator
         // - - doors - -
         private void AddDoors(Floor f, Zone z)
         {
+            //calls functions to add doors connecting to empty floor space / other rooms
+
             List<List<Room>> roomConnections = new List<List<Room>>();
 
             foreach (Room r in z.Rooms)
@@ -3514,12 +3528,14 @@ namespace random_school_generator
                 outerEntrancePoints.RemoveAll(x => x.Count < 30);
 
                 CreateOuterRoomDoors(z, r, ref doneOuterEdgeCluster, ref tempCluster, outerPoints, outerCorridorPoints, outerStairPoints, outerEntrancePoints);
-                CreateAdjacentDoors(f, z, r, outerPoints);
+                CreateRoomAdjacentDoors(f, z, r, outerPoints);
 
             }
         }
-        private void CreateAdjacentDoors(Floor f, Zone z, Room r, List<List<Point>> outerPoints)
+        private void CreateRoomAdjacentDoors(Floor f, Zone z, Room r, List<List<Point>> outerPoints)
         {
+            //call functions to add doors connecting different rooms together
+
             Dictionary<Room, List<Point>> interZoneAdjacencies = new Dictionary<Room, List<Point>>();
 
             //find clusters that are adjacent to other rooms
@@ -3530,7 +3546,7 @@ namespace random_school_generator
             {
                 if (kvp.Key.Type == r.Type)
                 {
-                    AddDoorFromCluster(kvp.Key, kvp.Value, z.GrowthTopLeft, r);
+                    AddDoorFromCluster(kvp.Key, kvp.Value, r);
                 }
                 else
                 {
@@ -3545,7 +3561,7 @@ namespace random_school_generator
             {        
                 foreach (KeyValuePair<Room, List<Point>> kvp in interZoneAdjacencies)
                 {
-                    AddDoorFromCluster(kvp.Key, kvp.Value, z.GrowthTopLeft, r);
+                    AddDoorFromCluster(kvp.Key, kvp.Value, r);
                 }
             }
         }
@@ -3562,7 +3578,7 @@ namespace random_school_generator
                 tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints, outerEntrancePoints);
                 if (tempCluster.Count > 0)
                 {
-                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
                     doneOuterEdgeCluster = true;
                 }
 
@@ -3572,8 +3588,8 @@ namespace random_school_generator
                     tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints);
                     if (tempCluster.Count > 0)
                     {
-                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
-                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
+                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
                         doneOuterEdgeCluster = true;
                     }
                 }
@@ -3584,8 +3600,8 @@ namespace random_school_generator
                     tempCluster = GetClusterIntersections(outerCorridorPoints, outerEntrancePoints);
                     if (tempCluster.Count > 0)
                     {
-                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
-                        AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
+                        AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)]);
                         doneOuterEdgeCluster = true;
                     }
                 }
@@ -3596,8 +3612,8 @@ namespace random_school_generator
                     tempCluster = GetClusterIntersections(outerStairPoints, outerEntrancePoints);
                     if (tempCluster.Count > 0)
                     {
-                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
-                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                        AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
+                        AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
                         doneOuterEdgeCluster = true;
                     }
                 }
@@ -3605,9 +3621,9 @@ namespace random_school_generator
                 //if none of this is possible, just use all three clusters separately
                 if (!doneOuterEdgeCluster)
                 {
-                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
-                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
-                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)]);
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)]);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
                     doneOuterEdgeCluster = true;
                 }
             }
@@ -3618,13 +3634,13 @@ namespace random_school_generator
                 tempCluster = GetClusterIntersections(outerCorridorPoints, outerStairPoints);
                 if (tempCluster.Count > 0)
                 {
-                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
                 }
                 //if not, just use separate clusters
                 else
                 {
-                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
-                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)]);
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)]);
                 }
             }
 
@@ -3635,13 +3651,13 @@ namespace random_school_generator
                 tempCluster = GetClusterIntersections(outerCorridorPoints, outerEntrancePoints);
                 if (tempCluster.Count > 0)
                 {
-                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
                 }
                 //if not possible, just use clusters separately
                 else
                 {
-                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
-                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)]);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
                 }
             }
 
@@ -3652,34 +3668,34 @@ namespace random_school_generator
                 tempCluster = GetClusterIntersections(outerStairPoints, outerEntrancePoints);
                 if (tempCluster.Count > 0)
                 {
-                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, tempCluster[_random.Next(0, tempCluster.Count)]);
                 }
                 //if impossible, just use separate clusters
                 else
                 {
-                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
-                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                    AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)]);
+                    AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
                 }
             }
             //use cluster with corridor points if it's the only type available
             else if (outerCorridorPoints.Count > 0)
             {
-                AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)], z.GrowthTopLeft);
+                AddDoorFromCluster(r, outerCorridorPoints[_random.Next(0, outerCorridorPoints.Count)]);
             }
             //use cluster with stair points if it's the only type available
             else if (outerStairPoints.Count > 0)
             {
-                AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)], z.GrowthTopLeft);
+                AddDoorFromCluster(r, outerStairPoints[_random.Next(0, outerStairPoints.Count)]);
             }
             //use cluster with entrance points if it's the only type available
             else if (outerEntrancePoints.Count > 0)
             {
-                AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)], z.GrowthTopLeft);
+                AddDoorFromCluster(r, outerEntrancePoints[_random.Next(0, outerEntrancePoints.Count)]);
             }
             //if no special cluster types are available, just use a regular cluster
             else if (outerPoints.Count > 0)
             {
-                AddDoorFromCluster(r, outerPoints[_random.Next(0, outerPoints.Count)], z.GrowthTopLeft);
+                AddDoorFromCluster(r, outerPoints[_random.Next(0, outerPoints.Count)]);
             }
         }
         private List<List<Point>> GetClusterIntersections(List<List<Point>> c1, List<List<Point>> c2, List<List<Point>> c3)
@@ -3720,6 +3736,8 @@ namespace random_school_generator
         }
         private (List<List<Point>>, List<List<Point>>, List<List<Point>>, List<List<Point>>) GetRoomPointsAdjacentToOutside(Floor f, Zone z, Room r)
         {
+            //returns separate lists of sections of a room's outer wall connected to the outside, a stair block, the entrance, and part of the corridor
+
             List<Point> usableEdgePoints = new List<Point>(), stairPoints = new List<Point>();
             Point tempPoint, tempStairPoint;
 
@@ -3779,9 +3797,11 @@ namespace random_school_generator
                 }
             }
         }
-        private bool ContainedInClusterLists(Point p, List<List<Point>> c)
+        private bool ContainedInClusterLists(Point p, List<List<Point>> clusters)
         {
-            foreach (List<Point> l in c)
+            // given a list of a clusters and a point, checks if one of the clusters contains that point
+
+            foreach (List<Point> l in clusters)
             {
                 if (l.Contains(p))
                 {
@@ -3792,6 +3812,8 @@ namespace random_school_generator
         }
         private List<List<Point>> GetEdgePointClusters(Zone z, Room r, int minWidth, char[,] grid, Func<int, int, char[,], bool> ValidPoint)
         {
+            //returns a list of "clusters" (connected points) along all walls of a room
+
             List<List<Point>> edgePointClusters = new List<List<Point>>();
             Point tempPoint;
 
@@ -3829,6 +3851,7 @@ namespace random_school_generator
             List<Point> tempCluster = new List<Point>();
 
             //iterate through edge points at a side of the room, creating clusters
+            //checks the space outside of each edge point up to a given distance to see if it is free
 
             if (direction == "left" || direction == "right")
             {
@@ -3952,6 +3975,8 @@ namespace random_school_generator
         }
         private Dictionary<Room, List<Point>> GetAllRoomAdjacencies(Point roomTopLeft, int roomWidth, int roomHeight, Point zoneTopLeft, Floor f)
         {
+            //returns a dictionary of parts of a room's edges that are adjacent to another room
+
             Dictionary<Room, List<Point>> adjacencies = new Dictionary<Room, List<Point>>();
             List<List<Point>> clusters = new List<List<Point>>();
             List<Point> tempCluster, tempEdgePoints;
@@ -4100,8 +4125,10 @@ namespace random_school_generator
             }
             return null;
         }
-        private void AddDoorFromCluster(Room r, List<Point> cluster, Point zoneTopLeft, Room r2 = null)
+        private void AddDoorFromCluster(Room r, List<Point> cluster, Room r2 = null)
         {
+            //given a room and a cluster on its edge, add a door along the cluster
+
             //only make new doors if adjacent to outside
             //or adjacent to other room and this room hasn't had a door between them made for it already
             if (r2 is null || (r2 is not null && !r.AdjacencyDoors.ContainsKey(r2)))
@@ -4202,6 +4229,8 @@ namespace random_school_generator
         }
         private void RemoveDoors(Zone z)
         {
+            //removes all unnecessary doors from a zone
+
             //add all rooms with door adjacent to corridor to a queue
             Room room;
             Queue<Room> _roomsConnectedToCorridor = new Queue<Room>();
@@ -4258,6 +4287,8 @@ namespace random_school_generator
         // - - walls - -
         private void AddWallsToFloor(Floor currentFloor)
         {
+            //calls functions to add all walls to the rooms in a floor
+
             foreach (Zone z in currentFloor.Zones)
             {
                 //remove excess connections between room before wall creation
@@ -4278,6 +4309,8 @@ namespace random_school_generator
         }
         private void AddClearEdges(Zone z)
         {
+            //for each room in a given zone, create a list of points that should be left free from walls
+
             List<Point> tempEdgePoints;
 
             //iterate through each room
@@ -4367,7 +4400,7 @@ namespace random_school_generator
         }
         private void AddWalls(Room r, int width, Point zoneTopLeft)
         {
-            List<(int, int)> clusters = new List<(int, int)>();
+            List<(int, int)> clusters;
 
             //go through each side of a room, adding wall rectangles while keeping certain points clear for doors
 
@@ -4465,6 +4498,8 @@ namespace random_school_generator
         }
         private void UpdateInnerEdgePoints(Room r)
         {
+            //creates a given room's list of edge points within its walls
+
             r.InnerEdgePoints = new List<Point>();
 
             for (int i = 0; i < r.RectWidth; i++)
@@ -4480,6 +4515,8 @@ namespace random_school_generator
         }
         private void UpdateInnerClearPoints(Room r, List<Point> clearPoints, bool reset = false)
         {
+            //using the list of a room's points to keep clear outside its walls, create a companion list containing points to keep clear within the walls
+
             if (reset)
             {
                 r.InnerClearPoints = new List<Point>();
@@ -4514,6 +4551,8 @@ namespace random_school_generator
         // - view generated school
         private string ViewGeneratedSchool()
         {
+            //calls function to display current floor; updates display of floor currently being viewed based on user input
+
             if (_currentFloorIndex == -1)
             {
                 _currentFloorIndex = 0;
@@ -4536,10 +4575,12 @@ namespace random_school_generator
         // - update message queue -
         private void UpdateMessageQueue(string s)
         {
+            //updates the queue of messages displayed on the screen; adds new messages to the queue and removes messages if the queue gets too long
+
             if (s != "")
             {
                 //remove oldest message if the queue has grown too large
-                if (_displayMessages.Count > 5)
+                if (_displayMessages.Count > 15)
                 {
                     _displayMessages.Dequeue();
                 }
@@ -4555,7 +4596,7 @@ namespace random_school_generator
         // - update scroll -
         private void UpdateScroll()
         {
-            //allows user to scroll based on WASD keys pressed
+            //allows user to scroll display based on WASD keys pressed
             if (_currentKeyboardState.IsKeyDown(Keys.W))
             {
                 _scrollY -= 10;
@@ -4575,13 +4616,14 @@ namespace random_school_generator
         }
         private bool CheckButtonPress(Keys k)
         {
+            //returns true if a button has just been pressed and released
             return _previousKeyboardState.IsKeyUp(k) && _currentKeyboardState.IsKeyDown(k);
         }
 
         // - reset data -
         private void ResetValues()
         {
-            //clear data if user returns to settings screen
+            //clear all school data if user returns to settings screen
             _allFloors = null;
             _displayMessages = new Queue<string>();
             _currentFloorIndex = 0;
