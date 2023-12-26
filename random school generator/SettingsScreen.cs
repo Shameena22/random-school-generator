@@ -27,6 +27,7 @@ namespace random_school_generator
             _allSubjectOptions = allSubjects; 
         }
 
+        // - load data -
         public void CreateSettingsScreen()
         {
             //creating all menu options
@@ -55,9 +56,9 @@ namespace random_school_generator
                 _inputOptions[i].Position = new Vector2(250, 50 * (i + 1)); //set position of each input option
             }
         }
-
         public void LoadSettingsScreenContent(SpriteFont consolasBold, SpriteFont consolas)
         {
+            //sets fonts
             _consolasBold = consolasBold;
             _consolas = consolas;
 
@@ -68,8 +69,11 @@ namespace random_school_generator
             }
         }
 
+        // - update -
         public bool UpdateSettingsScreen(KeyboardState previousKeyboardState, KeyboardState currentKeyboardState)
         {
+            //updates status of options based on user input
+
             //if no input options are currently selected
             if (_inputSelected < 0) 
             {
@@ -157,6 +161,7 @@ namespace random_school_generator
             return true;
         }
 
+        // - display + finish -
         public void DrawSettingsScreen(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             InputOption _currentlySelectedInputOption = null;
@@ -196,15 +201,11 @@ namespace random_school_generator
             }    
             
         }
-
         public void ReturnValues(ref int floorSize, ref int numOfFloors, ref string subjectOne, ref string subjectTwo, ref string subjectThree, ref string floorIrregularity, ref string watchGeneration)
         {
-            //passes on all values to simulation once user has exited this screen
+            //passes on all values to Game1 once user has exited this screen
             floorSize = Convert.ToInt32(_inputOptions[0].ReturnInput());
-            numOfFloors = Convert.ToInt32(_inputOptions[1].ReturnInput());
-            //make if all picked random - make sure not the same
-
-            
+            numOfFloors = Convert.ToInt32(_inputOptions[1].ReturnInput());         
             subjectOne = _inputOptions[2].ReturnInput();
             subjectTwo = _inputOptions[3].ReturnInput(subjectOne);
             subjectThree = _inputOptions[4].ReturnInput(subjectOne, subjectTwo);

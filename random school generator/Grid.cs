@@ -26,6 +26,8 @@ namespace random_school_generator
             ResetGrid(x, y);
             _floorRectangles = new List<Rectangle>();
         }
+
+        // - loading data -
         public static void LoadGridPixelData(GraphicsDevice graphicsDevice)
         {
             //loads data to draw rectangles
@@ -33,6 +35,7 @@ namespace random_school_generator
             _pixel.SetData<Color>(new Color[] { Color.White });
         }
 
+        // - other functions -
         public void ResetGrid(int x, int y, char c = ' ')
         {
             //makes a new grid of the size given, fill with specified character
@@ -83,6 +86,8 @@ namespace random_school_generator
         }
         public void FindAllEdgePoints(char c)
         {
+            //creates a list of all points on the grid that are on an edge
+
             _edgepoints = new List<Point>();
             bool atAnEdge;
 

@@ -22,20 +22,23 @@ namespace random_school_generator
             _selected = 0;
         }
 
+        // - load data -
         public void LoadTitleScreenContent(SpriteFont consolasBold, SpriteFont consolas)
         {
             _consolasBold = consolasBold;
             _consolas = consolas;
         }
-
         public void CreateTitleScreen()
         {
             _menuOptions.Add(new MenuOption("> run generator", Color.DeepSkyBlue, Color.White));
             _menuOptions.Add(new MenuOption("> exit", Color.DeepSkyBlue, Color.White));
         }
 
+        // - update -
         public int UpdateTitleScreen(KeyboardState previousKeyboardState, KeyboardState currentKeyboardState)
         {
+            //updates selected option based on user input and returns selected option once Enter is pressed
+
             if (previousKeyboardState.IsKeyDown(Keys.Enter) && currentKeyboardState.IsKeyUp(Keys.Enter))
             {
                 return _selected; //return selected option once user presses enter
@@ -64,6 +67,7 @@ namespace random_school_generator
             return -1; //indicates to simulation that nothing has been selected yet
         }
 
+        // - draw -
         public void DrawTitleScreen(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             graphicsDevice.Clear(Color.Black);

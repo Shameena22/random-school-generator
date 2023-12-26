@@ -15,7 +15,7 @@ namespace random_school_generator
         private int _floorID, _averageSize, _totalArea;
         private static Dictionary<int, Color> _componentColours;
         private List<Zone> _zones;
-        private List<Rectangle> _stairRects, _corridorStartingRects, _corridorRects = new List<Rectangle>();
+        private List<Rectangle> _stairRects, _corridorStartingRects, _corridorRects;
         private Rectangle _entrance;
         private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth, _madeWalls;
         private char[,] _roomGrid;
@@ -42,6 +42,7 @@ namespace random_school_generator
             _entrance = new Rectangle(0, 0, 0, 0);
             _corridorStartingRects = new List<Rectangle>();
             _finishedFirstZoneGrowth = false;
+            _corridorRects = new List<Rectangle>();
             _drawingList = new List<List<Rectangle>> { _floorRectangles, _corridorRects, _corridorStartingRects, _stairRects };
             _madeWalls = false;
         }
@@ -66,6 +67,8 @@ namespace random_school_generator
         // - creating floor shape -
         public void CreateFloorGrid(int irregularity, List<Floor> floorsBelow)
         {
+            //creates a floor's overall shape by combining a random number of rectangles
+
             Random random = new Random();
             int baseRectWidth, baseRectHeight,baseRectX, baseRectY, tempRectWidth, tempRectHeight, tempRectX, tempRectY, numOfRects, i = 0;
             Rectangle tempRectangle, baseRectangle;
@@ -127,6 +130,8 @@ namespace random_school_generator
         }      
         private int GetRectPosLowerBoundary(int mainRectPos, int rectLength)
         {
+            //returns lowest x or y coordinate that a rectangle should be given that it could still be connected to the floor’s base rectangle
+
             if (mainRectPos - rectLength < 0)
             {
                return 0;
@@ -135,6 +140,8 @@ namespace random_school_generator
         }
         private int GetRectPosUpperBoundary(int mainRectPos, int rectLength)
         {
+            //returns highest x or y coordinate that a rectangle should be given that it could still be connected to the floor’s base rectangle
+
             if (mainRectPos + rectLength >= _grid.GetUpperBound(0))
             {
                 return _grid.GetUpperBound(0) - rectLength - 1;
@@ -143,6 +150,7 @@ namespace random_school_generator
         }
         private void ModifyFloorsBelow(Rectangle newRect, List<Floor> floorsBelow)
         {
+            //adds parts of a floor to all floors below if they don't already overlap
             //preventing a floor from going over the space of those below it
             foreach (Floor f in floorsBelow)
             {
@@ -186,7 +194,7 @@ namespace random_school_generator
             _stairRects.Add(r);
 
             //update the list of edge points so they don't contain any part of the stair block
-            UpdateEdgePoints(r);
+            RemoveRectFromEdgePoints(r);
 
             //update grid with "S" symbol where the stair block is
             AddRectToGrid(r, true, 'S');
@@ -197,12 +205,12 @@ namespace random_school_generator
             _entrance = r;
 
             //update edge points list to not include anything in the entrance block
-            UpdateEdgePoints(r);
+            RemoveRectFromEdgePoints(r);
 
             //fill entrance rectangle with "E" symbols on the grid
             AddRectToGrid(r, true, 'E');
         }
-        private void UpdateEdgePoints(Rectangle r)
+        private void RemoveRectFromEdgePoints(Rectangle r)
         {
             //iterate through edges of the rectangle
             //remove these points from the list of edgepoints (if they are present)
@@ -251,6 +259,8 @@ namespace random_school_generator
         }
         private void GetCorridorRectBoundaries(Point p, int corridorLength, ref int rectX, ref int rectY)
         {
+            //gets the top left position of a rectangle based on a point from the pathfinding algorithm
+
             int i, j;
             rectX = p.X;
             rectY = p.Y;
@@ -320,8 +330,8 @@ namespace random_school_generator
         }
         public void RemoveCorridorPoint(int x, int y, char replacementSymbol)
         {
-            //easy solution is to add a grey rect to draw over the corridor - might add a lotta rects though
-            //or check each rect and remove it if it overlaps with the point......but inefficient?? 
+            //removes all corridor rectangles overlapping with a given point
+
             _grid[x, y] = replacementSymbol;
             Rectangle r;
             for (int i = 0; i < _corridorRects.Count; i++)
@@ -338,7 +348,7 @@ namespace random_school_generator
         // - adding rooms -
         public void SetRoomGrid()
         {
-            //ResetGrid(_grid.GetLength(0), _grid.GetLength(1), 'X');
+            //sets the room's character grid, marking spaces outside and inside the building
 
             _roomGrid = new char[_grid.GetLength(0), _grid.GetLength(1)];
 
@@ -359,6 +369,8 @@ namespace random_school_generator
         }
         public void AddToRoomGrid(Rectangle r)
         {
+            //adds a rectangle to the character array used to mark room positions
+
             for (int x = 0; x < r.Width; x++)
             {
                 for (int y = 0; y < r.Height; y++)
@@ -370,9 +382,7 @@ namespace random_school_generator
 
         // - drawing floor -
         public void DrawFloor(SpriteBatch spriteBatch, int scrollX, int scrollY)
-        {
-         
-
+        {         
             //draw base rectangle first
             foreach (Rectangle r in _drawingList[0])
             {

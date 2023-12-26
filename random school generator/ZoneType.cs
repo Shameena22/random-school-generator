@@ -26,6 +26,7 @@ namespace random_school_generator
             _secondaryType = SetSecondaryType();
         }
 
+        // - load data -
         //TODO: maybe load these from a file?
         public static void LoadZoneRules()
         {
@@ -54,6 +55,7 @@ namespace random_school_generator
         }
         public static void SetTypeColours()
         {
+            //setting the base colours for each type of zone
             TypeColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Ivory },
@@ -86,6 +88,8 @@ namespace random_school_generator
 
         public static int GetAdjacencyRule(ZoneType z1, ZoneType z2)
         {
+            //returns the highest priority adjacency rule between two given zones
+
             //iterate through each stored rule and returns the encouragement / discouragement value if a rule applies to both zones given
             foreach ((List<string>, string, int) rule in ZoneRules)
             {

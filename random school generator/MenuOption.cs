@@ -26,6 +26,7 @@ namespace random_school_generator
 
         public Color GetColour()
         {
+            //returns colour of option depending if it is currently selected or not
             if (_isDisabled)
             {
                 return Color.DarkGray;

@@ -68,14 +68,18 @@ namespace random_school_generator
             }
         }
         
+        // - loading data -
         public void LoadInputOptionContent(SpriteFont consolas, SpriteFont consolasBold)
         {
             _consolas = consolas;
             _consolasBold = consolasBold;
         }
         
+        // - updating -
         public bool UpdateInputOption(KeyboardState previousKeyboardState, KeyboardState currentKeyboardState)
         {
+            //updates what the input option contains depending on its type and the user's most recent input
+
             if (_isSelected)
             {
                 //if user has pressed the enter key
@@ -204,7 +208,9 @@ namespace random_school_generator
         }
         public void RefreshDropdownOptions(string selectedOption1, string selectedOption2, string selectedOption3)
         {
+            //ensures that subject options that are currently selected are disabled, and otherwise enabled
             //this sub is only used for subject options
+
             string text;
 
             foreach (MenuOption m in _menuOptions)
@@ -225,17 +231,17 @@ namespace random_school_generator
 
                 } else
                 {
-                    //if the option hasn't been selected in any of the other inputs, it is avaialble to use
+                    //if the option hasn't been selected in any of the other inputs, it is available to use
                     m.IsDisabled = false;
                 }
             }
         }
         
+        // - display + finish -
         public void DrawInputOption(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
         {
             if (!_isSelected || _validationType == "int")
             {
-
                 //draw option text if it isn't currently showing a dropdown box
                 spriteBatch.DrawString(_consolas, _textInBox, _position, _colour);
 
@@ -259,7 +265,7 @@ namespace random_school_generator
         public string ReturnInput(string chosenOption1 = "", string chosenOption2 = "")
         {
             //returns final input to _settingsScreen
-            Random r = new System.Random();
+            Random r = new Random();
 
             switch (_validationType) 
             {

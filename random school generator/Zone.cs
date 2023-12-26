@@ -15,24 +15,6 @@ namespace random_school_generator
         private bool _firstGrown, _secondGrown, _thirdGrown, _roomGrowthFailed, _finishedDoors;
         private List<Room> _rooms;
         private List<Point> _badGrowthPoints;
-        public Zone(int numberOfRooms, int idealSize, string zoneType, int id) : base() 
-        {
-            _numberOfRooms = numberOfRooms;
-            _idealSize = idealSize;
-            _zoneType = new ZoneType(zoneType);
-            _firstGrown = false;
-            _secondGrown = false;
-            _thirdGrown = false;
-            _growthPoint = new Point (-100, -100);
-            _floorRectangles.Add(new Rectangle());
-            _badGrowthPoints = new List<Point>();
-            _ID = id;
-            _area = 0;
-            _rooms = new List<Room>();
-            _roomGrowthRetries = 0;
-            _roomGrowthFailed = false;
-            _finishedDoors = false;
-        }
 
         public int NumberOfRooms { get => _numberOfRooms; set => _numberOfRooms = value; }
         public int IdealSize { get => _idealSize; set => _idealSize = value; }
@@ -47,10 +29,29 @@ namespace random_school_generator
         public int RoomGrowthRetries { get => _roomGrowthRetries; set => _roomGrowthRetries = value; }
         public bool RoomGrowthFailed { get => _roomGrowthFailed; set => _roomGrowthFailed = value; }
         public bool FinishedDoors { get => _finishedDoors; set => _finishedDoors = value; }
+        public Zone(int numberOfRooms, int idealSize, string zoneType, int id) : base()
+        {
+            _numberOfRooms = numberOfRooms;
+            _idealSize = idealSize;
+            _zoneType = new ZoneType(zoneType);
+            _firstGrown = false;
+            _secondGrown = false;
+            _thirdGrown = false;
+            _growthPoint = new Point(-100, -100);
+            _floorRectangles.Add(new Rectangle());
+            _badGrowthPoints = new List<Point>();
+            _ID = id;
+            _area = 0;
+            _rooms = new List<Room>();
+            _roomGrowthRetries = 0;
+            _roomGrowthFailed = false;
+            _finishedDoors = false;
+        }
 
+        // - update -
         public void UpdateArea()
         {
-            //go through grid + find total number of points belonging to the zone
+            //go through floor grid and count total number of points belonging to the zone
             _area = 0;
             for (int x = 0; x < _rectWidth; x++)
             {
@@ -64,6 +65,7 @@ namespace random_school_generator
             }
         }
 
+        // - display
         public void DrawZone(SpriteBatch spriteBatch, int scrollX, int scrollY)
         {
             //draws the base of the zone

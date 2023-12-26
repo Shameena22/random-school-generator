@@ -12,11 +12,8 @@ namespace random_school_generator
 {
     abstract class RoomType
     {
-       // private string _type;
         private static Dictionary<string, Color> _typeColours;
         private static Dictionary<string, Color> _wallColours;
-       // public string Type { get => _type; set => _type = value; }
-       // private static Random _random = new Random();
         private static Dictionary<string, int> _sideLengths;
         private static Dictionary<string, Color> _chairColours;
         private static Dictionary<string, Color> _deskColours;
@@ -89,7 +86,7 @@ namespace random_school_generator
                 {"staff", 100 }
             };
 
-            //TODO: fix these
+            //setting furniture colours
             _deskColours = new Dictionary<string, Color>
             {
                 {"hall", Color.Brown },

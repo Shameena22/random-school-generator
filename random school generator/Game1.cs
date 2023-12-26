@@ -333,9 +333,8 @@ namespace random_school_generator
             //creates a dictionary of some subjects with their allocated area for each floor
 
             List<string> randomAvailableZones, chosenZones, availableZoneTypes = new List<string> { "english", "maths", "science", "religious education", "languages", "computer science", "art", "design technology", "music", "staffroom", "office" };
-            List<float> topThreeChances;
-            int numOfZones, count = 0, i = 0, tempIdealSize, tempNumOfRooms, staffRoomFloor, zoneLimit;
-            float tempChance, lowerZoneLimitDivider, upperZoneLimitDivider, lowerRoomLimitDivider, upperRoomLimitDivider;
+            int numOfZones, count = 0, i = 0, staffRoomFloor, zoneLimit;
+            float lowerZoneLimitDivider, upperZoneLimitDivider, lowerRoomLimitDivider, upperRoomLimitDivider;
 
             //tweak these values to improve zone list generation:
             // - max num of zones on one floor
@@ -357,16 +356,9 @@ namespace random_school_generator
             {
                 zoneGraphChances.Add(s, 0);
             }
-            //special rooms are given an initial value of 1 so they appear at the top of the list of chosen zones once it has been sorted
-            zoneGraphChances.Add("gym", 1);
-            zoneGraphChances.Add("hall", 1);
-            zoneGraphChances.Add("canteen", 1);
-            //similarly, toilets are given a lower value so they appear lower in the chosen zones list
-            zoneGraphChances.Add("toilets", 0.7f);
-            //and the staffroom won't be too large / too small
-            zoneGraphChances["staffroom"] = 0.5f;
-            zoneGraphChances["offices"] = 0.65f;
-            //zone types closer to the front will be allocated larger areas
+
+            //propritise special zone types
+            AddPriorityZoneChances(zoneGraphChances);
 
             //allocate a floor to have a staff room, ensuring that the building has at least one staffroom area
             staffRoomFloor = _random.Next(0, _allFloors.Count);
@@ -377,23 +369,7 @@ namespace random_school_generator
                 i = 0;
                 chosenZones = new List<string>();
 
-                //the top 3 subjects will be given higher probabilities
-                topThreeChances = new List<float> { _random.Next(75, 100) / 100f, _random.Next(65, 100) / 100f, _random.Next(55, 100) / 100f };
-
-                //allocating highest -> lowest values from this list to highest -> lowest subject priorities
-                topThreeChances.Sort();
-                zoneGraphChances[_subjectOne] = topThreeChances[0];
-                zoneGraphChances[_subjectTwo] = topThreeChances[1];
-                zoneGraphChances[_subjectThree] = topThreeChances[2];
-
-                //allocate probabilities to all the other zone types, ensuring that they can't be too high
-                foreach (string s in availableZoneTypes)
-                {
-                    if (zoneGraphChances[s] == 0)
-                    {
-                        zoneGraphChances[s] = _random.Next(0, 75) / 100f;
-                    }
-                }
+                CreateZoneChances(availableZoneTypes, zoneGraphChances);
 
                 //shuffling the list of zone types
                 randomAvailableZones = availableZoneTypes.OrderBy(x => _random.Next()).ToList();
@@ -402,26 +378,9 @@ namespace random_school_generator
                 //boundaries based on total room area
                 numOfZones = _random.Next((int)Math.Ceiling(f.TotalArea / lowerZoneLimitDivider), (int)Math.Ceiling(f.TotalArea / upperZoneLimitDivider));
                 numOfZones = Math.Min(numOfZones, zoneLimit);
-                do
-                {
-                    //random number between 0 and 1 - its size determines if the zone will be added to the floor
-                    tempChance = _random.Next(0, 100) / 100f;
 
-                    //add zone to floor if it hasn't already been added and tempChance is less than the zone's set probability
-                    if (!chosenZones.Contains(randomAvailableZones[i]) && tempChance < zoneGraphChances[randomAvailableZones[i]])
-                    {
-                        chosenZones.Add(randomAvailableZones[i]);
-                        count++;
-                    }
-
-                    //increment i to iterate though each zone type; reset to 0 once it has done a full pass
-                    i++;
-                    if (i == randomAvailableZones.Count)
-                    {
-                        i = 0;
-                    }
-                    //continue until the quota of zones has been reached
-                } while (count < numOfZones);
+                //select the zones to be included
+                ChooseZonesOnFloor(randomAvailableZones, chosenZones, numOfZones, ref count, ref i, zoneGraphChances);
 
                 //adding these zones to the ground floor only
                 if (f.FloorID == 0)
@@ -430,7 +389,7 @@ namespace random_school_generator
                     chosenZones.Add("hall");
                     chosenZones.Add("canteen");
                 }
-                else if (f.FloorID == staffRoomFloor && !chosenZones.Contains("staffroom"))
+                if (f.FloorID == staffRoomFloor && !chosenZones.Contains("staffroom"))
                 {
                     chosenZones.Add("staffroom");
                 }
@@ -440,22 +399,96 @@ namespace random_school_generator
                 //calculate the proportions of the total floor size that each zone will take
                 zoneSizeProportions = CreateZoneSizeProportions(chosenZones, zoneGraphChances);
 
-                foreach (KeyValuePair<string, float> kvp in zoneSizeProportions)
+                //add zone estimated area and number of rooms to floor data
+                AddZoneEstimatesToFloor(chosenZones, lowerRoomLimitDivider, upperRoomLimitDivider, zoneSizeProportions, f);
+            }
+        }
+        private void AddZoneEstimatesToFloor(List<string> chosenZones, float lowerRoomLimitDivider, float upperRoomLimitDivider, Dictionary<string, float> zoneSizeProportions, Floor f)
+        {
+            //adds zone estimated area and number of rooms to floor data
+
+            int tempIdealSize, tempNumOfRooms;
+            foreach (KeyValuePair<string, float> kvp in zoneSizeProportions)
+            {
+                //set the ideal size using the floor's total size and the zone's proportion value
+                tempIdealSize = (int)(kvp.Value * f.TotalArea);
+
+                if (tempIdealSize > 0)
                 {
-                    //set the ideal size using the floor's total size and the zone's proportion value
-                    tempIdealSize = (int)(kvp.Value * f.TotalArea);
+                    //calculate the desired number of rooms based on the allocated sizes
+                    tempNumOfRooms = SetNumberOfRooms(kvp.Key, tempIdealSize, lowerRoomLimitDivider, upperRoomLimitDivider);
 
-                    if (tempIdealSize > 0)
-                    {
-                        //calculate the desired number of rooms based on the allocated sizes
-                        tempNumOfRooms = SetNumberOfRooms(kvp.Key, tempIdealSize, lowerRoomLimitDivider, upperRoomLimitDivider);
+                    //add the zone to the floor's list
+                    f.Zones.Add(new Zone(tempNumOfRooms, tempIdealSize, kvp.Key, chosenZones.IndexOf(kvp.Key)));
+                }
 
-                        //add the zone to the floor's list
-                        f.Zones.Add(new Zone(tempNumOfRooms, tempIdealSize, kvp.Key, chosenZones.IndexOf(kvp.Key)));
-                    }
+            }
+        }
+        private float ChooseZonesOnFloor(List<string> randomAvailableZones, List<string> chosenZones, int numOfZones, ref int count, ref int i, Dictionary<string, float> zoneGraphChances)
+        {
+            //selects the zones to be included on a floor
 
+            float tempChance;
+            do
+            {
+                //random number between 0 and 1 - its size determines if the zone will be added to the floor
+                tempChance = _random.Next(0, 100) / 100f;
+
+                //add zone to floor if it hasn't already been added and tempChance is less than the zone's set probability
+                if (!chosenZones.Contains(randomAvailableZones[i]) && tempChance < zoneGraphChances[randomAvailableZones[i]])
+                {
+                    chosenZones.Add(randomAvailableZones[i]);
+                    count++;
+                }
+
+                //increment i to iterate though each zone type; reset to 0 once it has done a full pass
+                i++;
+                if (i == randomAvailableZones.Count)
+                {
+                    i = 0;
+                }
+                //continue until the quota of zones has been reached
+            } while (count < numOfZones);
+            return tempChance;
+        }
+        private static void AddPriorityZoneChances(Dictionary<string, float> zoneGraphChances)
+        {
+            //manually adds zone chances for special rooms
+
+            //special rooms are given an initial value of 1 so they appear at the top of the list of chosen zones once it has been sorted
+            zoneGraphChances.Add("gym", 1);
+            zoneGraphChances.Add("hall", 1);
+            zoneGraphChances.Add("canteen", 1);
+            //similarly, toilets are given a lower value so they appear lower in the chosen zones list
+            zoneGraphChances.Add("toilets", 0.8f);
+            //and the staffroom won't be too large / too small
+            zoneGraphChances["staffroom"] = 0.5f;
+            zoneGraphChances["offices"] = 0.65f;
+            //zone types closer to the front will be allocated larger areas
+        }
+        private List<float> CreateZoneChances(List<string> availableZoneTypes, Dictionary<string, float> zoneGraphChances)
+        {
+            //creates a "chance" value for each zone type indicating its likeliness of being included in a floor
+
+            //the top 3 subjects will be given higher probabilities
+            List<float> topThreeChances = new List<float> { _random.Next(75, 100) / 100f, _random.Next(65, 100) / 100f, _random.Next(55, 100) / 100f };
+
+            //allocating highest -> lowest values from this list to highest -> lowest subject priorities
+            topThreeChances.Sort();
+            zoneGraphChances[_subjectOne] = topThreeChances[0];
+            zoneGraphChances[_subjectTwo] = topThreeChances[1];
+            zoneGraphChances[_subjectThree] = topThreeChances[2];
+
+            //allocate probabilities to all the other zone types, ensuring that they can't be too high
+            foreach (string s in availableZoneTypes)
+            {
+                if (zoneGraphChances[s] == 0)
+                {
+                    zoneGraphChances[s] = _random.Next(0, 75) / 100f;
                 }
             }
+
+            return topThreeChances;
         }
         private Dictionary<string, float> CreateZoneSizeProportions(List<string> chosenZones, Dictionary<string, float> zoneChances)
         {
@@ -474,7 +507,7 @@ namespace random_school_generator
             }
             sizeProportions.Add(total);
 
-            //sort the list of decimals in ascending order
+            //sort the list of  decimals in ascending order
             sizeProportions.Sort();
             //sort the list of zones in ascending order based on their probability value
             chosenZones = chosenZones.OrderBy(x => zoneChances[x]).ToList();
