@@ -556,14 +556,7 @@ namespace random_school_generator
         {
             //adds stairs to floors, giving time to display each floor to the screen
 
-            int stairWidth, stairLength;
-            List<Rectangle> possibleStairRectangles = new List<Rectangle>(), sharedStairEdgeRectangles;
-            Rectangle chosenRect;
-            bool horizontalEdge, verticalEdge;
-
-            //change these values to alter the size of the stair block
-            stairWidth = 20;
-            stairLength = 25;
+            int stairWidth = 20, stairLength = 25;
 
             //move onto the next floor if enough time has passed since the last floor update 
             if (_currentFloorIndex == _allFloors.Count || DateTime.Now >= _previousUpdateTime.AddMilliseconds(_timeBetweenDisplayChange))
@@ -576,54 +569,11 @@ namespace random_school_generator
             if (_currentFloorIndex > 0 && ((_currentFloorIndex < _allFloors.Count - 1 && _allFloors[_currentFloorIndex].StairPoints.Count <= 1) || (_currentFloorIndex == _allFloors.Count - 1 && _allFloors[_currentFloorIndex].StairPoints.Count == 0)))
             {
                 Floor f = _allFloors[_currentFloorIndex];
-
-                //iterate through every edge point on the floor
-                foreach (Point p in f.Edgepoints)
-                {
-                    horizontalEdge = true;
-                    verticalEdge = true;
-
-                    //check if the point could be the corner of a stair block, and what direction if so
-                    CheckEdgeAlignments(p, stairLength, stairWidth, f, ref horizontalEdge, ref verticalEdge);
-
-                    //add every possible stair rectangle for this point to the list possibleStairPoints
-                    if (horizontalEdge)
-                    {
-                        FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "horizontal", stairLength, stairWidth, p, f);
-                    }
-                    if (verticalEdge)
-                    {
-                        FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "vertical", stairLength, stairWidth, p, f);
-                    }
-
-                }
-
-                //find all the rectangles that are also at edges to the floor below
-                sharedStairEdgeRectangles = FindSharedStairPoints(possibleStairRectangles);
-
-                //if there are any shared rectangles, choose a random one of them
-                if (sharedStairEdgeRectangles.Count > 0)
-                {
-                    chosenRect = sharedStairEdgeRectangles[_random.Next(0, sharedStairEdgeRectangles.Count)];
-                }
-                //if not, choose a random rectangle from the list of possible rectangles
-                else if (possibleStairRectangles.Count > 0)
-                {
-                    chosenRect = possibleStairRectangles[_random.Next(0, possibleStairRectangles.Count)];
-                }
-                else
-                {
-                    //as a last resort, just choose a position that ensures the stairs don't go outside the floor
-                    chosenRect = GetLastResortStairs(f, stairWidth, stairLength);
-                }
-                
-                //add the rectangle to the floor and the floor below
-                _allFloors[_currentFloorIndex].AddStairs(chosenRect);
-                _allFloors[_currentFloorIndex - 1].AddStairs(chosenRect);
+                CreateStairsOnFloor(stairWidth, stairLength, f);
 
                 //reset timer so the display shows the floor for long enough
                 _previousUpdateTime = DateTime.Now;
-            } 
+            }
             //create the entrance to the ground floor if it hasn't already been made
             else if (_currentFloorIndex == 0 && _allFloors[0].Entrance.Width == 0)
             {
@@ -652,6 +602,60 @@ namespace random_school_generator
             {
                 return $"> created stairs: floor {_currentFloorIndex}";
             }          
+        }
+        private List<Rectangle> CreateStairsOnFloor(int stairWidth, int stairLength, Floor f)
+        {
+            //creates stairs on a specific floor
+
+            List<Rectangle> possibleStairRectangles = new List<Rectangle>(), sharedStairEdgeRectangles;
+            Rectangle chosenRect;
+            bool horizontalEdge, verticalEdge;
+
+            //iterate through every edge point on the floor
+            foreach (Point p in f.Edgepoints)
+            {
+                horizontalEdge = true;
+                verticalEdge = true;
+
+                //check if the point could be the corner of a stair block, and what direction if so
+                CheckEdgeAlignments(p, stairLength, stairWidth, f, ref horizontalEdge, ref verticalEdge);
+
+                //add every possible stair rectangle for this point to the list possibleStairPoints
+                if (horizontalEdge)
+                {
+                    FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "horizontal", stairLength, stairWidth, p, f);
+                }
+                if (verticalEdge)
+                {
+                    FindPossibleStairOrEntranceRectangles(ref possibleStairRectangles, "vertical", stairLength, stairWidth, p, f);
+                }
+
+            }
+
+            //find all the rectangles that are also at edges to the floor below
+            sharedStairEdgeRectangles = FindSharedStairPoints(possibleStairRectangles);
+
+            //if there are any shared rectangles, choose a random one of them
+            if (sharedStairEdgeRectangles.Count > 0)
+            {
+                chosenRect = sharedStairEdgeRectangles[_random.Next(0, sharedStairEdgeRectangles.Count)];
+            }
+            //if not, choose a random rectangle from the list of possible rectangles
+            else if (possibleStairRectangles.Count > 0)
+            {
+                chosenRect = possibleStairRectangles[_random.Next(0, possibleStairRectangles.Count)];
+            }
+            else
+            {
+                //as a last resort, just choose a position that ensures the stairs don't go outside the floor
+                chosenRect = GetLastResortStairs(f, stairWidth, stairLength);
+            }
+
+            //add the rectangle to the floor and the floor below
+            _allFloors[_currentFloorIndex].AddStairs(chosenRect);
+            _allFloors[_currentFloorIndex - 1].AddStairs(chosenRect);
+
+            return possibleStairRectangles;
         }
         private Rectangle GetLastResortStairs(Floor f, int stairWidth, int stairLength)
         {
