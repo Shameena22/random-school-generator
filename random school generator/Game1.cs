@@ -244,10 +244,10 @@ namespace random_school_generator
 
             if (_floorSize < 120000)
             {
-                _growthSpeed = 7;
+                _growthSpeed = 10;
             } else
             {
-                _growthSpeed = 10;
+                _growthSpeed = 13;
             }
         }
 
@@ -460,7 +460,7 @@ namespace random_school_generator
             zoneGraphChances.Add("hall", 1);
             zoneGraphChances.Add("canteen", 1);
             //similarly, toilets are given a lower value so they appear lower in the chosen zones list
-            zoneGraphChances.Add("toilets", 0.8f);
+            zoneGraphChances.Add("toilets", 0.75f);
             //and the staffroom won't be too large / too small
             zoneGraphChances["staffroom"] = 0.5f;
             zoneGraphChances["offices"] = 0.65f;
@@ -471,7 +471,7 @@ namespace random_school_generator
             //creates a "chance" value for each zone type indicating its likeliness of being included in a floor
 
             //the top 3 subjects will be given higher probabilities
-            List<float> topThreeChances = new List<float> { _random.Next(75, 100) / 100f, _random.Next(65, 100) / 100f, _random.Next(55, 100) / 100f };
+            List<float> topThreeChances = new List<float> { _random.Next(65, 100) / 100f, _random.Next(55, 100) / 100f, _random.Next(45, 100) / 100f };
 
             //allocating highest -> lowest values from this list to highest -> lowest subject priorities
             topThreeChances.Sort();
@@ -1550,6 +1550,37 @@ namespace random_school_generator
             //store the position of stairs as a point
             stairPoint1 = new Point(f.StairPoints[0].X, f.StairPoints[0].Y);
 
+            //create initial corridor clusters - won't be fully connected
+            CreateCorridorClusters(f, allStartingPoints, corridorPoints, pointConnections);
+
+            //ensuring that each point is accessible from each other point (directly or indirectly)
+            //check each list of connections
+            foreach (List<Point> connections in pointConnections)
+            {
+                //if the points aren't connected to (one of) the stairs
+                if (!connections.Contains(stairPoint1))
+                {
+                    //find the closest pair of points between this list and the first list
+                    //the first list is guaranteed to contain the stairs because stairs are added first to the list of points to connect
+                    tempPoints = FindClosestStairPoint(pointConnections[0], connections);
+
+                    //add the shortest path between these two points to connect the lists
+                    corridorPoints.AddRange(FindShortestPath(tempPoints.Item1, tempPoints.Item2, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' '));
+                }
+            }
+
+            //call the floor to make a corridor based on all the paths created
+            f.AddCorridor(corridorPoints);
+        }
+
+        private void CreateCorridorClusters(Floor f, List<Point> allStartingPoints, List<Point> corridorPoints, List<List<Point>> pointConnections)
+        {
+            //creates initial paths between corridor destination points
+
+            Point closestPoint;
+            bool alreadyConnected;
+            int connectionIndex;
+
             //iterate through each starting point
             foreach (Point p in allStartingPoints)
             {
@@ -1578,7 +1609,7 @@ namespace random_school_generator
                 if (!alreadyConnected)
                 {
                     //collect points on the shortest path between two points
-                    corridorPoints.AddRange(FindShortestPath(p, closestPoint, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' ' ));
+                    corridorPoints.AddRange(FindShortestPath(p, closestPoint, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' '));
 
                     //if either of the points is already in one of the connection lists..
                     if (connectionIndex != -1)
@@ -1595,26 +1626,8 @@ namespace random_school_generator
                     }
                 }
             }
-
-            //ensuring that each point is accessible from each other point (directly or indirectly)
-            //check each list of connections
-            foreach (List<Point> connections in pointConnections)
-            {
-                //if the points aren't connected to (one of) the stairs
-                if (!connections.Contains(stairPoint1))
-                {
-                    //find the closest pair of points between this list and the first list
-                    //the first list is guaranteed to contain the stairs because stairs are added first to the list of points to connect
-                    tempPoints = FindClosestStairPoint(pointConnections[0], connections);
-
-                    //add the shortest path between these two points to connect the lists
-                    corridorPoints.AddRange(FindShortestPath(tempPoints.Item1, tempPoints.Item2, (char[,])f.GetGrid.Clone(), (p, grid) => grid[p.X, p.Y] != 'V' && grid[p.X, p.Y] != ' '));
-                }
-            }
-
-            //call the floor to make a corridor based on all the paths created
-            f.AddCorridor(corridorPoints);
         }
+
         private List<Point> FindShortestPath(Point start, Point end, char[,] grid, Func<Point, char[,], bool> ValidNextPoint)
         {
             Queue<Point> nextPoints = new Queue<Point>();
@@ -2390,7 +2403,7 @@ namespace random_school_generator
                     MakeGroupedTables(new char[r.RectWidth - gap - kitchenSpace.Width, r.RectHeight - gap], r, gap);
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Y + tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X + tableGap, kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Width - 2 * tableGap, tableWidth));
-                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Bottom - tableWidth - tableGap, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
+                    r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Right - tableWidth - tableGap, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
                     r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y + stallWidth, stallWidth, kitchenSpace.Height - 2 * stallWidth));
                     break;
                 case "up":
@@ -2399,7 +2412,7 @@ namespace random_school_generator
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.Right - tableWidth, kitchenSpace.Y, tableWidth, kitchenSpace.Height));
                     r.ExtraFurnitureList1.Add(new Rectangle(kitchenSpace.X, kitchenSpace.Y, kitchenSpace.Width, tableWidth));
-                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Height - stallWidth, kitchenSpace.Width - 2 * stallWidth, stallWidth));
+                    r.ExtraFurnitureList2.Add(new Rectangle(kitchenSpace.X + stallWidth, kitchenSpace.Bottom - stallWidth, kitchenSpace.Width - 2 * stallWidth, stallWidth));
                     break;
                 case "down":
                     MakeGroupedTables(new char[r.RectWidth - gap, r.RectHeight - gap - kitchenSpace.Height], r, gap);
