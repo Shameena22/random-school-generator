@@ -1052,6 +1052,7 @@ namespace random_school_generator
                 //if no more growth available (or required area reached on first growth), finish
                 else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
                 {
+                    //if on the second stage and one side is too much larger than the other, delete the zone - it's not a good shape
                     if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
                     {
                         f.Zones.Remove(z);
@@ -1245,7 +1246,7 @@ namespace random_school_generator
                 //step = how many growth iterations done in one frame
 
                 bool left = false, right = false, up = false, down = false;
-                List<Point> pointsToAdd = new List<Point>(), tempPointsToAdd1 = new List<Point>(), tempPointsToAdd2 = new List<Point>();
+                List<Point> pointsToAdd = new List<Point>();
 
                 for (int j = 0; j < _growthSpeed; j++)
                 {
@@ -1255,69 +1256,10 @@ namespace random_school_generator
                     down = false;
                     pointsToAdd.Clear();
 
-                    //the tempPointsToAdd lists are for each direction in a pair: left and right, or up and down
-                    tempPointsToAdd1.Clear();
-                    tempPointsToAdd2.Clear();
+                    //call subroutines to check for unclaimed points in each direction
+                    CheckUnclaimedPointsLeftRight(z, f, ref left, ref right, pointsToAdd);
 
-                    //check if points to left / right aren't in any zones yet + add points if so
-                    for (int i = z.GrowthTopLeft.Y; i < z.GrowthTopLeft.Y + z.RectHeight; i++)
-                    {
-                        if (WithinBounds(z.GrowthTopLeft.X - 1, i, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[z.GrowthTopLeft.X - 1, i] == 'X')
-                        {
-                            tempPointsToAdd1.Add(new Point(z.GrowthTopLeft.X - 1, i));
-                        }
-                        if (WithinBounds(z.GrowthTopLeft.X + z.RectWidth, i, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[z.GrowthTopLeft.X + z.RectWidth, i] == 'X')
-                        {
-                            tempPointsToAdd2.Add(new Point(z.GrowthTopLeft.X + z.RectWidth, i));
-                        }
-                    }
-
-                    //only add points left/right if the amount is large enough relative to the height (not width!) of the zone's rectangle
-                    //if adding points, update zone's top left location + dimensions if necessary
-                    if (tempPointsToAdd1.Count > z.RectHeight / 3)
-                    {
-                        left = true;
-                        z.RectWidth++;
-                        z.GrowthTopLeft = new Point(z.GrowthTopLeft.X - 1, z.GrowthTopLeft.Y);
-                        pointsToAdd.AddRange(tempPointsToAdd1);
-                    }
-                    if (tempPointsToAdd2.Count > z.RectHeight / 3)
-                    {
-                        right = true;
-                        z.RectWidth++;
-                        pointsToAdd.AddRange(tempPointsToAdd2);
-                    }
-
-                    tempPointsToAdd1.Clear();
-                    tempPointsToAdd2.Clear();
-
-                    //check if points to up / down aren't in any zones yet + add points if so
-                    for (int i = z.GrowthTopLeft.X; i < z.GrowthTopLeft.X + z.RectWidth; i++)
-                    {
-                        if (WithinBounds(i, z.GrowthTopLeft.Y - 1, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[i, z.GrowthTopLeft.Y - 1] == 'X')
-                        {
-                            tempPointsToAdd1.Add(new Point(i, z.GrowthTopLeft.Y - 1));
-                        }
-                        if (WithinBounds(i, z.GrowthTopLeft.Y + z.RectHeight, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[i, z.GrowthTopLeft.Y + z.RectHeight] == 'X')
-                        {
-                            tempPointsToAdd2.Add(new Point(i, z.GrowthTopLeft.Y + z.RectHeight));
-                        }
-                    }
-
-                    //similarly, only add points up / down if there are enough relative to the zone's width (not height!)
-                    if (tempPointsToAdd1.Count > z.RectWidth / 3)
-                    {
-                        up = true;
-                        z.GrowthTopLeft = new Point(z.GrowthTopLeft.X, z.GrowthTopLeft.Y - 1);
-                        z.RectHeight++;
-                        pointsToAdd.AddRange(tempPointsToAdd1);
-                    }
-                    if (tempPointsToAdd2.Count > z.RectWidth / 3)
-                    {
-                        down = true;
-                        z.RectHeight++;
-                        pointsToAdd.AddRange(tempPointsToAdd2);
-                    }
+                    CheckUnclaimedPointsUpDown(z, f, ref up, ref down, pointsToAdd);
 
                     //add each chosen point to the zone
                     foreach (Point p in pointsToAdd)
@@ -1336,6 +1278,74 @@ namespace random_school_generator
             }
             return false;
         }
+        private void CheckUnclaimedPointsLeftRight(Zone z, Floor f, ref bool left, ref bool right, List<Point> pointsToAdd)
+        {
+            //check if points to left / right aren't in any zones yet + add points if so
+
+            List<Point> tempLeftPoints = new List<Point>(), tempRightPoints = new List<Point>();
+
+            for (int i = z.GrowthTopLeft.Y; i < z.GrowthTopLeft.Y + z.RectHeight; i++)
+            {
+                if (WithinBounds(z.GrowthTopLeft.X - 1, i, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[z.GrowthTopLeft.X - 1, i] == 'X')
+                {
+                    tempLeftPoints.Add(new Point(z.GrowthTopLeft.X - 1, i));
+                }
+                if (WithinBounds(z.GrowthTopLeft.X + z.RectWidth, i, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[z.GrowthTopLeft.X + z.RectWidth, i] == 'X')
+                {
+                    tempRightPoints.Add(new Point(z.GrowthTopLeft.X + z.RectWidth, i));
+                }
+            }
+
+            //only add points left/right if the amount is large enough relative to the height (not width!) of the zone's rectangle
+            //if adding points, update zone's top left location + dimensions if necessary
+            if (tempLeftPoints.Count > z.RectHeight / 3)
+            {
+                left = true;
+                z.RectWidth++;
+                z.GrowthTopLeft = new Point(z.GrowthTopLeft.X - 1, z.GrowthTopLeft.Y);
+                pointsToAdd.AddRange(tempLeftPoints);
+            }
+            if (tempRightPoints.Count > z.RectHeight / 3)
+            {
+                right = true;
+                z.RectWidth++;
+                pointsToAdd.AddRange(tempRightPoints);
+            }
+        }
+        private void CheckUnclaimedPointsUpDown(Zone z, Floor f, ref bool up, ref bool down, List<Point> pointsToAdd)
+        {
+            //check if points to up / down aren't in any zones yet + add points if so
+
+            List<Point> tempUpPoints = new List<Point>(), tempDownPoints = new List<Point>();
+
+            for (int i = z.GrowthTopLeft.X; i < z.GrowthTopLeft.X + z.RectWidth; i++)
+            {
+                if (WithinBounds(i, z.GrowthTopLeft.Y - 1, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[i, z.GrowthTopLeft.Y - 1] == 'X')
+                {
+                    tempUpPoints.Add(new Point(i, z.GrowthTopLeft.Y - 1));
+                }
+                if (WithinBounds(i, z.GrowthTopLeft.Y + z.RectHeight, f.GetGrid.GetUpperBound(0), f.GetGrid.GetUpperBound(1)) && f.GetGrid[i, z.GrowthTopLeft.Y + z.RectHeight] == 'X')
+                {
+                    tempDownPoints.Add(new Point(i, z.GrowthTopLeft.Y + z.RectHeight));
+                }
+            }
+
+            //similarly, only add points up / down if there are enough relative to the zone's width (not height!)
+            if (tempUpPoints.Count > z.RectWidth / 3)
+            {
+                up = true;
+                z.GrowthTopLeft = new Point(z.GrowthTopLeft.X, z.GrowthTopLeft.Y - 1);
+                z.RectHeight++;
+                pointsToAdd.AddRange(tempUpPoints);
+            }
+            if (tempDownPoints.Count > z.RectWidth / 3)
+            {
+                down = true;
+                z.RectHeight++;
+                pointsToAdd.AddRange(tempDownPoints);
+            }
+        }
+
         private bool WithinBounds(int x, int y, int xUpperBound, int yUpperBound)
         {
             return x >= 0 && x <= xUpperBound && y >= 0 && y <= yUpperBound;
