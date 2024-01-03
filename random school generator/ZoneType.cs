@@ -39,7 +39,6 @@ namespace random_school_generator
             {
                 { "classroom", new List<string> { "english", "maths", "religious education", "science", "languages", "computer science", "art", "design technology", "music" }},
                 { "service", new List<string> {"toilets"}},
-                //TODO: change office to be a Service room?
                 { "staff", new List<string> { "staffroom", "office"} },
                 { "large", new List<string> {"gym", "hall", "canteen"} }
             };

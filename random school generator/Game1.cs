@@ -389,12 +389,15 @@ namespace random_school_generator
                     chosenZones.Add("hall");
                     chosenZones.Add("canteen");
                 }
+                else
+                {
+                    //not having toilets on ground floor to make more space for large zones
+                    chosenZones.Add("toilets");
+                }
                 if (f.FloorID == staffRoomFloor && !chosenZones.Contains("staffroom"))
                 {
                     chosenZones.Add("staffroom");
                 }
-                //each floor is given a toilet zone
-                chosenZones.Add("toilets");
 
                 //calculate the proportions of the total floor size that each zone will take
                 zoneSizeProportions = CreateZoneSizeProportions(chosenZones, zoneGraphChances);
@@ -1527,10 +1530,8 @@ namespace random_school_generator
             //creates + adds corridor to floor
 
             List<Point> allStartingPoints = new List<Point>(), corridorPoints = new List<Point>();
-            Point stairPoint1, closestPoint;
+            Point stairPoint1;
             (Point, Point) tempPoints;
-            bool alreadyConnected;
-            int connectionIndex = -1;
             List<List<Point>> pointConnections = new List<List<Point>>();
 
             //adding stairs, starting points, and entrance (if applicable) to the list of points to connect
@@ -1572,7 +1573,6 @@ namespace random_school_generator
             //call the floor to make a corridor based on all the paths created
             f.AddCorridor(corridorPoints);
         }
-
         private void CreateCorridorClusters(Floor f, List<Point> allStartingPoints, List<Point> corridorPoints, List<List<Point>> pointConnections)
         {
             //creates initial paths between corridor destination points
@@ -1627,7 +1627,6 @@ namespace random_school_generator
                 }
             }
         }
-
         private List<Point> FindShortestPath(Point start, Point end, char[,] grid, Func<Point, char[,], bool> ValidNextPoint)
         {
             Queue<Point> nextPoints = new Queue<Point>();
@@ -2106,7 +2105,6 @@ namespace random_school_generator
                 SetRoomRect(z.Rooms[z.Rooms.Count - 1], z, true, true);
                 SplitRoom(z, z.Rooms.Count - 1);
             }
-
         }
 
 
