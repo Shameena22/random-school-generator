@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace random_school_generator
 {
-    internal class GrowableArea : Grid
+    abstract class GrowableArea : Grid
     {
         //base class for zones and rooms, since they both grow within another grid 
 

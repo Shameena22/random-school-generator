@@ -1175,7 +1175,8 @@ namespace random_school_generator
                             UpdateClosePoints(ref weightedGrid, p, (int)(distance / 2), adjacencyRule);
 
                             //negative weights will also be given to points a certain distance away around the rectangle
-                            //(leads to more interesting zone shapes)
+
+                            //(this leads to more interesting zone shapes)
                             //UpdateFarPoints(ref weightedGrid, p, distance, adjacencyRule);
                         }
                     }
@@ -1348,7 +1349,6 @@ namespace random_school_generator
                 pointsToAdd.AddRange(tempDownPoints);
             }
         }
-
         private bool WithinBounds(int x, int y, int xUpperBound, int yUpperBound)
         {
             return x >= 0 && x <= xUpperBound && y >= 0 && y <= yUpperBound;
@@ -1627,7 +1627,7 @@ namespace random_school_generator
                 }
             }
         }
-        private List<Point> FindShortestPath(Point start, Point end, char[,] grid, Func<Point, char[,], bool> ValidNextPoint)
+        private List<Point> FindShortestPath(Point start, Point end, char[,] grid, Func<Point, char[,], bool> ValidNextPoint) 
         {
             Queue<Point> nextPoints = new Queue<Point>();
             Point next = start;
@@ -3559,7 +3559,7 @@ namespace random_school_generator
 
         // - - doors - -
         private void AddDoors(Floor f, Zone z)
-        {
+        { 
             //calls functions to add doors connecting to empty floor space / other rooms
 
             List<List<Room>> roomConnections = new List<List<Room>>();
