@@ -13,7 +13,7 @@ namespace random_school_generator
     {
         private int _ID, _idealSize;
         private string _roomType, _facingTowards;
-        private bool _grown, _firstGrown;
+        private bool _fullyGrown, _firstStageGrown;
         private Point _growthFloorPoint;
         private List<Rectangle> _doors, _walls, _equipmentDesks, _tables, _chairs, _extraFurnitureList1, _extraFurnitureList2;
         private Rectangle _teacherDesk, _teacherChair, _cupboard;
@@ -44,7 +44,7 @@ namespace random_school_generator
             _extraFurnitureList2 = new List<Rectangle>();
         }
 
-        public bool Grown { get => _grown; set => _grown = value; }
+        public bool FullyGrown { get => _fullyGrown; set => _fullyGrown = value; }
         public Point GrowthFloorPoint { get => _growthFloorPoint; set => _growthFloorPoint = value; }
         public int ID { get => _ID; set => _ID = value; }
         public int IdealSize { get => _idealSize; set => _idealSize = value; }
@@ -64,7 +64,7 @@ namespace random_school_generator
         public List<Rectangle> Tables { get => _tables; set => _tables = value; }
         public List<Rectangle> Chairs { get => _chairs; set => _chairs = value; }
         public string FacingTowards { get => _facingTowards; set => _facingTowards = value; }
-        public bool FirstGrown { get => _firstGrown; set => _firstGrown = value; }
+        public bool FirstStageGrown { get => _firstStageGrown; set => _firstStageGrown = value; }
         public List<Rectangle> ExtraFurnitureList1 { get => _extraFurnitureList1; set => _extraFurnitureList1 = value; }
         public List<Rectangle> ExtraFurnitureList2 { get => _extraFurnitureList2; set => _extraFurnitureList2 = value; }
 

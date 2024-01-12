@@ -12,17 +12,17 @@ namespace random_school_generator
     {
         private int _numberOfRooms, _idealSize, _ID, _area, _roomGrowthRetries;
         private ZoneType _zoneType;
-        private bool _firstGrown, _secondGrown, _thirdGrown, _roomGrowthFailed, _finishedDoors;
+        private bool _firstStageGrown, _secondStageGrown, _thirdStageGrown, _roomGrowthFailed, _finishedDoors;
         private List<Room> _rooms;
         private List<Point> _badGrowthPoints;
 
         public int NumberOfRooms { get => _numberOfRooms; set => _numberOfRooms = value; }
         public int IdealSize { get => _idealSize; set => _idealSize = value; }
-        public bool FirstGrown { get => _firstGrown; set => _firstGrown = value; }
+        public bool FirstStageGrown { get => _firstStageGrown; set => _firstStageGrown = value; }
         public int ID { get => _ID; set => _ID = value; }
         internal ZoneType ZoneType { get => _zoneType; set => _zoneType = value; }
-        public bool SecondGrown { get => _secondGrown; set => _secondGrown = value; }
-        public bool ThirdGrown { get => _thirdGrown; set => _thirdGrown = value; }
+        public bool SecondStageGrown { get => _secondStageGrown; set => _secondStageGrown = value; }
+        public bool ThirdStageGrown { get => _thirdStageGrown; set => _thirdStageGrown = value; }
         internal List<Room> Rooms { get => _rooms; set => _rooms = value; }
         public int Area { get => _area; set => _area = value; }
         public List<Point> BadGrowthPoints { get => _badGrowthPoints; set => _badGrowthPoints = value; }
@@ -34,9 +34,9 @@ namespace random_school_generator
             _numberOfRooms = numberOfRooms;
             _idealSize = idealSize;
             _zoneType = new ZoneType(zoneType);
-            _firstGrown = false;
-            _secondGrown = false;
-            _thirdGrown = false;
+            _firstStageGrown = false;
+            _secondStageGrown = false;
+            _thirdStageGrown = false;
             _growthPoint = new Point(-100, -100);
             _floorRectangles.Add(new Rectangle());
             _badGrowthPoints = new List<Point>();

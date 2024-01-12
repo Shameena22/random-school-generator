@@ -31,16 +31,17 @@ namespace random_school_generator
         private SettingsScreen _settingsScreen;
 
         //data
-        private int _floorSize, _numOfFloors, _floorIrregularity, _screenWidth, _screenHeight, _wallWidth;
+        private int _floorSize, _numOfFloors, _floorIrregularity, _screenWidth, _screenHeight;
         private string _subjectOne, _subjectTwo, _subjectThree, _irregularityText, _watchGeneration;
         private List<string> _allSubjectOptions;
         private DateTime _previousUpdateTime;
+        private const int _wallWidth = 5;
 
         //drawing + display
         private int _scrollX, _scrollY, _growthSpeed;
         private int _currentFloorIndex, _currentZoneIndex, _currentRoomIndex;
         private Queue<string> _displayMessages;
-        private int _timeBetweenDisplayChange;
+        private const int _timeBetweenDisplayChange = 50;
 
         //building
         private List<Floor> _allFloors;
@@ -68,10 +69,10 @@ namespace random_school_generator
             _screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             _screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _random = new Random();
-            _timeBetweenDisplayChange = 50;
+            //_timeBetweenDisplayChange = 50;
             _scrollX = -_screenWidth / 4;
             _scrollY = -_screenHeight / 8;
-            _wallWidth = 5;
+            //_wallWidth = 5;
         }
 
         protected override void Initialize()
@@ -926,7 +927,7 @@ namespace random_school_generator
                         _currentZoneIndex -= 1;
                     }
 
-                    else if (currentFloor.Zones[_currentZoneIndex].FirstGrown)
+                    else if (currentFloor.Zones[_currentZoneIndex].FirstStageGrown)
                     {
                         //mark first stage as done if all zones in the floor have been grown
                         if (_currentZoneIndex == currentFloor.Zones.Count - 1)
@@ -943,7 +944,7 @@ namespace random_school_generator
                     else
                     {
                         //grow the zones (and store whether it has finished the first stage or not)
-                        currentFloor.Zones[_currentZoneIndex].FirstGrown = GrowZone(currentFloor.Zones[_currentZoneIndex], currentFloor);
+                        currentFloor.Zones[_currentZoneIndex].FirstStageGrown = GrowZone(currentFloor.Zones[_currentZoneIndex], currentFloor);
                         
                         //return a message about growing the zone
                         return $"> growing zone: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
@@ -955,7 +956,7 @@ namespace random_school_generator
                 {
                     if (_currentZoneIndex < currentFloor.Zones.Count )
                     {
-                        if (currentFloor.Zones[_currentZoneIndex].SecondGrown)
+                        if (currentFloor.Zones[_currentZoneIndex].SecondStageGrown)
                         {
                             //marks second stage as done if all zones have grown a second time
                             if (_currentZoneIndex == 0)
@@ -973,7 +974,7 @@ namespace random_school_generator
                         else
                         {
                             //grow the zone a second time if it hasn't finished this stage
-                            currentFloor.Zones[_currentZoneIndex].SecondGrown = GrowZone(currentFloor.Zones[_currentZoneIndex], currentFloor);
+                            currentFloor.Zones[_currentZoneIndex].SecondStageGrown = GrowZone(currentFloor.Zones[_currentZoneIndex], currentFloor);
 
                             return $"> expanding zone: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
                         }
@@ -990,7 +991,7 @@ namespace random_school_generator
                 {
                     
                     //if the current zone has already finished the third stage
-                    if (currentFloor.Zones[_currentZoneIndex].ThirdGrown)
+                    if (currentFloor.Zones[_currentZoneIndex].ThirdStageGrown)
                     {
                         //mark the third stage as done if all zones in the floor have completed it
                         if (_currentZoneIndex == 0)
@@ -1006,7 +1007,7 @@ namespace random_school_generator
                     else
                     {
                         //finish the zone's growth if this hasn't already been done
-                        currentFloor.Zones[_currentZoneIndex].ThirdGrown = FinishZoneGrowth(currentFloor.Zones[_currentZoneIndex], currentFloor);
+                        currentFloor.Zones[_currentZoneIndex].ThirdStageGrown = FinishZoneGrowth(currentFloor.Zones[_currentZoneIndex], currentFloor);
                         
                         return $"> final zone growth: floor {_currentFloorIndex}, zone {_currentZoneIndex}";
                     }
@@ -1046,17 +1047,17 @@ namespace random_school_generator
                 z.UpdateBaseRect(z.GrowthTopLeft.X, z.GrowthTopLeft.Y, z.RectWidth, z.RectHeight);
 
                 //delete the zone if the shape is too narrow
-                if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !z.FirstGrown)
+                if (((!left && !right && z.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && z.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !z.FirstStageGrown)
                 {
                     f.Zones.Remove(z);
                     f.RemoveFromGrid((char)('0' | z.ID));
                 }
 
                 //if no more growth available (or required area reached on first growth), finish
-                else if ((!left && !right && !up && !down) || (!z.FirstGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
+                else if ((!left && !right && !up && !down) || (!z.FirstStageGrown && z.RectWidth * z.RectHeight >= z.IdealSize))
                 {
                     //if on the second stage and one side is too much larger than the other, delete the zone - it's not a good shape
-                    if (z.FirstGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
+                    if (z.FirstStageGrown && (z.RectHeight >= z.RectWidth * 4.5 || z.RectWidth >= z.RectHeight * 4.5))
                     {
                         f.Zones.Remove(z);
                         f.RemoveFromGrid((char)('0' | z.ID));
@@ -1161,7 +1162,7 @@ namespace random_school_generator
             foreach (Zone otherZone in f.Zones)
             {
                 //only take a zone into account if it has grown already
-                if (!Zone.ReferenceEquals(otherZone, z) && otherZone.FirstGrown)
+                if (!Zone.ReferenceEquals(otherZone, z) && otherZone.FirstStageGrown)
                 {
                     //get adjacency rule between the two zones (whether they are encouraged / discouraged to be adjacent)
                     adjacencyRule = ZoneType.GetAdjacencyRule(otherZone.ZoneType, z.ZoneType);
@@ -1355,7 +1356,7 @@ namespace random_school_generator
         }
         private Point ChooseGrowthPoint(int[,] weightedGrid)
         {
-            //using a zone's weighted grid, choose a position on the floor to be a zone's growth point
+            //using a weighted grid, choose a position on the floor to be a zone's growth point
             Dictionary<int, List<Point>> pointsByWeight = new Dictionary<int, List<Point>>();
             int highestNum = -10000000;
 
@@ -1793,7 +1794,7 @@ namespace random_school_generator
                             }     
                         }
                         //if rooms have been grown successfully, move onto the next zone
-                        else if (!currentZone.Rooms[0].Grown)
+                        else if (!currentZone.Rooms[0].FullyGrown)
                         {
                             _currentRoomIndex = 0;
                         }
@@ -1816,12 +1817,12 @@ namespace random_school_generator
                             {
                                 //currentZone.Rooms[_currentRoomIndex].Grown = true;
                                 //currentZone.Rooms[_currentRoomIndex].FirstGrown = true;
-                                if (!currentZone.Rooms[_currentRoomIndex].FirstGrown)
+                                if (!currentZone.Rooms[_currentRoomIndex].FirstStageGrown)
                                 {
-                                    currentZone.Rooms[_currentRoomIndex].FirstGrown = true;
+                                    currentZone.Rooms[_currentRoomIndex].FirstStageGrown = true;
                                 } else
                                 {
-                                    currentZone.Rooms[_currentRoomIndex].Grown = true;
+                                    currentZone.Rooms[_currentRoomIndex].FullyGrown = true;
                                     //here, do splitting? TODO
                                 }
                                 _currentRoomIndex++;
@@ -1882,7 +1883,7 @@ namespace random_school_generator
                 r.UpdateBaseRect(r.GrowthTopLeft.X + z.GrowthTopLeft.X, r.GrowthTopLeft.Y + z.GrowthTopLeft.Y, r.RectWidth, r.RectHeight);
 
                 //if the room is too narrow, remove it
-                if (((!left && !right && r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !r.FirstGrown)
+                if (((!left && !right && r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType]) || (!up && !down && r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType])) && !r.FirstStageGrown)
                 {
                     z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                     z.Rooms.Remove(r);
@@ -1891,12 +1892,12 @@ namespace random_school_generator
 
                 //if no more growth available (or required area reached on first growth), finish growth
                 //&& r.RectWidth > RoomType.SideLengths[z.ZoneType.SecondaryType] && r.RectHeight > RoomType.SideLengths[z.ZoneType.SecondaryType]
-                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= r.IdealSize && !r.FirstGrown ))
+                else if ((!left && !right && !up && !down) || (r.RectWidth * r.RectHeight >= r.IdealSize && !r.FirstStageGrown ))
                 {
 
                     //remove the room if it is too long
                     //|| r.RectWidth < RoomType.SideLengths[z.ZoneType.SecondaryType] || r.RectHeight < RoomType.SideLengths[z.ZoneType.SecondaryType]
-                    if (r.FirstGrown && (r.RectHeight >= r.RectWidth * 3 || r.RectWidth >= r.RectHeight * 3))
+                    if (r.FirstStageGrown && (r.RectHeight >= r.RectWidth * 3 || r.RectWidth >= r.RectHeight * 3))
                     {
                         z.AddRectToGrid(new Rectangle(r.GrowthTopLeft.X, r.GrowthTopLeft.Y, r.RectWidth, r.RectHeight), (char)('0' | z.ID), true, addRect: false);
                         z.Rooms.Remove(r);
@@ -1983,7 +1984,7 @@ namespace random_school_generator
             //encourage growth in a place such that the room is likely to grow adjacent to other rooms
             foreach (Room room in z.Rooms)
             {
-                if (!Room.ReferenceEquals(r, room) && room.Grown)
+                if (!Room.ReferenceEquals(r, room) && room.FullyGrown)
                 {
                     foreach (Point p in room.Edgepoints)
                     {
@@ -3222,7 +3223,13 @@ namespace random_school_generator
                 } else
                 {
                     //make a rectangle facing up/down otherwise - will only happen if the point is one of the corners of the room
-                    enclosingRect = new Rectangle(_wallWidth, r.RectHeight - width - _wallWidth, length, width);
+                    if (chosenPoint.Y == _wallWidth)
+                    {
+                        enclosingRect = new Rectangle(chosenPoint.X, _wallWidth, length, width);
+                    } else
+                    {
+                        enclosingRect = new Rectangle(_wallWidth, r.RectHeight - width - _wallWidth, length, width);
+                    }
                 }
             }
 

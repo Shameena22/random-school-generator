@@ -20,6 +20,7 @@ namespace random_school_generator
         private bool _finishedFirstZoneGrowth, _finishedSecondZoneGrowth, _finishedThirdZoneGrowth, _madeWalls;
         private char[,] _roomGrid;
         private List<List<Rectangle>> _drawingList;
+
         public int TotalArea { get => _totalArea; set => _totalArea = value; }
         internal List<Zone> Zones { get => _zones; set => _zones = value; }
         public int FloorID { get => _floorID;  }
@@ -162,7 +163,7 @@ namespace random_school_generator
                 }
             }
         }
-        private bool CheckIfRectFitsBelow(Rectangle r, Floor f)
+        private static bool CheckIfRectFitsBelow(Rectangle r, Floor f)
         {
             bool spacesFound = true;
 
