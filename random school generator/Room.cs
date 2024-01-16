@@ -125,7 +125,6 @@ namespace random_school_generator
             {
                 i = AddCupboardOrSubjDesk(MakeRectPosRelativeToRoom(_equipmentDesks[i]), false, i);
             }
-
         }
         private int AddCupboardOrSubjDesk(Rectangle r, bool cupboard, int i = 0)
         {
