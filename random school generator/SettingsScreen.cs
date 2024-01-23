@@ -65,7 +65,7 @@ namespace random_school_generator
             //pass fonts to each input option for their use
             for (int i = 0; i < _inputOptions.Count(); i++)
             {
-                _inputOptions[i].LoadInputOptionContent(_consolas, _consolasBold);
+                _inputOptions[i].LoadInputOptionContent(_consolas);
             }
         }
 
@@ -201,7 +201,7 @@ namespace random_school_generator
             }    
             
         }
-        public void ReturnValues(ref int floorSize, ref int numOfFloors, ref string subjectOne, ref string subjectTwo, ref string subjectThree, ref string floorIrregularity, ref string watchGeneration)
+        public void ReturnValues(ref int floorSize, ref int numOfFloors, ref string subjectOne, ref string subjectTwo, ref string subjectThree, ref string floorIrregularity)
         {
             //passes on all values to Game1 once user has exited this screen
             floorSize = Convert.ToInt32(_inputOptions[0].ReturnInput());

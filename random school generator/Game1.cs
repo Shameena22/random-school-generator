@@ -32,7 +32,7 @@ namespace random_school_generator
 
         //data
         private int _floorSize, _numOfFloors, _floorIrregularity, _screenWidth, _screenHeight;
-        private string _subjectOne, _subjectTwo, _subjectThree, _irregularityText, _watchGeneration;
+        private string _subjectOne, _subjectTwo, _subjectThree, _irregularityText;
         private List<string> _allSubjectOptions;
         private DateTime _previousUpdateTime;
         private const int _wallWidth = 5;
@@ -214,7 +214,7 @@ namespace random_school_generator
             if (_settingsScreen.UpdateSettingsScreen(_previousKeyboardState, _currentKeyboardState))
             {
                 //get results of all inputs from settings screen
-                _settingsScreen.ReturnValues(ref _floorSize, ref _numOfFloors, ref _subjectOne, ref _subjectTwo, ref _subjectThree, ref _irregularityText, ref _watchGeneration);
+                _settingsScreen.ReturnValues(ref _floorSize, ref _numOfFloors, ref _subjectOne, ref _subjectTwo, ref _subjectThree, ref _irregularityText);
                 SetFloorIrregularity();
                 SetGrowthSpeed();
                 //switch to next game state
@@ -309,6 +309,14 @@ namespace random_school_generator
                 //change the floor to be displayed
                 _previousUpdateTime = DateTime.Now;
                 _currentFloorIndex++;
+            }
+        }
+        private void FindAllFloorEdgePoints()
+        {
+            //call each floor to store its edgepoints
+            foreach (Floor f in _allFloors)
+            {
+                f.FindAllEdgePoints('X');
             }
         }
 
@@ -697,14 +705,6 @@ namespace random_school_generator
 
             //returns nothing if no space at all (impossible)
             return new Rectangle(0, 0, 0, 0);
-        }
-        private void FindAllFloorEdgePoints()
-        {
-            //call each floor to store its edgepoints
-            foreach (Floor f in _allFloors)
-            {
-                f.FindAllEdgePoints('X');
-            }
         }
         private void CheckEdgeAlignments(Point p, int length, int width, Floor f, ref bool horizontalEdge, ref bool verticalEdge)
         {
@@ -2441,6 +2441,81 @@ namespace random_school_generator
             AddCupboard(r);
             AddEquipmentDesks(r, upperLimit: 6);
         }
+        private void MakeToiletFurniture(Room r)
+        {
+            //clearPoints: positions in the room to avoid, e.g. in front of door, for this purpose we make them relative to the room instead of the floor
+            List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
+            bool leftFree = true, rightFree = true, upFree = true, downFree = true;
+
+            //check for what sides of the room have doors; cubicles are set to avoid them
+            foreach (Point p in clearPoints)
+            {
+                if (p.X == 5)
+                {
+                    leftFree = false;
+                }
+                else if (p.X == r.RectWidth - 5 - 1)
+                {
+                    rightFree = false;
+                }
+                if (p.Y == 5)
+                {
+                    upFree = false;
+                }
+                else if (p.Y == r.RectHeight - 5 - 1)
+                {
+                    downFree = false;
+                }
+
+            }
+
+            //make cubicles and sinks, preferably opposite each other, cubicles should be made on a side without doors
+            if (upFree && downFree)
+            {
+                MakeToiletCubicles(r, "up");
+                MakeToiletSinks(r, "down");
+            }
+            else if (leftFree && rightFree)
+            {
+                MakeToiletCubicles(r, "left");
+                MakeToiletSinks(r, "right");
+
+            }
+            else if (upFree)
+            {
+                MakeToiletCubicles(r, "up");
+                MakeToiletSinks(r, "down");
+            }
+            else if (downFree)
+            {
+                MakeToiletCubicles(r, "down");
+                MakeToiletSinks(r, "up");
+            }
+            else if (leftFree)
+            {
+                MakeToiletCubicles(r, "left");
+                MakeToiletSinks(r, "right");
+            }
+            else if (rightFree)
+            {
+                MakeToiletCubicles(r, "right");
+                MakeToiletSinks(r, "left");
+            }
+            else
+            {
+                //if each side has a door - very unlikely - add cubicles and sinks anyway
+                if (r.RectWidth > r.RectHeight)
+                {
+                    MakeToiletCubicles(r, "down");
+                    MakeToiletSinks(r, "up");
+                }
+                else
+                {
+                    MakeToiletCubicles(r, "right");
+                    MakeToiletSinks(r, "left");
+                }
+            }
+        }
 
         // - - - specific pieces of furniture - - -
         private void AddScienceDesks(Room r)
@@ -2682,80 +2757,6 @@ namespace random_school_generator
             //add the chair and desk to the room, with appropriately shifted positions
             r.TeacherDesk = r.MakeRectPosRelativeToFloor(desk);
             r.TeacherChair = r.MakeRectPosRelativeToFloor(chair);
-        }
-        private void MakeToiletFurniture(Room r)
-        {
-            //clearPoints: positions in the room to avoid, e.g. in front of door, for this purpose we make them relative to the room instead of the floor
-            List<Point> validPoints = new List<Point>(), clearPoints = r.InnerClearPoints.Select(i => new Point(i.X - r.GrowthTopLeft.X - r.ZoneTopLeft.X, i.Y - r.GrowthTopLeft.Y - r.ZoneTopLeft.Y)).ToList();
-            bool leftFree = true, rightFree = true, upFree = true, downFree = true;
-
-            //check for what sides of the room have doors; cubicles are set to avoid them
-            foreach (Point p in clearPoints)
-            {
-                if (p.X == 5)
-                {
-                    leftFree = false;
-                }
-                else if (p.X == r.RectWidth - 5 - 1)
-                {
-                    rightFree = false;
-                }
-                if (p.Y == 5)
-                {
-                    upFree = false;
-                }
-                else if (p.Y == r.RectHeight - 5 - 1)
-                {
-                    downFree = false;
-                }
-
-            }
-
-            //make cubicles and sinks, preferably opposite each other, cubicles should be made on a side without doors
-            if (upFree && downFree)
-            {
-                MakeToiletCubicles(r, "up");
-                MakeToiletSinks(r, "down");
-            }
-            else if (leftFree && rightFree)
-            {
-                MakeToiletCubicles(r, "left");
-                MakeToiletSinks(r, "right");
-
-            }
-            else if (upFree)
-            {
-                MakeToiletCubicles(r, "up");
-                MakeToiletSinks(r, "down");
-            }
-            else if (downFree)
-            {
-                MakeToiletCubicles(r, "down");
-                MakeToiletSinks(r, "up");
-            }
-            else if (leftFree)
-            {
-                MakeToiletCubicles(r, "left");
-                MakeToiletSinks(r, "right");
-            }
-            else if (rightFree)
-            {
-                MakeToiletCubicles(r, "right");
-                MakeToiletSinks(r, "left");
-            }
-            else
-            {
-                //if each side has a door - very unlikely - add cubicles and sinks anyway
-                if (r.RectWidth > r.RectHeight)
-                {
-                    MakeToiletCubicles(r, "down");
-                    MakeToiletSinks(r, "up");
-                } else
-                {
-                    MakeToiletCubicles(r, "right");
-                    MakeToiletSinks(r, "left");
-                }
-            }
         }
         private void MakeToiletCubicles(Room r, string position)
         {
@@ -4393,7 +4394,6 @@ namespace random_school_generator
         }
         private List<Point> GetClearPointsFromRect(List<Point> edgePoints, Rectangle door)
         {
-           // bool foundEdge = false;
             List<Point> pointsToAdd = new List<Point>();
             Point tempPoint;
 
@@ -4407,59 +4407,34 @@ namespace random_school_generator
                 if (edgePoints.Contains(tempPoint))
                 {
                     pointsToAdd.Add(tempPoint);
-                    //if (pointsToAdd.Count > 1)
-                    //{
-                    //    foundEdge = true;
-                    //}
                 }
             }
 
-            //check right
-          //  if (!foundEdge)
-           // {
-                for (int y = door.Y; y < door.Y + door.Height; y++)
-                {
-                    tempPoint = new Point(door.X + door.Width - 1, y);
-                    if (edgePoints.Contains(tempPoint))
-                    {
-                        pointsToAdd.Add(tempPoint);
-                        //if (pointsToAdd.Count > 2)
-                        //{
-                        //    foundEdge = true;
-                        //}
-                    }
-                }
-           // }
-
-            //check up
-            //if (!foundEdge)
-            //{
-                for (int x = door.X; x < door.X + door.Width; x++)
-                {
-                    tempPoint = new Point(x, door.Y);
-                    if (edgePoints.Contains(tempPoint))
-                    {
-                        pointsToAdd.Add(tempPoint);
-                        //if (pointsToAdd.Count > 3)
-                        //{
-                        //    foundEdge = true;
-                        //}
-                    }
-                }
-          //  }
-
-            //check down
-            //if (!foundEdge)
-            //{
-                for (int x = door.X; x < door.X + door.Width; x++)
-                {
-                    tempPoint = new Point(x, door.Y + door.Height - 1);
+            for (int y = door.Y; y < door.Y + door.Height; y++)
+            {
+                tempPoint = new Point(door.X + door.Width - 1, y);
                 if (edgePoints.Contains(tempPoint))
                 {
                     pointsToAdd.Add(tempPoint);
                 }
             }
-            //}
+
+            for (int x = door.X; x < door.X + door.Width; x++)
+            {
+                tempPoint = new Point(x, door.Y);
+                if (edgePoints.Contains(tempPoint))
+                {
+                    pointsToAdd.Add(tempPoint);
+                }
+            }
+            for (int x = door.X; x < door.X + door.Width; x++)
+            {
+                tempPoint = new Point(x, door.Y + door.Height - 1);
+                if (edgePoints.Contains(tempPoint))
+                {
+                    pointsToAdd.Add(tempPoint);
+                }
+            }
 
             return pointsToAdd;
         }

@@ -16,7 +16,7 @@ namespace random_school_generator
         private bool _isSelected, _validInput;
         private int _selected, _maxNum, _minNum, _dropdownBoxWidth, _dropdownBoxHeight;
         private string _textInBox, _validationType;
-        private SpriteFont _consolas, _consolasBold;
+        private SpriteFont _consolas;
         private Vector2 _position;
         private Color _colour;
         private Color[] _colourData;
@@ -26,7 +26,6 @@ namespace random_school_generator
         public bool IsSelected { get => _isSelected; set => _isSelected = value; }
         public bool ValidInput { get => _validInput; }
         public string TextInBox { get => _textInBox;}
-        public bool IsSelected1 { get => _isSelected; set => _isSelected = value; }
 
         public InputOption(string validationType, List<string> dropDownOptions = null, int minNum = -1, int maxNum = -1, int dropdownBoxWidth = 300)
         {
@@ -69,10 +68,9 @@ namespace random_school_generator
         }
         
         // - loading data -
-        public void LoadInputOptionContent(SpriteFont consolas, SpriteFont consolasBold)
+        public void LoadInputOptionContent(SpriteFont consolas)
         {
             _consolas = consolas;
-            _consolasBold = consolasBold;
         }
         
         // - updating -
