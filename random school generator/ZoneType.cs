@@ -27,7 +27,6 @@ namespace random_school_generator
         }
 
         // - load data -
-        //TODO: maybe load these from a file?
         public static void LoadZoneRules()
         {
             //these values will later be used in each zone's weighted grid to help choose its growth position
