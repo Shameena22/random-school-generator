@@ -56,7 +56,6 @@ namespace random_school_generator
             _graphics.ApplyChanges();
             _gameState = "menu";
 
-            //TODO: check if code below fits here
             _allSubjectOptions = new List<string> { "english", "maths", "science", "religious education", "languages", "computer science", "art", "design technology", "music", "random" };
             _gameStates = new List<string> { "menu", "settings", "create floors", "create graphs", "create stairs", "grow rectangular zones", "create corridors", "create rooms", "create furniture", "view generated school" };
             _gameStateIndex = 0;
@@ -69,10 +68,8 @@ namespace random_school_generator
             _screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
             _screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
             _random = new Random();
-            //_timeBetweenDisplayChange = 50;
             _scrollX = -_screenWidth / 4;
             _scrollY = -_screenHeight / 8;
-            //_wallWidth = 5;
         }
 
         protected override void Initialize()
@@ -4616,11 +4613,20 @@ namespace random_school_generator
         private void UpdateMessageQueue(string s)
         {
             //updates the queue of messages displayed on the screen; adds new messages to the queue and removes messages if the queue gets too long
+            int messageCount = 0;
+
+            if (_gameState == "view generated school")
+            {
+                messageCount = 1;
+            } else
+            {
+                messageCount = 15;
+            }
 
             if (s != "")
             {
                 //remove oldest message if the queue has grown too large
-                if (_displayMessages.Count > 15)
+                if (_displayMessages.Count > messageCount)
                 {
                     _displayMessages.Dequeue();
                 }
