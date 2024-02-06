@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -174,11 +175,16 @@ namespace random_school_generator
                 case "view generated school":
                     UpdateScroll();
                     currentMessage = ViewGeneratedSchool();
+                    UpdateMessageQueue(currentMessage, 1);
                     break;
             }
 
             //update message queue with the message stored
-            UpdateMessageQueue(currentMessage);
+            if (_gameState != "view generated school")
+            {
+                UpdateMessageQueue(currentMessage);
+            }
+
 
             //store keyboard state for use in the next call, necessary to check if a button has been pressed and released
             _previousKeyboardState = _currentKeyboardState;
@@ -4603,25 +4609,19 @@ namespace random_school_generator
             else if (CheckButtonPress(Keys.Down) && _currentFloorIndex != 0)
             {
                 _currentFloorIndex--;
-            }
-            
+            } else if (CheckButtonPress(Keys.X))
+            {
+                ExportSchool();
+                return "> exported school";
+            }     
 
             return $"> viewing floor {_currentFloorIndex}";
         }
 
         // - update message queue -
-        private void UpdateMessageQueue(string s)
+        private void UpdateMessageQueue(string s, int messageCount = 15)
         {
             //updates the queue of messages displayed on the screen; adds new messages to the queue and removes messages if the queue gets too long
-            int messageCount = 0;
-
-            if (_gameState == "view generated school")
-            {
-                messageCount = 1;
-            } else
-            {
-                messageCount = 15;
-            }
 
             if (s != "")
             {
@@ -4674,6 +4674,51 @@ namespace random_school_generator
             _displayMessages = new Queue<string>();
             _currentFloorIndex = 0;
             _currentZoneIndex = 0;
+        }
+
+        // - export school -
+        private void ExportSchool()
+        {
+            string folder = DateTime.Now.ToString("MM-dd-yy H;mm;ss");
+            int currentFloor = _currentFloorIndex;
+
+            //remove the messages
+            UpdateMessageQueue(" ", 0);
+
+            //iterate through each floor and take a screenshot of each
+            for (int i = 0; i < _allFloors.Count; i++)
+            {
+                _currentFloorIndex = i;
+                TakeScreenshot(folder, $"floor {i}");
+            }
+
+            //set current floor back to whichever one it was before
+            _currentFloorIndex = currentFloor;
+        }
+        private void TakeScreenshot(string folder, string filename)
+        {
+            int width = GraphicsDevice.PresentationParameters.BackBufferWidth;
+            int height = GraphicsDevice.PresentationParameters.BackBufferHeight;
+
+            //force a frame to be drawn
+            Draw(new GameTime());
+
+            //pull the picture from the buffer
+            int[] backBuffer = new int[width * height];
+            GraphicsDevice.GetBackBufferData(backBuffer);
+
+            //copy into a texture
+            Texture2D texture = new Texture2D(GraphicsDevice, width, height, false, GraphicsDevice.PresentationParameters.BackBufferFormat);
+            texture.SetData(backBuffer);
+
+            //make folder (if not made before)
+            Directory.CreateDirectory($"screenshots/{folder}");
+
+            //save screenshot as png
+            Stream stream = File.Create($"screenshots/{folder}/{filename}.png");
+            texture.SaveAsPng(stream, width, height);
+            stream.Dispose();
+            texture.Dispose();
         }
 
         // - display -
