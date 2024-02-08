@@ -192,7 +192,7 @@ namespace random_school_generator
 
             //display additional messages guiding the user
             spriteBatch.DrawString(_consolas, "> NOTE: for options accepting integer input, enter 0 to make the number random.", new Vector2(5, 500), Color.Gray);
-            spriteBatch.DrawString(_consolas, "> NOTE: to export the school as png files, press X while viewing the finished output", new Vector2(5, 525), Color.LightGray);
+            spriteBatch.DrawString(_consolas, "> NOTE: to export the school as PNG files, press X while viewing the finished output", new Vector2(5, 525), Color.LightGray);
             spriteBatch.DrawString(_consolas, "> WARNING: large inputs may make the generator slow.", new Vector2(5, 550), Color.DeepPink);
 
             //draw selected input after everything else to prevent anything overlapping with its dropdown box

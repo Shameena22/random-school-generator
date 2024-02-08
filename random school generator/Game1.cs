@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 
 namespace random_school_generator
 {
-    public class Game1 : Game
+    public class Game1 : Game 
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
